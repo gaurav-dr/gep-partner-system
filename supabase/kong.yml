@@ -1,0 +1,165 @@
+_format_version: "1.1"
+
+consumers:
+  - username: anon
+    keyauth_credentials:
+      - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+  - username: service_role
+    keyauth_credentials:
+      - key: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTk1NzM0MTIwMH0.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+
+acls:
+  - consumer: anon
+    group: anon
+  - consumer: service_role
+    group: anon
+  - consumer: service_role
+    group: service_role
+
+services:
+  - name: auth
+    url: http://supabase-auth:9999
+    routes:
+      - name: auth-all
+        strip_path: true
+        paths:
+          - /auth/v1/
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - HEAD
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - X-Authorization
+            - apikey
+          credentials: true
+
+  - name: rest
+    url: http://supabase-rest:3000
+    routes:
+      - name: rest-all
+        strip_path: true
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - HEAD
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - X-Authorization
+            - apikey
+            - range
+            - prefer
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: realtime
+    url: http://supabase-realtime:4000
+    routes:
+      - name: realtime-all
+        strip_path: true
+        paths:
+          - /realtime/v1/
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - HEAD
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - X-Authorization
+            - apikey
+          credentials: true
+      - name: key-auth
+        config:
+          hide_credentials: false
+
+  - name: storage
+    url: http://supabase-storage:5000
+    routes:
+      - name: storage-all
+        strip_path: true
+        paths:
+          - /storage/v1/
+    plugins:
+      - name: cors
+        config:
+          origins:
+            - "*"
+          methods:
+            - GET
+            - HEAD
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+            - OPTIONS
+          headers:
+            - Accept
+            - Accept-Version
+            - Content-Length
+            - Content-MD5
+            - Content-Type
+            - Date
+            - X-Auth-Token
+            - Authorization
+            - X-Authorization
+            - apikey
+          credentials: true
+
+  - name: meta
+    url: http://supabase-meta:8080
+    routes:
+      - name: meta-all
+        strip_path: true
+        paths:
+          - /pg/
