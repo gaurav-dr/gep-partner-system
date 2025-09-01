@@ -896,6 +896,137 @@ Focus on Greek regulatory environment and SEPE-specific requirements.
             reportingSchedule: []
         };
     }
+
+    /**
+     * Generate a realistic customer request using Claude AI
+     */
+    async generateCustomerRequest() {
+        try {
+            logger.info('Generating AI customer request using Anthropic Claude');
+
+            const prompt = `
+You are a data generator for a Greek occupational health inspection system. Generate a realistic customer request with the following requirements:
+
+CONTEXT:
+- This is for Greek companies that need occupational health and safety services
+- Must comply with SEPE (Greek labor inspection authority) requirements
+- Should include realistic Greek company names, locations, and contact information
+- Vary the company size, industry, and service requirements
+
+GENERATE A REALISTIC CUSTOMER REQUEST WITH:
+1. Company name (Greek companies or international companies operating in Greece)
+2. Location (major Greek cities: Athens, Thessaloniki, Patras, Heraklion, Larissa, Volos, etc.)
+3. Contact information (realistic Greek email and phone)
+4. Number of installations (1-8 for variety)
+5. Total employees (10-500 range)
+6. Installation type (office, retail, warehouse, manufacturing, healthcare, hospitality, mixed)
+7. Work type (routine_health_check, comprehensive_health_assessment, safety_inspection, occupational_health_screening, compliance_audit, emergency_response_assessment)
+8. Contract completion date (6-18 months from now)
+9. Hours of operation (realistic business hours)
+10. Specific requests (realistic special requirements)
+11. Number of visits (optional, 4-24 range)
+
+IMPORTANT:
+- Use realistic Greek business naming conventions
+- Include varied industries (manufacturing, retail, hospitality, healthcare, tech, logistics)
+- Make contact emails match company domains
+- Use +30 prefix for Greek phone numbers
+- Include realistic special requirements (facility access, safety protocols, language needs, etc.)
+- Vary the company size and complexity
+
+Return ONLY a valid JSON object with these exact field names:
+{
+  "name": "Company Name",
+  "numberOfInstallations": number,
+  "totalEmployees": number,
+  "installationType": "type",
+  "workType": "type",
+  "contractCompletionDate": "YYYY-MM-DD",
+  "numberOfVisits": number or null,
+  "hoursOfOperation": "schedule",
+  "specificRequests": "detailed requirements",
+  "location": "City, Greece",
+  "contactEmail": "email@domain.gr",
+  "contactPhone": "+30 xxx xxx xxxx"
+}`;
+
+            // Set higher temperature for more creative/varied responses
+            const originalTemp = this.temperature;
+            this.temperature = 0.8;
+
+            const response = await this.makeAnthropicRequest(prompt);
+            
+            // Restore original temperature
+            this.temperature = originalTemp;
+
+            // Parse the JSON response
+            const jsonMatch = response.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('No valid JSON found in Claude response');
+            }
+
+            const customerData = JSON.parse(jsonMatch[0]);
+            
+            // Add some date processing to ensure valid dates
+            if (customerData.contractCompletionDate) {
+                const completionDate = new Date(customerData.contractCompletionDate);
+                if (isNaN(completionDate.getTime())) {
+                    // Fallback to 6 months from now if date is invalid
+                    const fallbackDate = new Date();
+                    fallbackDate.setMonth(fallbackDate.getMonth() + 6);
+                    customerData.contractCompletionDate = fallbackDate.toISOString().split('T')[0];
+                }
+            }
+
+            logger.info('Successfully generated AI customer request data');
+            return customerData;
+
+        } catch (error) {
+            logger.error('Failed to generate AI customer request:', error);
+            
+            // Fallback to predefined data if AI fails
+            return this.getFallbackCustomerData();
+        }
+    }
+
+    /**
+     * Fallback customer data if AI generation fails
+     */
+    getFallbackCustomerData() {
+        const companies = [
+            'Hellenic Enterprises SA', 'Mediterranean Solutions Ltd', 'Aegean Industries AE',
+            'Spartan Manufacturing Co', 'Olympus Healthcare Ltd', 'Delphi Technologies SA'
+        ];
+        const cities = ['Athens', 'Thessaloniki', 'Patras', 'Heraklion', 'Larissa', 'Volos'];
+        const installationTypes = ['office', 'retail', 'warehouse', 'manufacturing', 'healthcare', 'hospitality'];
+        const workTypes = [
+            'routine_health_check', 'comprehensive_health_assessment', 'safety_inspection',
+            'occupational_health_screening', 'compliance_audit', 'emergency_response_assessment'
+        ];
+
+        const randomChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const randomRange = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        
+        const company = randomChoice(companies);
+        const city = randomChoice(cities);
+        const completionDate = new Date();
+        completionDate.setMonth(completionDate.getMonth() + randomRange(6, 18));
+
+        return {
+            name: company,
+            numberOfInstallations: randomRange(1, 6),
+            totalEmployees: randomRange(15, 300),
+            installationType: randomChoice(installationTypes),
+            workType: randomChoice(workTypes),
+            contractCompletionDate: completionDate.toISOString().split('T')[0],
+            numberOfVisits: randomRange(6, 20),
+            hoursOfOperation: 'Monday-Friday 09:00-17:00',
+            specificRequests: 'Standard occupational health requirements as per Greek regulations',
+            location: `${city}, Greece`,
+            contactEmail: `info@${company.toLowerCase().replace(/[^a-z]/g, '')}.gr`,
+            contactPhone: `+30 ${randomRange(210, 299)} ${randomRange(100, 999)} ${randomRange(1000, 9999)}`
+        };
+    }
 }
 
 module.exports = AnthropicIntegration;

@@ -95,6 +95,82 @@ const NewRequest: React.FC = () => {
     return Math.max(totalHours, formData.numberOfInstallations * 2); // Minimum 2 hours per installation
   };
 
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+  const fillDemoData = async () => {
+    setIsGeneratingAI(true);
+    setSubmitMessage('');
+    
+    try {
+      console.log('🤖 Generating AI customer request data...');
+      
+      // Call the backend API to generate AI customer data
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${apiBaseUrl}/customer-requests/generate-ai`);
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const aiData = result.data;
+        
+        // Transform AI data to match form structure
+        setFormData({
+          name: aiData.name || '',
+          numberOfInstallations: aiData.numberOfInstallations || 1,
+          totalEmployees: aiData.totalEmployees || 0,
+          installationType: aiData.installationType || '',
+          workType: aiData.workType || '',
+          contractCompletionDate: aiData.contractCompletionDate || '',
+          numberOfVisits: aiData.numberOfVisits || undefined,
+          hoursOfOperation: aiData.hoursOfOperation || '',
+          blockedDates: aiData.blockedDates || [],
+          preferredDates: aiData.preferredDates || [],
+          specificRequests: aiData.specificRequests || '',
+          location: aiData.location || '',
+          contactEmail: aiData.contactEmail || '',
+          contactPhone: aiData.contactPhone || ''
+        });
+        
+        setSubmitMessage('🤖 AI-generated customer data loaded! Claude has created a unique, realistic request.');
+        console.log('✅ AI data loaded:', aiData);
+      } else {
+        throw new Error('Invalid response format from AI service');
+      }
+    } catch (error) {
+      console.error('❌ AI generation failed:', error);
+      
+      // Fallback to static demo data if AI fails
+      const today = new Date();
+      const completionDate = new Date(today);
+      completionDate.setMonth(today.getMonth() + 6);
+      
+      setFormData({
+        name: 'ACME Manufacturing Ltd. (Fallback)',
+        numberOfInstallations: 3,
+        totalEmployees: 85,
+        installationType: 'manufacturing',
+        workType: 'comprehensive_health_assessment',
+        contractCompletionDate: completionDate.toISOString().split('T')[0],
+        numberOfVisits: 12,
+        hoursOfOperation: 'Monday-Friday 08:00-16:00',
+        blockedDates: ['2025-12-25', '2025-01-01'],
+        preferredDates: ['2025-02-15', '2025-03-20', '2025-04-10'],
+        specificRequests: 'Please coordinate with facility manager before visits. Special attention needed for chemical handling areas.',
+        location: 'Thessaloniki, Greece',
+        contactEmail: 'safety@acme-manufacturing.gr',
+        contactPhone: '+30 231 056 7890'
+      });
+      
+      setSubmitMessage('⚠️ AI service unavailable - loaded fallback demo data instead.');
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -186,6 +262,30 @@ const NewRequest: React.FC = () => {
           <p className="mt-2 text-sm text-gray-700">
             Submit a new health inspection request. All fields marked with * are required.
           </p>
+        </div>
+        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
+          <button
+            type="button"
+            onClick={fillDemoData}
+            disabled={isGeneratingAI}
+            className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white ${
+              isGeneratingAI
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'
+            }`}
+          >
+            {isGeneratingAI ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Claude AI Generating...
+              </>
+            ) : (
+              <>🤖 Generate with AI</>
+            )}
+          </button>
         </div>
       </div>
 

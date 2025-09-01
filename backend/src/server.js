@@ -1,11 +1,10 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const helmet = require('helmet');
 const compression = require('compression');
-const { RateLimiterMemory } = require('rate-limiter-flexible');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { securityHeaders, apiRateLimit, sanitizeInput } = require('./middleware/validation');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -19,34 +18,41 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Rate limiting
-const rateLimiter = new RateLimiterMemory({
-  keyGenerator: (req) => req.ip,
-  points: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
-  duration: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000, // 15 minutes
-});
-
-const rateLimiterMiddleware = (req, res, next) => {
-  rateLimiter
-    .consume(req.ip)
-    .then(() => {
-      next();
-    })
-    .catch(() => {
-      res.status(429).json({ error: 'Too many requests' });
-    });
-};
-
-// Middleware
-app.use(helmet());
+// Security middleware
+app.use(securityHeaders);
 app.use(compression());
+
+// CORS configuration with enhanced security
+const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-  credentials: true
+  origin: corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(rateLimiterMiddleware);
+
+// Request parsing with size limits
+app.use(express.json({ 
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'Invalid JSON' });
+      return;
+    }
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: false, 
+  limit: '1mb',
+  parameterLimit: 100
+}));
+
+// Apply security middleware
+app.use(sanitizeInput);
+app.use(apiRateLimit);
 
 // Request logging
 app.use((req, res, next) => {
