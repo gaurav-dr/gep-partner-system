@@ -90,6 +90,15 @@ ehthumbs.db
 *.sqlite
 *.sqlite3
 
+# Testing artifacts
+debug-*.png
+final-debug.png
+playwright-report/
+test-results/
+simple-*.js
+simple-*.json
+test-*.json
+
 # Temporary deployment scripts
 FIX_*.md
 COMPLETE_*.md

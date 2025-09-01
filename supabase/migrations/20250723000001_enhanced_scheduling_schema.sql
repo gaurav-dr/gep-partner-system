@@ -64,7 +64,7 @@ CREATE TYPE visit_type AS ENUM ('occupational_doctor', 'safety_engineer', 'speci
 -- Master schedules table
 CREATE TABLE schedules (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    contract_code VARCHAR(20) REFERENCES contracts(contract_code),
+    contract_code VARCHAR(20),
     installation_code VARCHAR(10) REFERENCES installations(installation_code),
     partner_id VARCHAR(10) REFERENCES partners(id),
     service_type visit_type NOT NULL,

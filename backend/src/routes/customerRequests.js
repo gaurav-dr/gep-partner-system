@@ -3,6 +3,7 @@ const Joi = require('joi');
 const { supabase } = require('../config/supabase');
 const logger = require('../utils/logger');
 const { validateRequest } = require('../middleware/validation');
+const AnthropicIntegration = require('../services/AnthropicIntegration');
 
 const router = express.Router();
 
@@ -259,6 +260,33 @@ router.post('/:id/assign', async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+// GET /api/customer-requests/generate-ai - Generate AI customer request data
+router.get('/generate-ai', async (req, res, next) => {
+  try {
+    logger.info('AI customer request generation requested');
+
+    const anthropicService = new AnthropicIntegration();
+    const customerData = await anthropicService.generateCustomerRequest();
+
+    logger.info('AI customer request data generated successfully', {
+      companyName: customerData.name,
+      location: customerData.location
+    });
+
+    res.json({
+      success: true,
+      data: customerData
+    });
+  } catch (error) {
+    logger.error('Failed to generate AI customer request:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate customer request data',
+      message: error.message
+    });
   }
 });
 
