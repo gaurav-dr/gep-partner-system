@@ -1,508 +1,480 @@
 # GEP Partner System - Deployment Guide
 
-## Deployment Overview
+## Deployment Decision Tree
 
-The GEP Partner System supports multiple deployment strategies, from local development to production cloud deployments. This guide consolidates all deployment information and best practices.
+Choose your deployment method:
 
-## Deployment Architectures
+```
+🤔 What's your setup?
+├── 🏠 Local Development
+│   ├── Docker (Recommended) → Use Docker Compose Setup
+│   └── Native Development → Use Manual Development Setup
+├── 🌐 Production Server
+│   ├── Fresh Server → Use Automated Production Deployment
+│   ├── Existing Server (Port Conflicts) → Use Custom Port Deployment
+│   └── Docker Production → Use Docker Production Setup
+└── ☁️ Cloud Platforms
+    ├── AWS/GCP/Azure → Use Docker Production Setup
+    └── VPS/Dedicated → Use Automated Production Deployment
+```
 
-### Local Development
-- **Docker Compose**: Complete stack with Supabase local instance
-- **Native Setup**: Individual service startup for development
+## Prerequisites Validation
 
-### Production Deployment
-- **Single Server**: Ubuntu 20.04+ with PM2 process management
-- **Cloud Native**: Docker containers with orchestration
-- **Hybrid**: Managed database (Supabase) + self-hosted application
+Before deployment, verify these requirements:
 
-## Quick Deployment (Recommended)
+### For All Deployments
+- [ ] **Git Repository Access**: Clone access to the project repository
+- [ ] **Node.js Environment**: Version 18.x or higher
+- [ ] **Environment Variables**: Supabase credentials and API keys ready
 
-### Prerequisites Checklist
-
-Before deployment, ensure you have:
-
-- [ ] **Server Environment**
-  - Ubuntu Server 20.04+ or similar Linux distribution
-  - Minimum 2GB RAM, 20GB disk space
-  - Root or sudo access
-  - Static IP address or domain name
-
-- [ ] **External Services**
+### For Production Deployments
+- [ ] **Server Access**: Ubuntu 20.04+ server with sudo privileges
+- [ ] **Network Access**: Open ports (80/443 for web, custom ports as needed)
+- [ ] **Domain/IP**: Static IP address or configured domain name
+- [ ] **External Services**:
   - Supabase project with database configured
-  - SendGrid account for email services (optional)
-  - Anthropic API key for AI features
+  - SMTP service for email notifications (optional)
+  - Anthropic API key for AI features (optional)
 
-- [ ] **Local Setup**
-  - Git installed and repository access
-  - SSH access to target server
-  - Environment files configured
+### Validation Commands
+```bash
+# Check Node.js version
+node --version  # Should be v18.x or higher
 
-### Automated Deployment Script
+# Check available ports
+sudo netstat -tlnp | grep -E ":(80|443|3000|4000|4001)"
 
-The fastest production deployment method:
+# Test server connectivity (for remote deployments)
+ssh user@your-server-ip "echo 'Connection successful'"
+```
+
+## Deployment Methods
+
+### 🐳 Docker Compose Setup (Recommended for Development)
+
+**Use Case**: Local development with full stack including database
 
 ```bash
-# 1. Clone repository locally
-git clone https://github.com/mikedrai/gep-partner-system.git
+# 1. Clone repository
+git clone <repository-url>
 cd gep-partner-system
 
-# 2. Configure production environment
-cp .env.production.port4000 .env
-cp frontend/.env.production.port4000 frontend/.env
+# 2. Set up environment files
+cp .env.example .env
+cp frontend/.env.example frontend/.env
 
-# Edit environment files with your credentials:
-# - Supabase URL and keys
-# - JWT secret (generate secure random string)
-# - SendGrid API key
-# - Domain/IP address
+# 3. Configure environment variables
+# Edit .env and frontend/.env with your settings
 
-# 3. Make deploy script executable and run
-chmod +x deploy-port-4000.sh
-./deploy-port-4000.sh YOUR_SERVER_IP
+# 4. Start full stack
+docker-compose up -d
+
+# 5. Access application
+# Frontend: http://localhost:3000
+# Backend API: http://localhost:3001
+# Supabase Studio: http://localhost:54323
 ```
 
-This script handles:
-- System dependencies installation (Node.js, PM2, Nginx)
-- Application deployment and build
-- Service configuration and startup
-- Nginx proxy setup
-- Basic security configuration
+### 🚀 Automated Production Deployment
 
-## Manual Production Deployment
-
-### Step 1: Server Preparation
+**Use Case**: Fresh production server, standard ports (80/443)
 
 ```bash
-# Update system packages
-sudo apt update && sudo apt upgrade -y
+# 1. Prepare environment files locally
+cp .env.production.example .env.production
+cp frontend/.env.production.example frontend/.env.production
 
-# Install Node.js 18.x LTS
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# 2. Edit environment files with your production values:
+# - SUPABASE_URL=https://your-project-id.supabase.co
+# - SUPABASE_ANON_KEY=your_anon_key
+# - JWT_SECRET=generate_secure_random_string_here
+# - CORS_ORIGIN=https://your-domain.com
+# - SMTP credentials (if using email features)
 
-# Install system dependencies
-sudo apt install -y nginx git python3 python3-pip certbot python3-certbot-nginx
-
-# Install PM2 process manager globally
-sudo npm install -g pm2
-
-# Create application directory
-sudo mkdir -p /var/www/gep
-sudo chown -R $USER:$USER /var/www/gep
+# 3. Run deployment script
+chmod +x scripts/deploy-production.sh
+./scripts/deploy-production.sh user@your-server-ip
 ```
 
-### Step 2: Application Deployment
+**What the script does:**
+- Installs system dependencies (Node.js, PM2, Nginx)
+- Clones repository to `/var/www/gep`
+- Sets up environment configuration
+- Builds frontend and installs backend dependencies
+- Configures PM2 for process management
+- Sets up Nginx as reverse proxy
+- Configures firewall and basic security
+
+### ⚙️ Custom Port Deployment
+
+**Use Case**: Server with existing services, need to use custom ports
 
 ```bash
-# Clone and setup application
-cd /var/www
-git clone https://github.com/mikedrai/gep-partner-system.git gep
-cd gep
+# 1. Prepare environment files
+cp .env.port4000.example .env
+cp frontend/.env.port4000.example frontend/.env
 
-# Configure environment variables
-cp .env.production.port4000 .env
-cp frontend/.env.production.port4000 frontend/.env
+# 2. Configure for custom port (example: port 4000)
+# Edit .env:
+# - PORT=4001 (backend internal port)
+# - CORS_ORIGIN=http://your-domain.com:4000
+# - FRONTEND_URL=http://your-domain.com:4000
 
-# IMPORTANT: Edit .env files with your actual credentials
-nano .env
-nano frontend/.env
+# Edit frontend/.env:
+# - REACT_APP_API_URL=http://your-domain.com:4000/api
+
+# 3. Run custom port deployment
+chmod +x scripts/deploy-port-4000.sh
+./scripts/deploy-port-4000.sh user@your-server-ip
 ```
 
-### Step 3: Backend Setup
+**Port Configuration:**
+- Port 4000: Nginx (serves frontend + API proxy)
+- Port 4001: Node.js backend (internal only)
+- Existing services on ports 80, 443, 3000 remain untouched
+
+### 🐳 Docker Production Setup
+
+**Use Case**: Container-based production deployment
 
 ```bash
-# Install backend dependencies
-cd /var/www/gep/backend
-npm ci --production
+# 1. Configure production environment
+cp docker-compose.prod.yml.example docker-compose.prod.yml
+cp .env.docker.example .env
 
-# Create logs directory
-mkdir -p logs
+# 2. Edit environment variables in .env file
 
-# Test backend startup
-npm start
-# Verify it starts without errors, then stop (Ctrl+C)
-```
-
-### Step 4: Frontend Build
-
-```bash
-# Build frontend for production
-cd /var/www/gep/frontend
-npm ci
-npm run build
-
-# Verify build completed successfully
-ls -la build/
-```
-
-### Step 5: Process Management with PM2
-
-```bash
-# Configure PM2 ecosystem
-cd /var/www/gep
-
-# Create PM2 configuration (ecosystem.port4000.config.js)
-cat > ecosystem.port4000.config.js << 'EOF'
-module.exports = {
-  apps: [{
-    name: 'gep-backend',
-    script: './backend/src/server.js',
-    cwd: '/var/www/gep',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      PORT: 4001
-    },
-    error_file: './logs/backend-err.log',
-    out_file: './logs/backend-out.log',
-    log_file: './logs/backend-combined.log',
-    time: true
-  }]
-};
-EOF
-
-# Start application with PM2
-pm2 start ecosystem.port4000.config.js --env production
-
-# Save PM2 process list and configure startup
-pm2 save
-pm2 startup systemd
-# Follow the instructions to run the generated command
-
-# Verify application is running
-pm2 status
-pm2 logs gep-backend
-```
-
-### Step 6: Nginx Configuration
-
-```bash
-# Create Nginx site configuration
-sudo tee /etc/nginx/sites-available/gep << 'EOF'
-server {
-    listen 4000;
-    server_name _;
-    
-    # Serve React frontend
-    location / {
-        root /var/www/gep/frontend/build;
-        index index.html index.htm;
-        try_files $uri $uri/ /index.html;
-        
-        # Security headers
-        add_header X-Frame-Options "SAMEORIGIN" always;
-        add_header X-XSS-Protection "1; mode=block" always;
-        add_header X-Content-Type-Options "nosniff" always;
-        add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    }
-    
-    # Proxy API requests to backend
-    location /api {
-        proxy_pass http://localhost:4001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
-        proxy_read_timeout 300s;
-        proxy_connect_timeout 60s;
-    }
-    
-    # WebSocket support
-    location /ws {
-        proxy_pass http://localhost:4001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-    
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private must-revalidate auth;
-    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
-}
-EOF
-
-# Enable site and restart Nginx
-sudo ln -s /etc/nginx/sites-available/gep /etc/nginx/sites-enabled/
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
-### Step 7: Security Configuration
-
-```bash
-# Configure firewall
-sudo ufw allow 22    # SSH
-sudo ufw allow 4000  # Application port
-sudo ufw allow 80    # HTTP (for SSL verification)
-sudo ufw allow 443   # HTTPS
-sudo ufw enable
-
-# Optional: Setup SSL with Let's Encrypt (if using domain)
-sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
-
-# Secure SSH (optional but recommended)
-sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-sudo systemctl restart ssh
-```
-
-## Docker Deployment
-
-### Docker Compose Production Setup
-
-```yaml
-# docker-compose.prod.yml
-version: '3.8'
-
-services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: production
-    environment:
-      - REACT_APP_API_URL=http://localhost:4001
-      # Add other production env vars
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    environment:
-      - NODE_ENV=production
-      - PORT=4001
-      # Add production env vars from .env
-    volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./nginx-prod.conf:/etc/nginx/conf.d/default.conf
-      - ./frontend/build:/usr/share/nginx/html
-    depends_on:
-      - backend
-    restart: unless-stopped
-```
-
-### Deploy with Docker
-
-```bash
-# Build and deploy
+# 3. Deploy with Docker
 docker-compose -f docker-compose.prod.yml up -d
 
-# View logs
-docker-compose -f docker-compose.prod.yml logs -f
-
-# Scale services if needed
-docker-compose -f docker-compose.prod.yml up -d --scale backend=2
+# 4. Set up SSL (if using domain)
+./scripts/setup-ssl.sh your-domain.com
 ```
 
-## Environment Variables Reference
+### 💻 Manual Development Setup
 
-### Production Environment Template
+**Use Case**: Local development without Docker
 
 ```bash
-# .env (Backend)
-NODE_ENV=production
-PORT=4001
+# 1. Install dependencies
+cd backend && npm install && cd ..
+cd frontend && npm install && cd ..
 
-# Database (Supabase)
+# 2. Set up local environment
+cp .env.development.example .env
+cp frontend/.env.development.example frontend/.env
+
+# 3. Start services separately
+# Terminal 1: Backend
+cd backend && npm run dev
+
+# Terminal 2: Frontend
+cd frontend && npm start
+
+# Access: http://localhost:3000
+```
+
+## Environment Configuration
+
+### Environment File Templates
+
+Create these files based on your deployment method:
+
+**.env (Backend)**
+```bash
+# Database
 SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
-# Authentication
+# Server Configuration
+NODE_ENV=production
+PORT=3001
+HOST=0.0.0.0
+
+# Security
 JWT_SECRET=your_super_secure_random_string_here
 JWT_EXPIRES_IN=7d
 
-# CORS
-CORS_ORIGIN=http://your-domain.com:4000
+# CORS (adjust based on your domain/port)
+CORS_ORIGIN=https://your-domain.com
 
-# Email Service
-SENDGRID_API_KEY=your_sendgrid_api_key
-FROM_EMAIL=noreply@yourdomain.com
+# Email (Optional)
+SMTP_HOST=your-smtp-host
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+SMTP_FROM_EMAIL=noreply@your-domain.com
+SMTP_FROM_NAME=GEP Assignment System
 
-# AI Integration
+# AI Features (Optional)
 ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Logging
 LOG_LEVEL=info
 ```
 
+**frontend/.env (React)**
 ```bash
-# frontend/.env (React)
-REACT_APP_API_URL=http://your-domain.com:4000/api
+# API Configuration
+REACT_APP_API_URL=https://your-domain.com/api
+
+# Database (same as backend)
 REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your_anon_key
-REACT_APP_ENVIRONMENT=production
+REACT_APP_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Environment
+REACT_APP_ENV=production
 ```
 
-## Monitoring & Maintenance
+### Security Considerations
 
-### Health Checks
+**🔒 JWT Secret Generation**
+```bash
+# Generate secure JWT secret (32+ characters)
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+**🛡️ Environment Variables Security**
+- Never commit `.env` files to version control
+- Use `.env.example` templates without real credentials
+- Rotate secrets regularly in production
+- Use different secrets for development/staging/production
+
+## Post-Deployment Configuration
+
+### SSL Certificate Setup (Production)
 
 ```bash
-# Application health endpoint
-curl http://localhost:4000/api/health
+# Install Certbot
+sudo apt install certbot python3-certbot-nginx
 
-# Expected response:
-# {"status":"healthy","timestamp":"...","version":"1.0.0"}
+# Obtain SSL certificate (replace with your domain)
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 
-# PM2 monitoring
+# Auto-renewal (certbot sets this up automatically)
+sudo systemctl enable certbot.timer
+```
+
+### Firewall Configuration
+
+```bash
+# Standard deployment (ports 80, 443)
+sudo ufw allow 22      # SSH
+sudo ufw allow 80      # HTTP
+sudo ufw allow 443     # HTTPS
+sudo ufw enable
+
+# Custom port deployment (add your custom port)
+sudo ufw allow 4000    # Custom application port
+```
+
+### Monitoring Setup
+
+```bash
+# Check application status
 pm2 status
-pm2 monit
-```
-
-### Log Management
-
-```bash
-# View application logs
 pm2 logs gep-backend
 
-# View Nginx logs
-sudo tail -f /var/log/nginx/access.log
-sudo tail -f /var/log/nginx/error.log
-
-# Rotate logs
-pm2 flush  # Clear PM2 logs
-sudo logrotate -f /etc/logrotate.conf  # Rotate system logs
-```
-
-### Performance Monitoring
-
-```bash
-# System resources
+# Monitor system resources
 htop
 df -h
 free -m
 
-# Application metrics
-curl http://localhost:4001/api/analytics/dashboard
-
-# Database performance (if using local PostgreSQL)
-# Connect to Supabase dashboard for cloud monitoring
+# Set up log rotation
+pm2 install pm2-logrotate
 ```
 
-### Backup Strategies
+## Health Checks & Verification
+
+### Application Health Endpoints
 
 ```bash
-# Application backup
-tar -czf gep-backup-$(date +%Y%m%d).tar.gz /var/www/gep
+# Backend health check
+curl http://localhost:3001/api/health
+# Expected: {"status":"healthy","timestamp":"..."}
 
-# Database backup (Supabase handles this automatically)
-# Use Supabase dashboard for manual backups
+# Frontend accessibility
+curl -I http://localhost:3000
+# Expected: HTTP 200 status
+
+# Database connectivity test
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     http://localhost:3001/api/customers
+# Expected: JSON response or authentication prompt
+```
+
+### Common Verification Steps
+
+```bash
+# 1. Check all services are running
+pm2 status                    # PM2 processes
+sudo systemctl status nginx   # Nginx web server
+docker-compose ps             # Docker services (if using Docker)
+
+# 2. Test port accessibility
+netstat -tlnp | grep -E ":(3000|3001|4000|4001|80|443)"
+
+# 3. Check logs for errors
+pm2 logs gep-backend
+tail -f /var/log/nginx/error.log
+
+# 4. Test API endpoints
+curl http://your-domain.com/api/health
+curl http://your-domain.com/api/customers
 ```
 
 ## Troubleshooting
 
 ### Common Issues & Solutions
 
-#### Application Won't Start
-
+#### 🔧 Port Conflicts
 ```bash
-# Check PM2 status
-pm2 status
-pm2 logs gep-backend
+# Find process using port
+sudo lsof -i :3001
 
-# Common fixes:
-# 1. Check environment variables
-# 2. Verify database connectivity
-# 3. Check port availability
-sudo lsof -i :4001
+# Kill process if needed
+sudo kill -9 [PID]
+
+# Change port in environment files if conflict persists
 ```
 
-#### 502 Bad Gateway (Nginx)
-
+#### 🔧 PM2 Issues
 ```bash
-# Check backend service
+# Restart application
+pm2 restart gep-backend
+
+# Reload PM2 configuration
+pm2 reload ecosystem.config.js
+
+# PM2 not starting on boot
+pm2 startup systemd
+pm2 save
+```
+
+#### 🔧 Nginx 502 Bad Gateway
+```bash
+# Check backend is running
 pm2 status
-curl http://localhost:4001/api/health
+curl http://localhost:3001/api/health
 
 # Check Nginx configuration
 sudo nginx -t
-sudo systemctl status nginx
+sudo systemctl restart nginx
 ```
 
-#### Database Connection Issues
-
+#### 🔧 Database Connection Issues
 ```bash
 # Test Supabase connection
-curl -H "apikey: YOUR_ANON_KEY" "YOUR_SUPABASE_URL/rest/v1/customers?select=count"
+curl -H "apikey: YOUR_ANON_KEY" \
+     "YOUR_SUPABASE_URL/rest/v1/customers?select=count"
 
-# Check environment variables
-grep SUPABASE /var/www/gep/.env
+# Verify environment variables
+grep SUPABASE .env
 ```
 
-#### SSL Certificate Issues
-
+#### 🔧 Build Failures
 ```bash
-# Renew Let's Encrypt certificate
-sudo certbot renew
+# Clear npm cache and reinstall
+npm cache clean --force
+rm -rf node_modules package-lock.json
+npm install
 
-# Check certificate status
-sudo certbot certificates
+# Check Node.js version compatibility
+node --version  # Should be 18.x+
 ```
 
-### Update Deployment
+## Maintenance & Updates
+
+### Application Updates
 
 ```bash
-# Pull latest changes
+# 1. Pull latest changes
 cd /var/www/gep
 git pull origin main
 
-# Update backend
-cd backend
-npm ci --production
+# 2. Update backend dependencies (if package.json changed)
+cd backend && npm ci --production
 
-# Rebuild frontend
-cd ../frontend
-npm ci
-npm run build
+# 3. Rebuild frontend
+cd ../frontend && npm ci && npm run build
 
-# Restart services
+# 4. Restart services
 pm2 restart gep-backend
 sudo systemctl reload nginx
 ```
 
-## Deployment Checklist
+### Backup Procedures
 
-### Pre-deployment
-- [ ] Environment variables configured
-- [ ] SSL certificates ready (if using HTTPS)
-- [ ] Database migrations applied
-- [ ] External services configured (SendGrid, Anthropic)
+```bash
+# Application backup
+sudo tar -czf gep-backup-$(date +%Y%m%d).tar.gz /var/www/gep
 
-### Post-deployment
-- [ ] Health checks passing
-- [ ] PM2 processes running
-- [ ] Nginx serving correctly
-- [ ] SSL redirect working (if applicable)
-- [ ] Logs are being written
-- [ ] Backup strategy implemented
+# Environment backup (be careful with credentials)
+cp .env .env.backup-$(date +%Y%m%d)
+
+# Database backup (use Supabase dashboard for cloud database)
+# For local PostgreSQL:
+pg_dump your_database > gep-db-backup-$(date +%Y%m%d).sql
+```
 
 ### Performance Optimization
-- [ ] Gzip compression enabled
-- [ ] Static assets cached
-- [ ] Database queries optimized
-- [ ] CDN configured (if applicable)
+
+```bash
+# Enable Nginx gzip compression (already in configs)
+# Monitor PM2 processes
+pm2 monit
+
+# Optimize database queries (check slow query logs in Supabase)
+# Set up CDN for static assets (Cloudflare recommended)
+```
+
+## Deployment Checklists
+
+### ✅ Pre-Deployment Checklist
+- [ ] Environment variables configured and secure
+- [ ] External services (Supabase, SMTP) set up and tested
+- [ ] SSL certificates ready (for production)
+- [ ] Firewall rules configured
+- [ ] Server resources adequate (2GB+ RAM, 20GB+ disk)
+- [ ] Domain DNS configured (if applicable)
+
+### ✅ Post-Deployment Checklist  
+- [ ] Application accessible via web browser
+- [ ] API endpoints responding correctly
+- [ ] Database connectivity working
+- [ ] PM2 processes running and auto-starting
+- [ ] Nginx serving files and proxying API
+- [ ] SSL certificate installed and redirects working
+- [ ] Email notifications working (if configured)
+- [ ] Logs being written correctly
+- [ ] Backup procedures documented and tested
 
 ---
 
-*This deployment guide ensures reliable, secure, and scalable deployment of the GEP Partner System in production environments.*
+## Need Help?
+
+**Quick Commands Reference:**
+```bash
+# Application Status
+pm2 status && sudo systemctl status nginx
+
+# View Logs
+pm2 logs gep-backend
+tail -f /var/log/nginx/error.log
+
+# Restart Everything
+pm2 restart all && sudo systemctl reload nginx
+
+# Emergency Stop
+pm2 stop all && sudo systemctl stop nginx
+```
+
+**Support Resources:**
+1. Check application logs first: `pm2 logs gep-backend`
+2. Verify environment configuration: `grep -v '^#' .env`
+3. Test database connectivity: `curl -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/"`
+4. Monitor server resources: `htop` and `df -h`
+
+*This deployment guide provides comprehensive coverage for all deployment scenarios while maintaining security best practices.*

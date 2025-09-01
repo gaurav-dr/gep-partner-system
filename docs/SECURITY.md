@@ -153,5 +153,5 @@ If you discover a security vulnerability, please:
 
 ---
 
-*Last Updated: 2025-01-09*
+*Last Updated: September 2025*
 *Next Review: 2025-04-09*

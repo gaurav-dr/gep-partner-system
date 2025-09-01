@@ -1,4 +1,5 @@
-version: '3.8'
+# Docker Compose configuration for GEP Partner System
+# Always use Docker for development, testing, and production
 
 services:
   # Frontend React Application
@@ -11,12 +12,14 @@ services:
       - "3000:3000"
     environment:
       - REACT_APP_SUPABASE_URL=http://localhost:8000
-      - REACT_APP_SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+      - REACT_APP_SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE
       - REACT_APP_API_URL=http://localhost:3001
       - REACT_APP_ENVIRONMENT=development
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - REACT_APP_DEMO_MODE=true
+      - REACT_APP_DEMO_CREDENTIALS=[{"email":"admin@gephellas.com","password":"GEPAdmin2024!"},{"email":"manager@gephellas.com","password":"Manager2024!"},{"email":"partner.danezis@gephellas.com","password":"Partner2024!"}]
+    # volumes:
+      # - ./frontend:/app
+      # - /app/node_modules
     depends_on:
       - backend
     networks:
@@ -33,22 +36,51 @@ services:
       - NODE_ENV=development
       - PORT=3001
       - SUPABASE_URL=http://supabase-kong:8000
-      - SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE
+      - SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE
       - SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTk1NzM0MTIwMH0.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
-      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL}
-      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME}
-      - CORS_ORIGIN=http://localhost:3000
+      - JWT_SECRET=gep-super-secure-jwt-secret-key-for-production-change-this-32-chars
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY:-}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-noreply@gep-system.com}
+      - SENDGRID_FROM_NAME=${SENDGRID_FROM_NAME:-GEP Partner System}
+      - CORS_ORIGIN=http://frontend:3000,http://localhost:3000
       - LOG_LEVEL=info
+      - RATE_LIMIT_WINDOW_MS=900000
+      - RATE_LIMIT_MAX_REQUESTS=100
+      - SECURITY_HEADERS_ENABLED=true
+      - STRICT_VALIDATION=true
     volumes:
-      - ./backend:/app
-      - /app/node_modules
       - ./logs:/app/logs
     depends_on:
       - redis
       - supabase-kong
     networks:
       - gep-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend Testing Service
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=test
+      - PORT=3001
+      - SUPABASE_URL=http://supabase-kong:8000
+      - SUPABASE_ANON_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE
+      - SUPABASE_SERVICE_ROLE_KEY=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJzZXJ2aWNlX3JvbGUiLCJpYXQiOjE2NDE3NjkyMDAsImV4cCI6MTk1NzM0MTIwMH0.DaYlNEoUrrEn2Ig7tqibS-PHK5vgusbcbo7X36XVt4Q
+      - JWT_SECRET=test-jwt-secret-for-unit-testing-32-characters-long
+    command: ["npm", "test"]
+    depends_on:
+      - redis
+      - supabase-kong
+    networks:
+      - gep-network
+    profiles:
+      - test
 
   # Supabase Database (PostgreSQL)
   supabase-db:

@@ -17,22 +17,30 @@ A comprehensive AI-powered solution for optimal assignment of healthcare consult
 
 ## ⚡ Quick Start
 
-### Development with Docker (Recommended)
+### 🐳 Docker Development (MANDATORY)
+**All development, testing, and deployment must use Docker.**
+
 ```bash
-git clone https://github.com/mikedrai/gep-partner-system.git
+git clone https://github.com/gaurav-dr/gep-partner-system.git
 cd gep-partner-system
+
+# Start all services
 docker-compose up -d
 
 # Access points:
 # Frontend: http://localhost:3000
 # Backend: http://localhost:3001  
 # Database: http://localhost:8000
+# Supabase Studio: http://localhost:3010
+
+# Run tests
+docker-compose --profile test up backend-test
 ```
 
 ### Production Deployment
 ```bash
 # Automated deployment
-./deploy-port-4000.sh YOUR_SERVER_IP
+./scripts/deploy-port-4000.sh YOUR_SERVER_IP
 
 # Access: http://your-server:4000
 ```
@@ -133,7 +141,7 @@ cd frontend && npm install && npm start
 ### Automated Deployment (Recommended)
 ```bash
 # Quick production setup
-git clone https://github.com/mikedrai/gep-partner-system.git
+git clone https://github.com/gaurav-dr/gep-partner-system.git
 cd gep-partner-system
 
 # Configure environment
@@ -142,7 +150,7 @@ cp frontend/.env.production.port4000 frontend/.env
 # Edit with your credentials
 
 # Deploy to server
-./deploy-port-4000.sh YOUR_SERVER_IP
+./scripts/deploy-port-4000.sh YOUR_SERVER_IP
 ```
 
 ### Service Architecture

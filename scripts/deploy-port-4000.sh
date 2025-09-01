@@ -12,8 +12,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-SERVER="135.181.95.74"
-SERVER_USER="root"
+SERVER="${1:-your-server-ip}"
+SERVER_USER="${2:-root}"
+
+if [ "$SERVER" = "your-server-ip" ]; then
+    echo -e "${RED}❌ Please provide server IP as first argument${NC}"
+    echo "Usage: $0 <server-ip> [username]"
+    echo "Example: $0 192.168.1.100 ubuntu"
+    exit 1
+fi
 
 echo -e "${GREEN}🚀 Deploying GEP on port 4000 (preserving ports 80 and 3000)${NC}"
 
@@ -25,7 +32,7 @@ ssh $SERVER_USER@$SERVER << 'ENDSSH'
     rm -rf gep
     
     # Clone repository
-    git clone https://github.com/mikedrai/gep-partner-system.git gep
+    git clone https://github.com/gaurav-dr/gep-partner-system.git gep
     cd gep
     
     # Create logs directory
@@ -45,7 +52,7 @@ ssh $SERVER_USER@$SERVER 'cp /var/www/gep/.env /var/www/gep/backend/.env'
 scp frontend/.env.production.port4000 $SERVER_USER@$SERVER:/var/www/gep/frontend/.env
 
 # Copy PM2 config
-scp ecosystem.port4000.config.js $SERVER_USER@$SERVER:/var/www/gep/ecosystem.config.js
+scp scripts/ecosystem.port4000.config.js $SERVER_USER@$SERVER:/var/www/gep/ecosystem.config.js
 
 # Step 3: Install and build
 echo -e "${YELLOW}Step 3: Installing dependencies and building...${NC}"
@@ -178,8 +185,8 @@ ENDSSH
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo ""
 echo -e "${GREEN}Your GEP application is now accessible at:${NC}"
-echo -e "  ${YELLOW}http://135.181.95.74:4000${NC} - Main application"
-echo -e "  ${YELLOW}http://135.181.95.74:4000/api${NC} - API endpoints"
+echo -e "  ${YELLOW}http://$SERVER:4000${NC} - Main application"
+echo -e "  ${YELLOW}http://$SERVER:4000/api${NC} - API endpoints"
 echo ""
 echo -e "${YELLOW}Your other services remain untouched:${NC}"
 echo "  Port 80 - Your existing website"

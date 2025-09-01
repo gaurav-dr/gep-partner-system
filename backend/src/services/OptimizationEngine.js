@@ -4,10 +4,11 @@ class OptimizationEngine {
   constructor(config = {}) {
     this.maxDistance = config.maxDistance || 50; // km
     this.weights = {
-      location: 0.4,
-      availability: 0.3,
-      cost: 0.2,
-      specialty: 0.1,
+      location: 0.25,
+      availability: 0.20,
+      cost: 0.15,
+      specialty: 0.10,
+      performance: 0.30, // Highest weight for performance-based assignment
       ...config.weights
     };
     this.timeout = config.timeout || 5000; // ms
@@ -61,7 +62,8 @@ class OptimizationEngine {
         availability_score: partner.availability_score,
         cost_score: partner.cost_score,
         location_score: partner.location_score,
-        specialty_score: partner.specialty_score
+        specialty_score: partner.specialty_score,
+        performance_score: partner.performance_score
       }));
 
       const selectedPartner = scoredPartners[0];
@@ -82,6 +84,7 @@ class OptimizationEngine {
         evaluation: {
           totalPartnersEvaluated: partners.length,
           candidatesAfterFiltering: candidatePartners.length,
+          executionTimeMs: executionTime,
           weights: this.weights
         }
       };
@@ -140,13 +143,15 @@ class OptimizationEngine {
           scores.location * this.weights.location +
           scores.availability * this.weights.availability +
           scores.cost * this.weights.cost +
-          scores.specialty * this.weights.specialty
+          scores.specialty * this.weights.specialty +
+          scores.performance * this.weights.performance
         );
 
         scoredPartners.push({
           ...partner,
           score: totalScore,
           location_score: scores.location,
+          performance_score: scores.performance,
           availability_score: scores.availability,
           cost_score: scores.cost,
           specialty_score: scores.specialty,
@@ -173,6 +178,7 @@ class OptimizationEngine {
       availability: 0,
       cost: 0,
       specialty: 0,
+      performance: 0,
       distance: 0
     };
 
@@ -189,6 +195,9 @@ class OptimizationEngine {
 
     // Specialty Score
     scores.specialty = this.calculateSpecialtyScore(request.service_type, partner.specialty);
+
+    // Performance Score (based on completion rate, response time, satisfaction)
+    scores.performance = this.calculatePerformanceScore(partner, request);
 
     return scores;
   }
@@ -275,6 +284,61 @@ class OptimizationEngine {
   }
 
   /**
+   * Calculate performance score based on partner's historical performance
+   * Prioritizes partners with >70% completion rate as per business requirements
+   */
+  calculatePerformanceScore(partner, request) {
+    if (!partner.performance_metrics) {
+      return 50; // Default score for partners without performance data
+    }
+
+    const metrics = partner.performance_metrics;
+    let performanceScore = 0;
+
+    // Completion Rate Score (0-100 scale) - Highest weight
+    // Business rule: Partners with >70% completion rate get priority
+    const completionRate = metrics.completion_rate || 0;
+    let completionScore = completionRate;
+    
+    // Bonus for high performers (>70% completion rate)
+    if (completionRate > 70) {
+      completionScore = completionScore * 1.2; // 20% bonus
+    }
+    
+    // Penalty for very low performers (<30% completion rate)
+    if (completionRate < 30) {
+      completionScore = completionScore * 0.7; // 30% penalty
+    }
+
+    // Response Time Score (inverse - faster is better)
+    const responseTime = metrics.avg_response_time || 5.0;
+    const maxResponseTime = 8.0; // Anything over 8 hours is poor
+    const responseScore = Math.max(0, ((maxResponseTime - responseTime) / maxResponseTime) * 100);
+
+    // Client Satisfaction Score (1-5 scale normalized to 0-100)
+    const satisfaction = metrics.client_satisfaction || 3.0;
+    const satisfactionScore = ((satisfaction - 1) / 4) * 100; // Convert 1-5 to 0-100
+
+    // Weighted combination of performance factors
+    performanceScore = (
+      completionScore * 0.6 +      // 60% weight on completion rate
+      responseScore * 0.25 +       // 25% weight on response time
+      satisfactionScore * 0.15     // 15% weight on satisfaction
+    );
+
+    // Handle urgency level - critical installations need proven performers
+    if (request.urgency_level === 'high' || request.urgency_level === 'urgent') {
+      if (completionRate > 80) {
+        performanceScore *= 1.3; // 30% bonus for urgent requests
+      } else if (completionRate < 50) {
+        performanceScore *= 0.5; // 50% penalty for urgent requests
+      }
+    }
+
+    return Math.min(100, Math.max(0, performanceScore));
+  }
+
+  /**
    * Check if partner specialty matches request
    */
   checkSpecialtyMatch(requestedServiceType, partnerSpecialty) {
@@ -297,6 +361,13 @@ class OptimizationEngine {
     // Check if partner is active
     if (!partner.is_active) {
       return false;
+    }
+
+    // Check weekly capacity constraints
+    if (partner.availability && partner.availability.weekly_capacity && partner.availability.current_load) {
+      if (partner.availability.current_load > partner.availability.weekly_capacity) {
+        return false; // Partner is over capacity
+      }
     }
 
     // Check if has availability data

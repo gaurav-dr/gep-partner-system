@@ -118,7 +118,7 @@ Welcome to the comprehensive documentation for the GEP Partner Assignment System
 
 ```bash
 # Quick development start
-git clone https://github.com/mikedrai/gep-partner-system.git
+git clone https://github.com/gaurav-dr/gep-partner-system.git
 cd gep-partner-system
 docker-compose up -d
 
@@ -175,9 +175,9 @@ Documentation improvements are welcome:
 
 ## Version Information
 
-- **Documentation Version**: 1.0.0
-- **System Version**: 1.0.0
-- **Last Updated**: January 2024
+- **Documentation Version**: 1.4.0
+- **System Version**: 1.4.0
+- **Last Updated**: September 2025
 - **Compatibility**: Node.js 18+, React 18+, PostgreSQL 12+
 
 ---

@@ -1,6 +1,9 @@
 # Backend Dockerfile
 FROM node:18-alpine
 
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Create logs directory
@@ -9,8 +12,10 @@ RUN mkdir -p logs
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies and rebuild native modules
+RUN npm ci --only=production && \
+    npm rebuild bcrypt --build-from-source && \
+    npm cache clean --force
 
 # Copy source code
 COPY . .

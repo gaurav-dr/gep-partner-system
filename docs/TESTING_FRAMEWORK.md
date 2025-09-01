@@ -99,9 +99,13 @@ describe('AI Partner Assignment Algorithm', () => {
   
     const assignments = aiAssignmentEngine.suggest(installations, partners);
   
-    expect(assignments.every(assignment => 
-      partners.find(p => p.id === assignment.partnerId).completionRate > 70
-    )).toBe(true);
+    expect(assignments.every(assignment => {
+      const partner = partners.find(p => p.id === assignment.partnerId);
+      if (!partner) {
+        throw new Error(`Partner with ID ${assignment.partnerId} not found`);
+      }
+      return partner.completionRate > 70;
+    })).toBe(true);
   });
   
   test('should respect geographic constraints', () => {
@@ -351,14 +355,200 @@ class SecurityTests:
         # Create test user with sensitive data
         user = self.create_test_user()
       
-        # Check database directly
+        # Check database directly using parameterized query
         db_record = self.db.execute(
-            f"SELECT * FROM users WHERE id = {user.id}"
+            "SELECT * FROM users WHERE id = ?", (user.id,)
         ).fetchone()
       
         # Personal data should be encrypted
         assert db_record.email != user.email  # Should be encrypted
         assert self.encryption.decrypt(db_record.email) == user.email
+```
+
+---
+
+## 🔄 Disaster Recovery Testing
+
+### 💾 Backup & Restore Validation
+
+#### Disaster Recovery Test Scenarios
+
+| Test Category                    | Test Type           | Recovery Time | Success Criteria        |
+| -------------------------------- | ------------------- | ------------- | ----------------------- |
+| 🗄️**Database Backup**     | Automated backup    | <15 minutes   | 100% data integrity     |
+| 🔄**System Restore**       | Full system restore | <30 minutes   | All services operational |
+| 📊**Data Migration**       | Schema changes      | <10 minutes   | Zero data loss          |
+| 🌐**Failover Testing**     | Service failover    | <5 minutes    | Seamless user experience |
+
+#### Disaster Recovery Automation
+
+```python
+# Disaster Recovery Test Suite
+class DisasterRecoveryTests:
+    def test_database_backup_integrity(self):
+        """Test database backup and restore integrity"""
+        # Create test data
+        original_data = self.create_comprehensive_test_data()
+        
+        # Trigger backup
+        backup_result = self.backup_service.create_backup()
+        assert backup_result.status == 'success'
+        
+        # Simulate database corruption
+        self.simulate_database_corruption()
+        
+        # Restore from backup
+        restore_result = self.backup_service.restore(backup_result.backup_id)
+        assert restore_result.status == 'success'
+        
+        # Verify data integrity
+        restored_data = self.get_all_system_data()
+        assert self.compare_data_integrity(original_data, restored_data)
+    
+    def test_service_failover_scenarios(self):
+        """Test automatic failover to backup services"""
+        # Monitor primary service
+        primary_health = self.health_check_service.get_status('primary')
+        assert primary_health == 'healthy'
+        
+        # Simulate primary service failure
+        self.simulate_service_failure('primary')
+        
+        # Verify automatic failover
+        failover_result = self.wait_for_failover(timeout=300)  # 5 minutes
+        assert failover_result.secondary_active == True
+        assert failover_result.downtime < 300  # < 5 minutes
+        
+        # Test system functionality on secondary
+        self.run_critical_functionality_tests()
+```
+
+---
+
+## ♿ Accessibility Testing Framework
+
+### 🎯 WCAG Compliance Validation
+
+#### Accessibility Test Coverage
+
+| WCAG Level | Test Category              | Coverage | Automation Level |
+| ---------- | -------------------------- | -------- | ---------------- |
+| 🅰️**A**   | Basic accessibility        | 100%     | 95%              |
+| 🅰️🅰️**AA** | Standard compliance        | 100%     | 90%              |
+| 🅰️🅰️🅰️**AAA** | Enhanced accessibility     | 80%      | 70%              |
+| 📱**Mobile** | Mobile accessibility       | 100%     | 85%              |
+
+#### Accessibility Test Implementation
+
+```javascript
+// Accessibility Test Suite
+describe('WCAG Compliance Tests', () => {
+  test('should have no accessibility violations on critical pages', async () => {
+    const criticalPages = [
+      '/login',
+      '/dashboard',
+      '/schedules/create',
+      '/partner-assignments'
+    ];
+    
+    for (const page of criticalPages) {
+      await browser.goto(page);
+      const results = await browser.injectAxe();
+      
+      // No Level A or AA violations allowed
+      const criticalViolations = results.violations.filter(
+        v => v.impact === 'critical' || v.impact === 'serious'
+      );
+      
+      expect(criticalViolations).toHaveLength(0);
+    }
+  });
+  
+  test('should support keyboard navigation', async () => {
+    await page.goto('/schedules/create');
+    
+    // Test tab navigation through all interactive elements
+    const interactiveElements = await page.$$('button, input, select, textarea, [tabindex]');
+    
+    for (let i = 0; i < interactiveElements.length; i++) {
+      await page.keyboard.press('Tab');
+      const focusedElement = await page.evaluate(() => document.activeElement);
+      expect(focusedElement).toBeTruthy();
+    }
+  });
+  
+  test('should have proper ARIA labels and roles', async () => {
+    await page.goto('/partner-assignments');
+    
+    // Check for required ARIA attributes
+    const missingLabels = await page.evaluate(() => {
+      const interactiveElements = document.querySelectorAll('button, input, select');
+      return Array.from(interactiveElements).filter(el => 
+        !el.getAttribute('aria-label') && 
+        !el.getAttribute('aria-labelledby') &&
+        !el.textContent.trim()
+      );
+    });
+    
+    expect(missingLabels).toHaveLength(0);
+  });
+});
+```
+
+---
+
+## 🌐 Cross-Browser Compatibility Testing
+
+### 📱 Multi-Platform Test Matrix
+
+#### Browser Compatibility Coverage
+
+| Platform | Browsers                    | Versions      | Testing Frequency | Automation Level |
+| -------- | --------------------------- | ------------- | ----------------- | ---------------- |
+| 🖥️**Desktop** | Chrome, Firefox, Safari, Edge | Latest + 2    | Every release     | 90%              |
+| 📱**Mobile**  | Chrome Mobile, Safari Mobile | Latest + 1    | Weekly            | 80%              |
+| 📟**Tablet**  | Safari iPad, Chrome Android | Latest        | Bi-weekly         | 70%              |
+
+#### Cross-Browser Test Implementation
+
+```javascript
+// Cross-Browser Test Configuration
+const browserMatrix = [
+  { browserName: 'chrome', version: 'latest' },
+  { browserName: 'firefox', version: 'latest' },
+  { browserName: 'safari', version: 'latest' },
+  { browserName: 'MicrosoftEdge', version: 'latest' }
+];
+
+describe('Cross-Browser Compatibility', () => {
+  browserMatrix.forEach(browser => {
+    describe(`${browser.browserName} ${browser.version}`, () => {
+      test('should render critical UI components correctly', async () => {
+        const driver = await createWebDriver(browser);
+        await driver.get('/dashboard');
+        
+        // Test critical UI elements
+        const navMenu = await driver.findElement(By.id('navigation-menu'));
+        const scheduleGrid = await driver.findElement(By.id('schedule-grid'));
+        const aiSuggestions = await driver.findElement(By.id('ai-suggestions'));
+        
+        expect(await navMenu.isDisplayed()).toBe(true);
+        expect(await scheduleGrid.isDisplayed()).toBe(true);
+        expect(await aiSuggestions.isDisplayed()).toBe(true);
+      });
+      
+      test('should maintain functionality across browsers', async () => {
+        const driver = await createWebDriver(browser);
+        
+        // Test core functionality
+        await testLoginFlow(driver);
+        await testScheduleCreation(driver);
+        await testPartnerAssignment(driver);
+        await testSEPEExport(driver);
+      });
+    });
+  });
+});
 ```
 
 ---

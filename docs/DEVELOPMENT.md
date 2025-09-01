@@ -6,18 +6,21 @@
 
 Before setting up the development environment, ensure you have:
 
-- **Docker & Docker Compose** (recommended for easiest setup)
-- **Node.js 18+** and **npm** (for native development)
+#### Required (Docker-Only Setup)
+- **Docker** and **Docker Compose** installed
 - **Git** for version control
-- **Supabase CLI** (optional, for database management)
 
-### Quick Start with Docker (Recommended)
+#### Optional Tools  
+- **Supabase CLI** (for advanced database management)
+- **Node.js 18+** and **npm** (ONLY for IDE support - application runs in Docker)
 
-The fastest way to get the entire system running locally:
+### 🐳 Docker-First Development (MANDATORY)
+
+**IMPORTANT**: This project uses Docker for ALL development, testing, and production deployments. Native development is not supported.
 
 ```bash
 # Clone the repository
-git clone https://github.com/mikedrai/gep-partner-system.git
+git clone https://github.com/gaurav-dr/gep-partner-system.git
 cd gep-partner-system
 
 # Start all services with Docker Compose
