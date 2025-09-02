@@ -12,9 +12,8 @@ RUN mkdir -p logs
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies and rebuild native modules
+# Install dependencies
 RUN npm ci --only=production && \
-    npm rebuild bcrypt --build-from-source && \
     npm cache clean --force
 
 # Copy source code

@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+// Using Node.js built-in crypto instead of bcrypt for compatibility
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { supabaseAdmin } = require('../config/supabase');
@@ -38,8 +38,8 @@ class AuthService {
             // Validate role-specific requirements
             await this.validateRoleRequirements(role, partnerId, clientCompanyCode);
 
-            // Hash password
-            const passwordHash = await bcrypt.hash(password, this.bcryptRounds);
+            // Hash password using crypto
+            const passwordHash = this.hashPassword(password);
 
             // Generate email verification token
             const emailVerificationToken = crypto.randomBytes(32).toString('hex');
@@ -109,7 +109,7 @@ class AuthService {
             }
 
             // Verify password
-            const passwordValid = await bcrypt.compare(password, user.password_hash);
+            const passwordValid = this.verifyPassword(password, user.password_hash);
             if (!passwordValid) {
                 throw new Error('Invalid email or password');
             }
@@ -226,13 +226,13 @@ class AuthService {
             }
 
             // Verify current password
-            const passwordValid = await bcrypt.compare(currentPassword, user.password_hash);
+            const passwordValid = this.verifyPassword(currentPassword, user.password_hash);
             if (!passwordValid) {
                 throw new Error('Current password is incorrect');
             }
 
             // Hash new password
-            const newPasswordHash = await bcrypt.hash(newPassword, this.bcryptRounds);
+            const newPasswordHash = this.hashPassword(newPassword);
 
             // Update password
             const { error } = await supabaseAdmin
@@ -315,7 +315,7 @@ class AuthService {
             }
 
             // Hash new password
-            const passwordHash = await bcrypt.hash(newPassword, this.bcryptRounds);
+            const passwordHash = this.hashPassword(newPassword);
 
             // Update password and clear reset token
             const { error } = await supabaseAdmin
@@ -443,6 +443,28 @@ class AuthService {
             issuer: 'gep-scheduling-system',
             audience: 'gep-users'
         });
+    }
+
+    /**
+     * Hash password using crypto (replacement for bcrypt)
+     */
+    hashPassword(password) {
+        const salt = crypto.randomBytes(16).toString('hex');
+        const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+        return `${salt}:${hash}`;
+    }
+
+    /**
+     * Verify password using crypto (replacement for bcrypt)
+     */
+    verifyPassword(password, storedHash) {
+        try {
+            const [salt, hash] = storedHash.split(':');
+            const verifyHash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+            return hash === verifyHash;
+        } catch (error) {
+            return false;
+        }
     }
 
     /**

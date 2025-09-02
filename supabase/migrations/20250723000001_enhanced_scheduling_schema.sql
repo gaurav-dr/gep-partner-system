@@ -106,6 +106,7 @@ CREATE TABLE schedules (
 CREATE TABLE scheduled_visits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     schedule_id UUID REFERENCES schedules(id) ON DELETE CASCADE,
+    partner_id VARCHAR(10) REFERENCES partners(id),
     visit_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
@@ -134,7 +135,11 @@ CREATE TABLE scheduled_visits (
     CONSTRAINT no_time_overlap EXCLUDE USING gist (
         partner_id WITH =,
         daterange(visit_date, visit_date, '[]') WITH &&,
-        timerange(start_time, end_time, '[]') WITH &&
+        tsrange(
+            (visit_date + start_time)::timestamp,
+            (visit_date + end_time)::timestamp,
+            '[]'
+        ) WITH &&
     ) WHERE (status != 'cancelled')
 );
 
