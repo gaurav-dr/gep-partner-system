@@ -126,7 +126,7 @@ jobs:
         
         # Wait for application to be healthy
         for i in {1..30}; do
-          if curl -f -s http://localhost:3001/health >/dev/null 2>&1; then
+          if curl -f -s http://localhost:3002/health >/dev/null 2>&1; then
             echo "✅ Application is healthy!"
             break
           fi
@@ -139,7 +139,7 @@ jobs:
         echo "🏥 Running health checks..."
         
         # Check application health
-        if curl -f -s http://localhost:3001/health; then
+        if curl -f -s http://localhost:3002/health; then
           echo "✅ Backend health check passed"
         else
           echo "❌ Backend health check failed"
@@ -164,7 +164,7 @@ jobs:
         echo "Timestamp: $(date)"
         echo ""
         echo "🌐 Application URLs:"
-        echo "Frontend/Backend: http://localhost:3001"
+        echo "Frontend/Backend: http://localhost:3002"
         echo "Supabase Studio: http://localhost:3010"
         echo "Database: localhost:5433"
         echo "Redis: localhost:6380"
@@ -177,11 +177,11 @@ jobs:
         
         # Test API endpoints
         echo "Testing API health endpoint..."
-        curl -f http://localhost:3001/health || exit 1
+        curl -f http://localhost:3002/health || exit 1
         
         # Test database queries through API
         echo "Testing partners endpoint..."
-        curl -f -H "Content-Type: application/json" http://localhost:3001/api/partners || echo "Partners endpoint test completed"
+        curl -f -H "Content-Type: application/json" http://localhost:3002/api/partners || echo "Partners endpoint test completed"
         
         echo "✅ Integration tests completed"
         
@@ -196,7 +196,7 @@ jobs:
       run: |
         if [ "${{ job.status }}" == "success" ]; then
           echo "🎉 Local development deployment successful!"
-          echo "Your application is now running at http://localhost:3001"
+          echo "Your application is now running at http://localhost:3002"
         else
           echo "❌ Local development deployment failed"
           echo "Check the logs above for troubleshooting information"
