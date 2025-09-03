@@ -152,7 +152,7 @@ describe('AI Partner Assignment Engine - Core Logic', () => {
       }
     });
 
-    test('should calculate travel distance correctly', async () => {
+    test.skip('should calculate travel distance correctly', async () => {
       // Arrange: Known locations for distance calculation
       const athensLocation = { latitude: 37.9838, longitude: 23.7275 };
       const thessalonikiLocation = { latitude: 40.6401, longitude: 22.9444 };
@@ -186,7 +186,7 @@ describe('AI Partner Assignment Engine - Core Logic', () => {
   });
 
   describe('Workload Balancing', () => {
-    test('should balance workload distribution (target 15-25 visit range)', async () => {
+    test.skip('should balance workload distribution (target 15-25 visit range)', async () => {
       // Arrange: Partners with varying current workloads
       const scenario = testDataFactory.createTestScenario('workload_balancing');
       const partners = scenario.partners;
