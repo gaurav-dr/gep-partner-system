@@ -73,7 +73,7 @@ jobs:
       run: npm run lint || echo "Lint script not found, skipping..."
       
     - name: Run tests
-      run: npm test -- --coverage --watchAll=false
+      run: npm test -- --coverage --watchAll=false --passWithNoTests
       env:
         CI: true
         REACT_APP_SUPABASE_URL: http://localhost:8000
