@@ -1,0 +1,55 @@
+# Multi-stage Dockerfile for development deployment
+FROM node:18-alpine AS base
+
+# Install build dependencies
+RUN apk add --no-cache python3 make g++
+
+# Frontend build stage
+FROM base AS frontend-builder
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci
+COPY frontend/ ./
+ARG REACT_APP_SUPABASE_URL
+ARG REACT_APP_SUPABASE_ANON_KEY  
+ARG REACT_APP_API_URL
+ENV REACT_APP_SUPABASE_URL=$REACT_APP_SUPABASE_URL
+ENV REACT_APP_SUPABASE_ANON_KEY=$REACT_APP_SUPABASE_ANON_KEY
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+RUN npm run build
+
+# Backend build stage  
+FROM base AS backend-builder
+WORKDIR /app/backend
+COPY backend/package*.json ./
+RUN npm ci --only=production
+COPY backend/ ./
+
+# Final production image
+FROM node:18-alpine AS runtime
+RUN apk add --no-cache curl
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S gep -u 1001
+
+# Copy backend
+WORKDIR /app
+COPY --from=backend-builder --chown=gep:nodejs /app/backend ./backend
+COPY --from=frontend-builder --chown=gep:nodejs /app/frontend/build ./frontend/build
+
+# Create logs directory
+RUN mkdir -p logs && chown gep:nodejs logs
+
+# Switch to non-root user
+USER gep
+
+# Expose ports
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the backend (which can also serve the frontend if configured)
+CMD ["node", "backend/src/server.js"]

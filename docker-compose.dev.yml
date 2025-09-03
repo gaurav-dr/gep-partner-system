@@ -1,0 +1,183 @@
+# Development deployment configuration
+# This is used by CI/CD pipeline for automated deployments
+
+services:
+  # Application (combined frontend + backend)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      args:
+        - REACT_APP_SUPABASE_URL=${REACT_APP_SUPABASE_URL:-http://localhost:8000}
+        - REACT_APP_SUPABASE_ANON_KEY=${REACT_APP_SUPABASE_ANON_KEY}
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3001}
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - SUPABASE_URL=${SUPABASE_URL:-http://supabase-kong:8000}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      - LOG_LEVEL=info
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+      - supabase-kong
+    networks:
+      - gep-dev-network
+    restart: unless-stopped
+
+  # Supabase services (same as main docker-compose but with dev network)
+  supabase-db:
+    image: supabase/postgres:15.1.0.147
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_postgres_password}
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    networks:
+      - gep-dev-network
+
+  supabase-kong:
+    image: kong:2.8.1
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /var/lib/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+    ports:
+      - "8001:8000"  # Different port for dev
+    volumes:
+      - ./supabase/kong.yml:/var/lib/kong/kong.yml:ro
+    depends_on:
+      - supabase-auth
+      - supabase-rest
+      - supabase-realtime
+      - supabase-storage
+    networks:
+      - gep-dev-network
+
+  supabase-auth:
+    image: supabase/gotrue:v2.132.3
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: http://localhost:8001
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD:-dev_postgres_password}@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: http://localhost:3001
+      GOTRUE_URI_ALLOW_LIST: http://localhost:3001
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_SECRET: ${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+    depends_on:
+      - supabase-db
+    networks:
+      - gep-dev-network
+
+  supabase-rest:
+    image: postgrest/postgrest:v11.2.0
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD:-dev_postgres_password}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: ${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      PGRST_APP_SETTINGS_JWT_EXP: 3600
+    depends_on:
+      - supabase-db
+    networks:
+      - gep-dev-network
+
+  supabase-realtime:
+    image: supabase/realtime:v2.25.50
+    environment:
+      PORT: 4000
+      DB_HOST: supabase-db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-dev_postgres_password}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET:-gep-dev-jwt-secret-key-32-chars-long}
+      FLY_ALLOC_ID: fly123
+      FLY_APP_NAME: realtime
+      SECRET_KEY_BASE: UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq
+      ERL_AFLAGS: -proto_dist inet_tcp
+      ENABLE_TAILSCALE: "false"
+      DNS_NODES: "''"
+    depends_on:
+      - supabase-db
+    networks:
+      - gep-dev-network
+
+  supabase-storage:
+    image: supabase/storage-api:v0.40.4
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGOPTIONS: -c search_path=storage,public
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD:-dev_postgres_password}@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://supabase-imgproxy:5001
+    volumes:
+      - storage_dev_data:/var/lib/storage
+    depends_on:
+      - supabase-db
+      - supabase-rest
+    networks:
+      - gep-dev-network
+
+  supabase-imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    environment:
+      IMGPROXY_BIND: 0.0.0.0:5001
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_ENABLE_WEBP_DETECTION: "true"
+    volumes:
+      - storage_dev_data:/var/lib/storage:ro
+    networks:
+      - gep-dev-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Different port for dev
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - gep-dev-network
+
+volumes:
+  postgres_dev_data:
+  storage_dev_data:
+  redis_dev_data:
+
+networks:
+  gep-dev-network:
+    driver: bridge
