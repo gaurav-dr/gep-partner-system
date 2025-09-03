@@ -1,11 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use proper frontend configuration with anonymous key
-const supabaseUrl = 'https://jlbtczaqlbikswexcqnv.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpsYnRjemFxbGJpa3N3ZXhjcW52Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMTg2NDgsImV4cCI6MjA2ODc5NDY0OH0.9f0HvhjNaJu1oftxSt7UiDeF6L9y1Dyi4_K95U649hU';
+// Get environment variables - required, no defaults
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+
+// Validate required environment variables
+if (!supabaseUrl) {
+  throw new Error(
+    'Missing REACT_APP_SUPABASE_URL environment variable. ' +
+    'Please set it in your .env file or Docker environment.'
+  );
+}
+
+if (!supabaseAnonKey) {
+  throw new Error(
+    'Missing REACT_APP_SUPABASE_ANON_KEY environment variable. ' +
+    'Please set it in your .env file or Docker environment.'
+  );
+}
 
 // Helper function to decode JWT payload
-function decodeJWTPayload(token) {
+function decodeJWTPayload(token: string) {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload;
@@ -14,17 +29,17 @@ function decodeJWTPayload(token) {
   }
 }
 
+// Validate the JWT token structure
 const payload = decodeJWTPayload(supabaseAnonKey);
-console.log('🔗 Supabase URL:', supabaseUrl);
-console.log('🔑 JWT Payload:', payload);
-console.log('🔑 Role from JWT:', payload?.role);
-console.log('🔑 Using anonymous key (proper for frontend):', payload?.role === 'anon');
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase configuration');
-  console.error('URL:', supabaseUrl);
-  console.error('Anon Key exists:', !!supabaseAnonKey);
+if (!payload || !payload.role) {
+  throw new Error('Invalid REACT_APP_SUPABASE_ANON_KEY format. Must be a valid JWT token.');
 }
+
+// Log configuration (safe to log in development)
+console.log('🔗 Supabase URL:', supabaseUrl);
+console.log('🔑 JWT Role:', payload.role);
+console.log('🔑 JWT Issuer:', payload.iss);
+console.log('✅ Supabase configuration loaded successfully');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -32,7 +47,5 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true
   }
 });
-
-console.log('✅ Supabase client created with anonymous key (proper for frontend)');
 
 export default supabase;
