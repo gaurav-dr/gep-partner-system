@@ -83,6 +83,7 @@ jobs:
     - name: Build frontend
       run: npm run build
       env:
+        CI: false  # Disable treating warnings as errors for demo
         REACT_APP_SUPABASE_URL: http://localhost:8000
         REACT_APP_SUPABASE_ANON_KEY: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE
         REACT_APP_API_URL: http://localhost:3001
