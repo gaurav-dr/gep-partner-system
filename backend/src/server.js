@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const compression = require('compression');
+const path = require('path');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const { securityHeaders, apiRateLimit, sanitizeInput } = require('./middleware/validation');
@@ -23,7 +24,7 @@ app.use(securityHeaders);
 app.use(compression());
 
 // CORS configuration with enhanced security
-const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'];
+const corsOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:3002'];
 app.use(cors({
   origin: corsOrigins,
   credentials: true,
@@ -81,9 +82,18 @@ app.use('/api/optimization', optimizationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/admin', adminRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Endpoint not found' });
+// Serve static files from React build
+const buildPath = path.join(__dirname, '../../frontend/build');
+app.use(express.static(buildPath));
+
+// Catch all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  // Don't serve React app for API routes that don't exist
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'API endpoint not found' });
+  }
+  
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 // Error handling middleware

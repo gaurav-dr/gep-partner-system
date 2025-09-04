@@ -8,7 +8,7 @@ on:
 
 env:
   # Local deployment settings
-  COMPOSE_PROJECT_NAME: gep-dev-deployment
+  COMPOSE_PROJECT_NAME: gep-partner-system
 
 jobs:
   # Test job for backend

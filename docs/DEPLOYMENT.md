@@ -23,11 +23,13 @@ Choose your deployment method:
 Before deployment, verify these requirements:
 
 ### For All Deployments
+
 - [ ] **Git Repository Access**: Clone access to the project repository
 - [ ] **Node.js Environment**: Version 18.x or higher
 - [ ] **Environment Variables**: Supabase credentials and API keys ready
 
 ### For Production Deployments
+
 - [ ] **Server Access**: Ubuntu 20.04+ server with sudo privileges
 - [ ] **Network Access**: Open ports (80/443 for web, custom ports as needed)
 - [ ] **Domain/IP**: Static IP address or configured domain name
@@ -37,6 +39,7 @@ Before deployment, verify these requirements:
   - Anthropic API key for AI features (optional)
 
 ### Validation Commands
+
 ```bash
 # Check Node.js version
 node --version  # Should be v18.x or higher
@@ -47,6 +50,19 @@ sudo netstat -tlnp | grep -E ":(80|443|3000|4000|4001)"
 # Test server connectivity (for remote deployments)
 ssh user@your-server-ip "echo 'Connection successful'"
 ```
+
+## Port Configuration
+
+The system uses configurable ports for different environments:
+
+- **Development**: Frontend: 3000, Backend: 3001
+- **Production**: Frontend: 4000 (default), Backend: 4001 (default)
+- **Custom**: Ports can be configured during deployment
+
+**Production Port Configuration:**
+- Modify `config/nginx/nginx-production.conf` to change the frontend port
+- Update environment variables for backend port configuration
+- Use deployment script parameters: `./scripts/deployment/deploy-production.sh SERVER_IP USERNAME FRONTEND_PORT BACKEND_PORT`
 
 ## Deployment Methods
 
@@ -97,6 +113,7 @@ chmod +x scripts/deploy-production.sh
 ```
 
 **What the script does:**
+
 - Installs system dependencies (Node.js, PM2, Nginx)
 - Clones repository to `/var/www/gep`
 - Sets up environment configuration
@@ -129,6 +146,7 @@ chmod +x scripts/deploy-port-4000.sh
 ```
 
 **Port Configuration:**
+
 - Port 4000: Nginx (serves frontend + API proxy)
 - Port 4001: Node.js backend (internal only)
 - Existing services on ports 80, 443, 3000 remain untouched
@@ -181,6 +199,7 @@ cd frontend && npm start
 Create these files based on your deployment method:
 
 **.env (Backend)**
+
 ```bash
 # Database
 SUPABASE_URL=https://your-project-id.supabase.co
@@ -216,6 +235,7 @@ LOG_LEVEL=info
 ```
 
 **frontend/.env (React)**
+
 ```bash
 # API Configuration
 REACT_APP_API_URL=https://your-domain.com/api
@@ -231,12 +251,14 @@ REACT_APP_ENV=production
 ### Security Considerations
 
 **🔒 JWT Secret Generation**
+
 ```bash
 # Generate secure JWT secret (32+ characters)
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 **🛡️ Environment Variables Security**
+
 - Never commit `.env` files to version control
 - Use `.env.example` templates without real credentials
 - Rotate secrets regularly in production
@@ -330,6 +352,7 @@ curl http://your-domain.com/api/customers
 ### Common Issues & Solutions
 
 #### 🔧 Port Conflicts
+
 ```bash
 # Find process using port
 sudo lsof -i :3001
@@ -341,6 +364,7 @@ sudo kill -9 [PID]
 ```
 
 #### 🔧 PM2 Issues
+
 ```bash
 # Restart application
 pm2 restart gep-backend
@@ -354,6 +378,7 @@ pm2 save
 ```
 
 #### 🔧 Nginx 502 Bad Gateway
+
 ```bash
 # Check backend is running
 pm2 status
@@ -365,6 +390,7 @@ sudo systemctl restart nginx
 ```
 
 #### 🔧 Database Connection Issues
+
 ```bash
 # Test Supabase connection
 curl -H "apikey: YOUR_ANON_KEY" \
@@ -375,6 +401,7 @@ grep SUPABASE .env
 ```
 
 #### 🔧 Build Failures
+
 ```bash
 # Clear npm cache and reinstall
 npm cache clean --force
@@ -433,6 +460,7 @@ pm2 monit
 ## Deployment Checklists
 
 ### ✅ Pre-Deployment Checklist
+
 - [ ] Environment variables configured and secure
 - [ ] External services (Supabase, SMTP) set up and tested
 - [ ] SSL certificates ready (for production)
@@ -440,7 +468,8 @@ pm2 monit
 - [ ] Server resources adequate (2GB+ RAM, 20GB+ disk)
 - [ ] Domain DNS configured (if applicable)
 
-### ✅ Post-Deployment Checklist  
+### ✅ Post-Deployment Checklist
+
 - [ ] Application accessible via web browser
 - [ ] API endpoints responding correctly
 - [ ] Database connectivity working
@@ -456,6 +485,7 @@ pm2 monit
 ## Need Help?
 
 **Quick Commands Reference:**
+
 ```bash
 # Application Status
 pm2 status && sudo systemctl status nginx
@@ -472,6 +502,7 @@ pm2 stop all && sudo systemctl stop nginx
 ```
 
 **Support Resources:**
+
 1. Check application logs first: `pm2 logs gep-backend`
 2. Verify environment configuration: `grep -v '^#' .env`
 3. Test database connectivity: `curl -H "apikey: $SUPABASE_ANON_KEY" "$SUPABASE_URL/rest/v1/"`

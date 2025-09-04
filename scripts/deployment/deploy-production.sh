@@ -1,9 +1,7 @@
 #!/bin/bash
 
-# GEP Deployment Script - Port 4000 Configuration
-# This will NOT touch ports 80 or 3000
-# Frontend + API will be served on port 4000
-# Backend runs internally on port 4001
+# GEP Partner System - Production Deployment Script
+# Configurable deployment with environment-based port settings
 
 set -e
 
@@ -14,15 +12,18 @@ NC='\033[0m'
 
 SERVER="${1:-your-server-ip}"
 SERVER_USER="${2:-root}"
+FRONTEND_PORT="${3:-4000}"
+BACKEND_PORT="${4:-4001}"
 
 if [ "$SERVER" = "your-server-ip" ]; then
     echo -e "${RED}❌ Please provide server IP as first argument${NC}"
-    echo "Usage: $0 <server-ip> [username]"
-    echo "Example: $0 192.168.1.100 ubuntu"
+    echo "Usage: $0 <server-ip> [username] [frontend-port] [backend-port]"
+    echo "Example: $0 192.168.1.100 ubuntu 4000 4001"
+    echo "Default ports: Frontend=4000, Backend=4001"
     exit 1
 fi
 
-echo -e "${GREEN}🚀 Deploying GEP on port 4000 (preserving ports 80 and 3000)${NC}"
+echo -e "${GREEN}🚀 Deploying GEP Partner System (Frontend: $FRONTEND_PORT, Backend: $BACKEND_PORT)${NC}"
 
 # Step 1: Clean and prepare GEP directory only
 echo -e "${YELLOW}Step 1: Preparing GEP directory...${NC}"

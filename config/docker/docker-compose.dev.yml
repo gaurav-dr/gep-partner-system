@@ -1,6 +1,8 @@
 # Development deployment configuration
 # This is used by CI/CD pipeline for automated deployments
 
+name: gep-partner-system
+
 services:
   # Application (combined frontend + backend)
   app:

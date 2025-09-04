@@ -25,7 +25,7 @@ git clone https://github.com/gaurav-dr/gep-partner-system.git
 cd gep-partner-system
 
 # Start all services
-docker-compose up -d
+docker-compose -f config/docker/docker-compose.yml up -d
 
 # Access points:
 # Frontend: http://localhost:3000
@@ -34,15 +34,15 @@ docker-compose up -d
 # Supabase Studio: http://localhost:3010
 
 # Run tests
-docker-compose --profile test up backend-test
+docker-compose -f config/docker/docker-compose.yml --profile test up backend-test
 ```
 
 ### Production Deployment
 ```bash
 # Automated deployment
-./scripts/deploy-port-4000.sh YOUR_SERVER_IP
+./scripts/deployment/deploy-production.sh YOUR_SERVER_IP
 
-# Access: http://your-server:4000
+# Access: http://your-server (port configured in deployment)
 ```
 
 ## 🏗️ System Architecture

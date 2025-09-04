@@ -1,185 +1,156 @@
 # GEP Partner System Documentation
 
-Welcome to the comprehensive documentation for the GEP Partner Assignment System. This documentation provides detailed information about the system's architecture, features, development processes, and deployment strategies.
+Welcome to the comprehensive documentation for the GEP Partner System - an AI-powered healthcare compliance scheduling platform.
 
-## Documentation Structure
+## 📁 Documentation Structure
 
-### 📋 [Project Overview](./PROJECT_OVERVIEW.md)
-**Start here for a complete system introduction**
-- Business domain and problem statement
-- System overview and core workflows
-- Key features and stakeholder information
-- Success metrics and regulatory compliance
-- High-level architecture diagram
+### 🏛️ [Architecture](./architecture/)
+- **[ARCHITECTURE.md](./architecture/ARCHITECTURE.md)** - System architecture overview, database design, and technical components
 
-### 🏗️ [Technical Architecture](./ARCHITECTURE.md)
-**Detailed technical system design**
-- Full-stack architecture overview
-- Frontend React + TypeScript implementation
-- Backend Node.js + Express service layer
-- Database design with Supabase/PostgreSQL
-- Security architecture and authentication
-- Performance and scalability considerations
+### 🤖 [AI System](./ai-system/)
+- **[AI_ARCHITECTURE.md](./ai-system/AI_ARCHITECTURE.md)** - Complete AI scheduling system documentation including algorithms, learning capabilities, and integration strategy
 
-### 🛠️ [Development Guide](./DEVELOPMENT.md)
-**Complete development setup and workflow**
-- Local development with Docker Compose
-- Manual setup for native development
-- Environment configuration
-- Testing strategies (Unit, E2E, Integration)
-- Development best practices and standards
-- Debugging and troubleshooting guide
+### ⭐ [Features](./features/)
+- **[TECHNICAL_FEATURES.md](./features/TECHNICAL_FEATURES.md)** - Comprehensive feature catalog by user role and technical capabilities
 
-### 🔌 [API Documentation](./API.md)
-**Comprehensive API reference**
-- Complete endpoint documentation
-- Authentication and authorization
-- Request/response schemas
-- Error handling and status codes
-- WebSocket real-time events
-- SDK examples and usage patterns
+### 👨‍💻 [Development](./development/)
+- **[DEVELOPMENT.md](./development/DEVELOPMENT.md)** - Development setup, coding standards, and contribution guidelines
+- **[API.md](./development/API.md)** - Complete API reference with endpoints, authentication, and examples
 
-### 🚀 [Deployment Guide](./DEPLOYMENT.md)
-**Production deployment strategies**
-- Quick automated deployment script
-- Manual production deployment steps
-- Docker containerization options
-- Environment configuration
-- Security setup and SSL configuration
-- Monitoring and maintenance procedures
+### 🧪 [Testing](./testing/)
+- **[TESTING_FRAMEWORK.md](./testing/TESTING_FRAMEWORK.md)** - Testing strategy, frameworks, and quality assurance processes
+- **[SELF_HOSTED_RUNNER_SETUP.md](./testing/SELF_HOSTED_RUNNER_SETUP.md)** - CI/CD runner configuration
 
-### ⚡ [Technical Features](./TECHNICAL_FEATURES.md)
-**Advanced system capabilities**
-- AI-powered scheduling with Anthropic Claude
-- Multi-factor optimization algorithms
-- Real-time communication systems
-- SEPE regulatory compliance automation
-- Advanced analytics and business intelligence
-- Security and audit capabilities
+### 🚀 [Deployment](./deployment/)
+- **[DEPLOYMENT.md](./deployment/DEPLOYMENT.md)** - Production deployment guide and environment configuration
+- **[DEPLOYMENT_PORT_4000.md](./deployment/DEPLOYMENT_PORT_4000.md)** - Port 4000 specific deployment instructions
+- **[DOCKER_SUPABASE.md](./deployment/DOCKER_SUPABASE.md)** - Docker and Supabase setup guide
 
-## Quick Start Guides
+### 📋 [Project](./project/)
+- **[PROJECT_OVERVIEW.md](./project/PROJECT_OVERVIEW.md)** - Project goals, scope, and business context
+- **[JTBD_FRAMEWORK.md](./project/JTBD_FRAMEWORK.md)** - Jobs-to-be-Done framework analysis
+- **[SECURITY.md](./project/SECURITY.md)** - Security architecture and compliance considerations
 
-### For Developers
-1. **Setup**: Start with [Development Guide](./DEVELOPMENT.md) → Docker setup
-2. **Understanding**: Read [Architecture](./ARCHITECTURE.md) → Service layer
-3. **API**: Reference [API Documentation](./API.md) → Endpoints
-4. **Features**: Explore [Technical Features](./TECHNICAL_FEATURES.md) → AI integration
+### 📦 [Deliverables](./deliverables/)
+- **[OUTSTANDING_PROJECT_DELIVERABLES.md](./deliverables/OUTSTANDING_PROJECT_DELIVERABLES.md)** - Project deliverables tracking and status
 
-### For DevOps/Deployment
-1. **Overview**: Read [Project Overview](./PROJECT_OVERVIEW.md) → System requirements
-2. **Deploy**: Follow [Deployment Guide](./DEPLOYMENT.md) → Quick deployment
-3. **Monitor**: Use [Architecture](./ARCHITECTURE.md) → Monitoring section
-4. **Troubleshoot**: Reference [Deployment Guide](./DEPLOYMENT.md) → Troubleshooting
+## 🚀 Quick Start
 
-### For Project Managers
-1. **Business Context**: [Project Overview](./PROJECT_OVERVIEW.md) → Business domain
-2. **Capabilities**: [Technical Features](./TECHNICAL_FEATURES.md) → Key features
-3. **Architecture**: [Architecture](./ARCHITECTURE.md) → System overview
-4. **Deployment**: [Deployment Guide](./DEPLOYMENT.md) → Requirements
+### For New Developers
+1. Start with [PROJECT_OVERVIEW.md](./project/PROJECT_OVERVIEW.md) for business context
+2. Review [ARCHITECTURE.md](./architecture/ARCHITECTURE.md) for system understanding
+3. Follow [DEVELOPMENT.md](./development/DEVELOPMENT.md) for setup instructions
+4. Check [AI_ARCHITECTURE.md](./ai-system/AI_ARCHITECTURE.md) for AI system details
 
-## Key System Highlights
+### For Managers/Stakeholders
+1. [PROJECT_OVERVIEW.md](./project/PROJECT_OVERVIEW.md) - Business value and objectives
+2. [TECHNICAL_FEATURES.md](./features/TECHNICAL_FEATURES.md) - Feature catalog by role
+3. [AI_ARCHITECTURE.md](./ai-system/AI_ARCHITECTURE.md) - AI capabilities and strategy
+4. [OUTSTANDING_PROJECT_DELIVERABLES.md](./deliverables/OUTSTANDING_PROJECT_DELIVERABLES.md) - Project status
 
-### 🤖 AI-Powered Intelligence
-- **Anthropic Claude Integration**: Natural language scheduling recommendations
-- **Multi-factor Optimization**: Geographic, cost, availability, and skill matching
-- **Predictive Analytics**: Demand forecasting and capacity planning
+### For DevOps/Operations
+1. [DEPLOYMENT.md](./deployment/DEPLOYMENT.md) - Production deployment
+2. [DOCKER_SUPABASE.md](./deployment/DOCKER_SUPABASE.md) - Infrastructure setup
+3. [TESTING_FRAMEWORK.md](./testing/TESTING_FRAMEWORK.md) - Quality assurance
+4. [SECURITY.md](./project/SECURITY.md) - Security considerations
 
-### ⚡ Real-Time Operations
-- **WebSocket Communication**: Live updates and notifications
-- **Instant Assignment**: Sub-second partner matching
-- **24/7 Monitoring**: Automated escalation and fallback mechanisms
+## 📊 System Overview
 
-### 🛡️ Enterprise Security
-- **JWT Authentication**: Stateless, secure token management
-- **Role-Based Access**: Granular permission system
-- **Comprehensive Audit**: Complete activity and change tracking
-- **Regulatory Compliance**: SEPE authority integration ready
+The GEP Partner System is a comprehensive healthcare compliance scheduling platform that:
 
-### 📊 Advanced Analytics
-- **Performance Metrics**: Real-time KPI tracking
-- **Cost Optimization**: Budget efficiency analysis
-- **Success Rate Monitoring**: Partner and assignment performance
-- **Compliance Reporting**: Automated regulatory reports
+- **🤖 AI-Powered Scheduling** - Utilizes Anthropic Claude and multiple algorithms for optimal partner assignment
+- **🏥 Healthcare Compliance** - Manages Greek SEPE regulatory requirements and workplace safety visits
+- **👥 Multi-Role Support** - Serves Admins, Managers, Partners, and Clients with role-specific interfaces
+- **📈 Continuous Learning** - Improves AI decisions based on manager feedback and historical patterns
+- **🔧 Production Ready** - Enterprise-grade architecture with comprehensive testing and monitoring
 
-## Technology Stack Summary
+## 🎯 Key Features
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | React 18, TypeScript, TailwindCSS, React Query |
-| **Backend** | Node.js, Express, JWT, Winston Logging |
-| **Database** | Supabase (PostgreSQL) with real-time subscriptions |
-| **AI/ML** | Anthropic Claude API, Optimization algorithms |
-| **Communication** | SendGrid Email, WebSocket, SMS ready |
-| **Infrastructure** | Docker, PM2, Nginx, SSL/TLS |
-| **Testing** | Jest, Playwright, React Testing Library |
-| **Deployment** | Docker Compose, PM2 process management |
+### For Healthcare Managers
+- AI-powered partner assignment optimization
+- Real-time scheduling dashboard
+- SEPE compliance tracking and reporting
+- Performance analytics and KPI monitoring
 
-## Development Workflow
+### For Healthcare Partners
+- Mobile-optimized schedule management
+- Availability tracking and booking
+- Performance feedback and ratings
+- Route optimization and travel planning
 
-```bash
-# Quick development start
-git clone https://github.com/gaurav-dr/gep-partner-system.git
-cd gep-partner-system
-docker-compose up -d
+### For Client Organizations  
+- Service request submission and tracking
+- Installation management and compliance monitoring
+- Partner feedback and satisfaction reporting
+- Regulatory document access and export
 
-# Access points
-# Frontend: http://localhost:3000
-# Backend API: http://localhost:3001
-# Database Studio: http://localhost:8000
-```
+### For System Administrators
+- User management and role assignment
+- System configuration and AI algorithm management
+- Comprehensive audit trails and compliance reporting
+- Performance monitoring and optimization
 
-## Production Deployment
+## 🛠️ Technology Stack
 
-```bash
-# Automated production deployment
-./deploy-port-4000.sh YOUR_SERVER_IP
+### Frontend
+- **React 18** with TypeScript
+- **TailwindCSS** for styling
+- **React Query** for data management
+- **WebSocket** for real-time updates
 
-# Manual verification
-curl http://your-server:4000/api/health
-```
+### Backend
+- **Node.js/Express** API server
+- **Supabase** (PostgreSQL) database
+- **Redis** for caching and sessions
+- **Anthropic Claude** AI integration
 
-## Support & Contribution
+### Infrastructure
+- **Docker** containerization
+- **GitHub Actions** CI/CD
+- **Supabase** hosted database
+- **Email/SMS** notifications
 
-### File Issues
-For bugs, feature requests, or questions:
-- Use the project's GitHub Issues
-- Include relevant log outputs
-- Specify environment details
+### AI/ML
+- **Anthropic Claude 3 Sonnet** - Primary AI engine
+- **Linear Programming** - Mathematical optimization
+- **Rule-Based Engine** - Business logic enforcement
+- **Machine Learning** - Pattern recognition and prediction
 
-### Development Contribution
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Follow coding standards in [Development Guide](./DEVELOPMENT.md)
-4. Submit pull request with tests
+## 📈 Performance Metrics
 
-### Documentation Updates
-Documentation improvements are welcome:
-- Keep technical accuracy high
-- Include code examples where helpful
-- Update table of contents if adding sections
+- **AI Response Time**: <30 seconds average
+- **Schedule Approval Rate**: >85% of AI schedules approved without changes
+- **Client Satisfaction**: 4.5+ average rating
+- **Partner Utilization**: 80%+ capacity optimization
+- **Regulatory Compliance**: 100% SEPE requirement adherence
 
-## External Resources
+## 🔄 Continuous Improvement
 
-### Services Documentation
-- [Supabase Documentation](https://supabase.com/docs)
-- [Anthropic Claude API](https://docs.anthropic.com/)
-- [SendGrid API](https://docs.sendgrid.com/)
-- [React Query Documentation](https://tanstack.com/query/latest)
+The system implements continuous learning through:
+- Manager intervention pattern analysis
+- Partner performance tracking
+- Client satisfaction feedback
+- Regulatory requirement updates
+- AI prompt optimization based on outcomes
 
-### Greek Regulatory Information
-- [SEPE (Greek Labor Inspection)](https://www.sepe.gov.gr/)
-- Greek Occupational Safety Regulations
-- Healthcare Professional Licensing Requirements
+## 📞 Support
+
+For technical questions or documentation updates:
+- Create issues in the project repository
+- Contact the development team
+- Review troubleshooting guides in respective sections
+
+## 📝 Contributing
+
+When updating documentation:
+1. Follow the established structure and naming conventions
+2. Update the relevant section index files
+3. Include code examples where appropriate
+4. Maintain consistent formatting and style
+5. Update this README if adding new major sections
 
 ---
 
-## Version Information
-
-- **Documentation Version**: 1.4.0
-- **System Version**: 1.4.0
-- **Last Updated**: September 2025
-- **Compatibility**: Node.js 18+, React 18+, PostgreSQL 12+
-
----
-
-*This documentation is maintained alongside the codebase and reflects the current system capabilities and requirements. For the most up-to-date information, refer to the individual documentation files and the project's Git history.*
+**Last Updated:** September 3, 2025  
+**Documentation Version:** 2.0  
+**Next Review:** October 1, 2025

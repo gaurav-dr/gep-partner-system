@@ -32,13 +32,38 @@
     "web-vitals": "^2.1.4",
     "tailwindcss": "^3.2.7",
     "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.21"
+    "postcss": "^8.4.21",
+    "playwright": "^1.40.0",
+    "@playwright/test": "^1.40.0",
+    "supertest": "^6.3.3",
+    "cross-env": "^7.0.3",
+    "wait-on": "^7.2.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "test:health": "cross-env NODE_ENV=test jest --testPathPattern=health --verbose",
+    "test:integration": "cross-env NODE_ENV=test jest --testPathPattern=integration --verbose",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test:health && npm run test:integration && npm run test:e2e",
+    "health:check": "node src/scripts/healthCheck.js",
     "eject": "react-scripts eject"
+  },
+  "jest": {
+    "testMatch": [
+      "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "<rootDir>/src/**/?(*.)(spec|test).{js,jsx,ts,tsx}"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{js,jsx,ts,tsx}",
+      "!src/**/*.d.ts",
+      "!src/index.tsx",
+      "!src/serviceWorker.ts"
+    ],
+    "coverageReporters": ["lcov", "text", "html"],
+    "coverageDirectory": "coverage",
+    "testTimeout": 10000
   },
   "eslintConfig": {
     "extends": [

@@ -1,11 +1,13 @@
 # Docker Compose configuration for GEP Partner System
 # Always use Docker for development, testing, and production
 
+name: gep-partner-system
+
 services:
   # Frontend React Application
   frontend:
     build: 
-      context: ./frontend
+      context: ../../frontend
       dockerfile: Dockerfile
       target: development
     ports:
@@ -28,7 +30,7 @@ services:
   # Backend Node.js API
   backend:
     build:
-      context: ./backend
+      context: ../../backend
       dockerfile: Dockerfile
     ports:
       - "3001:3001"

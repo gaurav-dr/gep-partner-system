@@ -8,8 +8,9 @@ echo "🚀 Starting development deployment..."
 
 # Configuration
 PROJECT_NAME="gep-partner-system"
-ENV_FILE=".env.dev"
-COMPOSE_FILE="docker-compose.dev.yml"
+ENV_FILE=".env.development"
+COMPOSE_FILE="config/docker/docker-compose.dev.yml"
+COMPOSE_PROJECT_NAME="gep-partner-system"
 HEALTH_CHECK_URL="http://localhost:3001/health"
 MAX_WAIT_TIME=120
 

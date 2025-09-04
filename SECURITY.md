@@ -42,7 +42,7 @@ When reporting a vulnerability, please include:
 
 ## Security Best Practices
 
-For detailed security implementation and best practices, please refer to our comprehensive [Security Guide](./docs/SECURITY.md).
+For detailed security implementation and best practices, please refer to our comprehensive [Security Implementation Guide](./docs/SECURITY_IMPLEMENTATION.md).
 
 ### Key Security Features
 
