@@ -1,5 +1,143 @@
-const logger = require('../utils/logger');
-const { supabaseAdmin } = require('../config/supabase');
+import { Logger } from '../types';
+
+const logger: Logger = require('../utils/logger');
+
+interface OptimizationWeights {
+  installationSize: number;
+  partnerExpertise: number;
+  costEfficiency: number;
+  proximity: number;
+  historicalData: number;
+  regulatoryCompliance: number;
+}
+
+interface DurationBounds {
+  min: number;
+  max: number;
+  default: number;
+}
+
+interface ServiceDurations {
+  occupational_doctor: DurationBounds;
+  safety_engineer: DurationBounds;
+  specialist_consultation: DurationBounds;
+}
+
+interface ComplexityMultipliers {
+  A: number;
+  B: number;
+  C: number;
+}
+
+interface OptimizationContext {
+  installation?: {
+    installation_code?: string;
+    service_type?: string;
+    employees_count?: number;
+    category?: string;
+    special_requirements?: string;
+    address?: string;
+  };
+  selectedPartner?: {
+    id: string;
+    specialty?: string;
+    hourly_rate?: number;
+    city?: string;
+  };
+  availablePartners?: {
+    id: string;
+    specialty?: string;
+    hourly_rate?: number;
+    city?: string;
+  }[];
+  contract?: {
+    budget_limit?: number;
+    contract_value?: number;
+  };
+  regulatoryRequirements?: {
+    minimumHoursPerMonth?: number;
+    requiredVisitFrequency?: string;
+  };
+  historicalData?: any[];
+}
+
+interface OptimizationFactors {
+  installation: number;
+  partner: number;
+  cost: number;
+  proximity: number;
+  historical: number;
+  regulatory: number;
+}
+
+interface DurationOption {
+  duration: number;
+  type: 'conservative' | 'optimal' | 'comprehensive';
+  description: string;
+  pros: string[];
+  cons: string[];
+}
+
+interface OptimizationResult {
+  optimizedDuration: number;
+  baseDuration: number;
+  optimizationScore: number;
+  confidence: number;
+  durationOptions: DurationOption[];
+  factors: OptimizationFactors;
+  reasoning: string;
+  recommendations: string[];
+}
+
+interface BatchOptimizationResult {
+  optimizations: OptimizationResult[];
+  summary: {
+    successRate: number;
+    averageDuration: number;
+    averageConfidence: number;
+    totalOptimizations: number;
+  };
+  totalContexts: number;
+  successfulOptimizations: number;
+}
+
+interface WorkloadBalanceResult {
+  originalDuration: number;
+  adjustedDuration: number;
+  currentUtilization: number;
+  adjustment: number;
+  reasoning: string;
+}
+
+interface SeasonalAdjustmentResult {
+  originalDuration: number;
+  seasonalDuration: number;
+  seasonalMultiplier: number;
+  month: number;
+  reasoning: string;
+}
+
+interface PartnerExperienceData {
+  totalAssignments: number;
+  successRate: number;
+  averageDuration: number;
+}
+
+interface PartnerDetails {
+  id: string;
+  specialty?: string;
+  hourly_rate?: number;
+  max_weekly_hours?: number;
+}
+
+interface ExistingWorkload {
+  totalHours?: number;
+}
+
+interface DurationPerformanceAnalysis {
+  averageSuccessRate: number;
+  optimalDuration: number;
+}
 
 /**
  * Visit Duration Optimizer
@@ -12,6 +150,10 @@ const { supabaseAdmin } = require('../config/supabase');
  * - Regulatory requirements (SEPE)
  */
 class VisitDurationOptimizer {
+    private optimizationWeights: OptimizationWeights;
+    private baseDurations: ServiceDurations;
+    private complexityMultipliers: ComplexityMultipliers;
+
     constructor() {
         this.optimizationWeights = {
             installationSize: 0.25,      // Employee count, complexity
@@ -50,7 +192,7 @@ class VisitDurationOptimizer {
     /**
      * Optimize visit duration for a specific context
      */
-    async optimizeVisitDuration(context) {
+    async optimizeVisitDuration(context: OptimizationContext): Promise<OptimizationResult> {
         try {
             logger.info(`Optimizing visit duration for installation ${context.installation?.installation_code}`);
 
@@ -83,7 +225,7 @@ class VisitDurationOptimizer {
             // Calculate confidence level
             const confidence = this.calculateOptimizationConfidence(context, optimizationScore);
 
-            const result = {
+            const result: OptimizationResult = {
                 optimizedDuration: Math.round(optimizedDuration * 10) / 10, // Round to 1 decimal
                 baseDuration,
                 optimizationScore,
@@ -105,7 +247,9 @@ class VisitDurationOptimizer {
             return result;
 
         } catch (error) {
-            logger.error('Visit duration optimization failed:', error);
+            logger.error('Visit duration optimization failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return this.getFallbackDuration(context);
         }
     }
@@ -113,11 +257,13 @@ class VisitDurationOptimizer {
     /**
      * Batch optimize durations for multiple contexts
      */
-    async batchOptimizeDurations(contexts) {
+    async batchOptimizeDurations(contexts: OptimizationContext[]): Promise<BatchOptimizationResult> {
         try {
             const optimizationPromises = contexts.map(context => 
                 this.optimizeVisitDuration(context).catch(error => {
-                    logger.warn(`Batch optimization failed for ${context.installation?.installation_code}:`, error);
+                    logger.warn(`Batch optimization failed for ${context.installation?.installation_code}:`, { 
+                        error: error instanceof Error ? error.message : String(error) 
+                    });
                     return this.getFallbackDuration(context);
                 })
             );
@@ -132,7 +278,9 @@ class VisitDurationOptimizer {
             };
 
         } catch (error) {
-            logger.error('Batch duration optimization failed:', error);
+            logger.error('Batch duration optimization failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -140,7 +288,7 @@ class VisitDurationOptimizer {
     /**
      * Get optimal duration for partner workload balancing
      */
-    async optimizeForWorkloadBalance(partnerId, proposedDuration, existingWorkload) {
+    async optimizeForWorkloadBalance(partnerId: string, proposedDuration: number, existingWorkload: ExistingWorkload): Promise<WorkloadBalanceResult> {
         try {
             const partner = await this.getPartnerDetails(partnerId);
             const currentUtilization = this.calculatePartnerUtilization(partner, existingWorkload);
@@ -158,7 +306,7 @@ class VisitDurationOptimizer {
 
             // Ensure duration stays within reasonable bounds
             const serviceType = partner.specialty || 'occupational_doctor';
-            const bounds = this.baseDurations[serviceType] || this.baseDurations.occupational_doctor;
+            const bounds = this.baseDurations[serviceType as keyof ServiceDurations] || this.baseDurations.occupational_doctor;
             adjustedDuration = Math.max(bounds.min, Math.min(bounds.max, adjustedDuration));
 
             return {
@@ -170,7 +318,9 @@ class VisitDurationOptimizer {
             };
 
         } catch (error) {
-            logger.error('Workload balance optimization failed:', error);
+            logger.error('Workload balance optimization failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return {
                 originalDuration: proposedDuration,
                 adjustedDuration: proposedDuration,
@@ -184,7 +334,7 @@ class VisitDurationOptimizer {
     /**
      * Calculate seasonal duration adjustments
      */
-    calculateSeasonalAdjustments(context, baseDuration) {
+    calculateSeasonalAdjustments(context: OptimizationContext, baseDuration: number): SeasonalAdjustmentResult {
         try {
             const currentMonth = new Date().getMonth() + 1;
             let seasonalMultiplier = 1.0;
@@ -219,7 +369,9 @@ class VisitDurationOptimizer {
             };
 
         } catch (error) {
-            logger.warn('Seasonal adjustment calculation failed:', error);
+            logger.warn('Seasonal adjustment calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return {
                 originalDuration: baseDuration,
                 seasonalDuration: baseDuration,
@@ -233,16 +385,16 @@ class VisitDurationOptimizer {
     /**
      * Calculate base duration from service type
      */
-    calculateBaseDuration(context) {
+    private calculateBaseDuration(context: OptimizationContext): number {
         const serviceType = context.installation?.service_type || 'occupational_doctor';
-        const baseDurationConfig = this.baseDurations[serviceType] || this.baseDurations.occupational_doctor;
+        const baseDurationConfig = this.baseDurations[serviceType as keyof ServiceDurations] || this.baseDurations.occupational_doctor;
         return baseDurationConfig.default;
     }
 
     /**
      * Calculate installation complexity factor
      */
-    calculateInstallationFactor(context) {
+    private calculateInstallationFactor(context: OptimizationContext): number {
         const installation = context.installation;
         if (!installation) return 0.5;
 
@@ -256,7 +408,7 @@ class VisitDurationOptimizer {
 
         // Risk category factor
         const category = installation.category || 'C';
-        const complexityMultiplier = this.complexityMultipliers[category] || 1.0;
+        const complexityMultiplier = this.complexityMultipliers[category as keyof ComplexityMultipliers] || 1.0;
         factor *= complexityMultiplier;
 
         // Special requirements factor
@@ -270,13 +422,13 @@ class VisitDurationOptimizer {
     /**
      * Calculate partner expertise factor
      */
-    async calculatePartnerFactor(context) {
+    private async calculatePartnerFactor(context: OptimizationContext): Promise<number> {
         try {
             if (!context.selectedPartner && (!context.availablePartners || context.availablePartners.length === 0)) {
                 return 0.5;
             }
 
-            const partner = context.selectedPartner || context.availablePartners[0];
+            const partner = context.selectedPartner || context.availablePartners![0];
             let factor = 0.5;
 
             // Experience factor (based on historical data)
@@ -297,7 +449,9 @@ class VisitDurationOptimizer {
             return Math.min(1.0, factor);
 
         } catch (error) {
-            logger.warn('Partner factor calculation failed:', error);
+            logger.warn('Partner factor calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return 0.5;
         }
     }
@@ -305,7 +459,7 @@ class VisitDurationOptimizer {
     /**
      * Calculate cost efficiency factor
      */
-    calculateCostFactor(context) {
+    private calculateCostFactor(context: OptimizationContext): number {
         try {
             const partner = context.selectedPartner || (context.availablePartners && context.availablePartners[0]);
             if (!partner) return 0.5;
@@ -327,7 +481,9 @@ class VisitDurationOptimizer {
             return 0.2;                             // Expensive
 
         } catch (error) {
-            logger.warn('Cost factor calculation failed:', error);
+            logger.warn('Cost factor calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return 0.5;
         }
     }
@@ -335,7 +491,7 @@ class VisitDurationOptimizer {
     /**
      * Calculate proximity factor
      */
-    calculateProximityFactor(context) {
+    private calculateProximityFactor(context: OptimizationContext): number {
         try {
             const partner = context.selectedPartner || (context.availablePartners && context.availablePartners[0]);
             if (!partner) return 0.5;
@@ -353,7 +509,9 @@ class VisitDurationOptimizer {
             return 0.2;                             // Very far
 
         } catch (error) {
-            logger.warn('Proximity factor calculation failed:', error);
+            logger.warn('Proximity factor calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return 0.5;
         }
     }
@@ -361,12 +519,12 @@ class VisitDurationOptimizer {
     /**
      * Calculate historical performance factor
      */
-    async calculateHistoricalFactor(context) {
+    private async calculateHistoricalFactor(context: OptimizationContext): Promise<number> {
         try {
             const installation = context.installation;
             if (!installation) return 0.5;
 
-            const historicalData = await this.getHistoricalDurationData(installation.installation_code);
+            const historicalData = await this.getHistoricalDurationData(installation.installation_code || '');
             
             if (historicalData.length === 0) return 0.5;
 
@@ -377,7 +535,9 @@ class VisitDurationOptimizer {
             return Math.min(1.0, durationPerformance.averageSuccessRate + 0.1);
 
         } catch (error) {
-            logger.warn('Historical factor calculation failed:', error);
+            logger.warn('Historical factor calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return 0.5;
         }
     }
@@ -385,7 +545,7 @@ class VisitDurationOptimizer {
     /**
      * Calculate regulatory compliance factor
      */
-    calculateRegulatoryFactor(context) {
+    private calculateRegulatoryFactor(context: OptimizationContext): number {
         try {
             const requirements = context.regulatoryRequirements;
             if (!requirements) return 0.5;
@@ -408,7 +568,9 @@ class VisitDurationOptimizer {
             return Math.min(1.0, factor);
 
         } catch (error) {
-            logger.warn('Regulatory factor calculation failed:', error);
+            logger.warn('Regulatory factor calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return 0.5;
         }
     }
@@ -416,7 +578,7 @@ class VisitDurationOptimizer {
     /**
      * Apply optimization score to base duration
      */
-    applyOptimizationScore(baseDuration, optimizationScore, context) {
+    private applyOptimizationScore(baseDuration: number, optimizationScore: number, context: OptimizationContext): number {
         // Convert optimization score to duration multiplier
         // Score of 0.5 = no change, >0.5 = longer visits, <0.5 = shorter visits
         const multiplier = 0.7 + (optimizationScore * 0.6); // Range: 0.7 to 1.3
@@ -425,7 +587,7 @@ class VisitDurationOptimizer {
 
         // Apply service type bounds
         const serviceType = context.installation?.service_type || 'occupational_doctor';
-        const bounds = this.baseDurations[serviceType] || this.baseDurations.occupational_doctor;
+        const bounds = this.baseDurations[serviceType as keyof ServiceDurations] || this.baseDurations.occupational_doctor;
         
         optimizedDuration = Math.max(bounds.min, Math.min(bounds.max, optimizedDuration));
 
@@ -435,10 +597,10 @@ class VisitDurationOptimizer {
     /**
      * Generate multiple duration options
      */
-    generateDurationOptions(optimizedDuration, context) {
-        const options = [];
+    private generateDurationOptions(optimizedDuration: number, context: OptimizationContext): DurationOption[] {
+        const options: DurationOption[] = [];
         const serviceType = context.installation?.service_type || 'occupational_doctor';
-        const bounds = this.baseDurations[serviceType] || this.baseDurations.occupational_doctor;
+        const bounds = this.baseDurations[serviceType as keyof ServiceDurations] || this.baseDurations.occupational_doctor;
 
         // Conservative option (shorter)
         const conservative = Math.max(bounds.min, optimizedDuration * 0.85);
@@ -475,7 +637,7 @@ class VisitDurationOptimizer {
     /**
      * Calculate optimization confidence
      */
-    calculateOptimizationConfidence(context, optimizationScore) {
+    private calculateOptimizationConfidence(context: OptimizationContext, optimizationScore: number): number {
         let confidence = 0.5;
 
         // Boost confidence if we have good data
@@ -493,8 +655,8 @@ class VisitDurationOptimizer {
     /**
      * Generate optimization reasoning
      */
-    generateOptimizationReasoning(context, optimizationScore) {
-        const reasons = [];
+    private generateOptimizationReasoning(context: OptimizationContext, optimizationScore: number): string {
+        const reasons: string[] = [];
 
         if (optimizationScore > 0.7) {
             reasons.push('High optimization confidence due to comprehensive data');
@@ -504,7 +666,7 @@ class VisitDurationOptimizer {
             reasons.push('Conservative optimization due to limited data');
         }
 
-        if (context.installation?.employees_count > 100) {
+        if (context.installation?.employees_count && context.installation.employees_count > 100) {
             reasons.push('Larger installation requires more comprehensive visits');
         }
 
@@ -513,7 +675,7 @@ class VisitDurationOptimizer {
         }
 
         const partner = context.selectedPartner || (context.availablePartners && context.availablePartners[0]);
-        if (partner && partner.hourly_rate > 60) {
+        if (partner && partner.hourly_rate && partner.hourly_rate > 60) {
             reasons.push('Higher partner rates favor efficient visit duration');
         }
 
@@ -523,8 +685,8 @@ class VisitDurationOptimizer {
     /**
      * Generate duration recommendations
      */
-    generateDurationRecommendations(context, optimizedDuration) {
-        const recommendations = [];
+    private generateDurationRecommendations(context: OptimizationContext, optimizedDuration: number): string[] {
+        const recommendations: string[] = [];
 
         const baseDuration = this.calculateBaseDuration(context);
         const change = optimizedDuration - baseDuration;
@@ -557,7 +719,7 @@ class VisitDurationOptimizer {
     /**
      * Get fallback duration when optimization fails
      */
-    getFallbackDuration(context) {
+    private getFallbackDuration(context: OptimizationContext): OptimizationResult {
         const baseDuration = this.calculateBaseDuration(context);
         
         return {
@@ -580,9 +742,9 @@ class VisitDurationOptimizer {
     }
 
     // Helper methods
-    calculateDistance(location1, location2) {
+    private calculateDistance(location1: string, location2: string): number {
         // Simplified distance calculation for Greek cities
-        const cityDistances = {
+        const cityDistances: Record<string, number> = {
             'ΑΘΗΝΑ-ΚΑΛΛΙΘΕΑ': 8,
             'ΑΘΗΝΑ-ΓΕΡΑΚΑΣ': 25,
             'ΚΑΛΛΙΘΕΑ-ΓΕΡΑΚΑΣ': 30,
@@ -597,26 +759,28 @@ class VisitDurationOptimizer {
         return cityDistances[key] || cityDistances[reverseKey] || 20;
     }
 
-    calculateSpecialtyMatch(partnerSpecialty, serviceType) {
-        const specialtyMappings = {
+    private calculateSpecialtyMatch(partnerSpecialty?: string, serviceType?: string): number {
+        const specialtyMappings: Record<string, string[]> = {
             'occupational_doctor': ['Παθολόγος', 'Ιατρός', 'Ειδικός Ιατρός Εργασίας'],
             'safety_engineer': ['Μηχανικός', 'Ηλεκτρολόγος Μηχανικός', 'Μηχανολόγος Μηχανικός'],
             'specialist_consultation': ['Ειδικός Ιατρός Εργασίας', 'Παθολόγος']
         };
+
+        if (!serviceType || !partnerSpecialty) return 0.3;
 
         const requiredSpecialties = specialtyMappings[serviceType] || [];
         
         if (requiredSpecialties.includes(partnerSpecialty)) return 1.0;
         
         for (const specialty of requiredSpecialties) {
-            if (partnerSpecialty && partnerSpecialty.includes(specialty)) return 0.8;
+            if (partnerSpecialty.includes(specialty)) return 0.8;
         }
         
         return 0.3;
     }
 
     // Database helper methods (would be implemented with actual queries)
-    async getPartnerExperienceData(partnerId) {
+    private async getPartnerExperienceData(partnerId: string): Promise<PartnerExperienceData> {
         // Placeholder - would query historical assignments
         return {
             totalAssignments: 15,
@@ -625,7 +789,7 @@ class VisitDurationOptimizer {
         };
     }
 
-    async getPartnerDetails(partnerId) {
+    private async getPartnerDetails(partnerId: string): Promise<PartnerDetails> {
         // Placeholder - would query partner details
         return {
             id: partnerId,
@@ -635,18 +799,18 @@ class VisitDurationOptimizer {
         };
     }
 
-    calculatePartnerUtilization(partner, existingWorkload) {
+    private calculatePartnerUtilization(partner: PartnerDetails, existingWorkload: ExistingWorkload): number {
         const maxHours = partner.max_weekly_hours || 40;
         const currentHours = existingWorkload?.totalHours || 20;
         return currentHours / maxHours;
     }
 
-    async getHistoricalDurationData(installationCode) {
+    private async getHistoricalDurationData(installationCode: string): Promise<any[]> {
         // Placeholder - would query historical schedule data
         return [];
     }
 
-    analyzeDurationPerformance(historicalData) {
+    private analyzeDurationPerformance(historicalData: any[]): DurationPerformanceAnalysis {
         // Placeholder - would analyze success rates by duration
         return {
             averageSuccessRate: 0.8,
@@ -654,7 +818,7 @@ class VisitDurationOptimizer {
         };
     }
 
-    generateBatchSummary(results) {
+    private generateBatchSummary(results: OptimizationResult[]): BatchOptimizationResult['summary'] {
         const successful = results.filter(r => r.confidence > 0.5);
         const avgDuration = results.reduce((sum, r) => sum + r.optimizedDuration, 0) / results.length;
         const avgConfidence = results.reduce((sum, r) => sum + r.confidence, 0) / results.length;
@@ -667,7 +831,7 @@ class VisitDurationOptimizer {
         };
     }
 
-    generateWorkloadReasoning(utilization, adjusted, original) {
+    private generateWorkloadReasoning(utilization: number, adjusted: number, original: number): string {
         if (adjusted > original) {
             return `Partner utilization is ${(utilization * 100).toFixed(1)}% - can handle longer visits`;
         } else if (adjusted < original) {
@@ -677,8 +841,8 @@ class VisitDurationOptimizer {
         }
     }
 
-    generateSeasonalReasoning(month, multiplier) {
-        const seasons = {
+    private generateSeasonalReasoning(month: number, multiplier: number): string {
+        const seasons: Record<number, string> = {
             12: 'Winter', 1: 'Winter', 2: 'Winter',
             3: 'Spring', 4: 'Spring', 5: 'Spring',
             6: 'Summer', 7: 'Summer', 8: 'Summer',
@@ -697,4 +861,4 @@ class VisitDurationOptimizer {
     }
 }
 
-module.exports = VisitDurationOptimizer;
+export default VisitDurationOptimizer;

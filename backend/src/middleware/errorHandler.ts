@@ -1,6 +1,16 @@
-const logger = require('../utils/logger');
+import { Request, Response, NextFunction } from 'express';
+import { Logger } from '../types';
 
-const errorHandler = (err, req, res, next) => {
+const logger: Logger = require('../utils/logger');
+
+interface CustomError extends Error {
+  status?: number;
+  code?: string;
+  isJoi?: boolean;
+  details?: Array<{ message: string }>;
+}
+
+const errorHandler = (err: CustomError, req: Request, res: Response, next: NextFunction): void => {
   logger.error('Unhandled error:', {
     error: err.message,
     stack: err.stack,
@@ -12,19 +22,21 @@ const errorHandler = (err, req, res, next) => {
 
   // Supabase errors
   if (err.code && err.message) {
-    return res.status(400).json({
+    res.status(400).json({
       error: 'Database operation failed',
       details: err.message,
       code: err.code
     });
+    return;
   }
 
-  // Validation errors
-  if (err.isJoi) {
-    return res.status(400).json({
+  // Validation errors (Joi)
+  if (err.isJoi && err.details) {
+    res.status(400).json({
       error: 'Validation failed',
       details: err.details.map(detail => detail.message)
     });
+    return;
   }
 
   // Default error response
@@ -36,4 +48,4 @@ const errorHandler = (err, req, res, next) => {
   });
 };
 
-module.exports = errorHandler;
+export default errorHandler;

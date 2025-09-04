@@ -1,6 +1,16 @@
 // Common types for the GEP Partner System
 import { Request } from 'express';
 
+// Extend Express Request interface to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+      originalBody?: any;
+    }
+  }
+}
+
 export interface User {
   id: string;
   email: string;
@@ -50,15 +60,17 @@ export interface CustomerRequest {
   service_type: ServiceType;
   installation_address: string;
   employee_count: number;
+  estimated_hours: number;
   start_date: string;
   end_date: string;
+  special_requirements?: string;
   status: RequestStatus;
   urgency_level?: UrgencyLevel;
   created_at: string;
   updated_at?: string;
 }
 
-export type ServiceType = 'occupational_doctor' | 'safety_engineer';
+export type ServiceType = 'installation' | 'maintenance' | 'repair' | 'consultation' | 'training';
 export type RequestStatus = 'pending' | 'assigned' | 'approved' | 'in_progress' | 'completed' | 'cancelled';
 export type UrgencyLevel = 'low' | 'normal' | 'high' | 'urgent';
 

@@ -6,9 +6,9 @@ import path from 'path';
 
 // Import utilities and middleware
 import { Logger } from './types';
+import errorHandler from './middleware/errorHandler';
+import { securityHeaders, apiRateLimit, sanitizeInput } from './middleware/validation';
 const logger: Logger = require('./utils/logger');
-const errorHandler = require('./middleware/errorHandler');
-const { securityHeaders, apiRateLimit, sanitizeInput } = require('./middleware/validation');
 
 // Import routes
 import authRoutes from './routes/auth';

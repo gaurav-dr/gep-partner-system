@@ -1,5 +1,200 @@
-const logger = require('../utils/logger');
-const { supabaseAdmin } = require('../config/supabase');
+import { Logger } from '../types';
+import { supabaseAdmin } from '../config/supabase';
+
+const logger: Logger = require('../utils/logger');
+
+interface MigrationStats {
+  processed: number;
+  successful: number;
+  failed: number;
+  warnings: number;
+}
+
+interface VisitData {
+  id: string;
+  partner_id: string;
+  installation_code: string;
+  visit_date: string;
+  service_type?: string;
+  partners?: {
+    id: string;
+    name: string;
+    specialty: string;
+    city: string;
+  };
+  installations?: {
+    installation_code: string;
+    company_name: string;
+    address: string;
+    employees_count: number;
+    category: string;
+  };
+}
+
+interface VisitAnalysis {
+  totalVisits: number;
+  uniquePartners: number;
+  uniqueInstallations: number;
+  visitsByPartner: Record<string, VisitData[]>;
+  visitsByInstallation: Record<string, VisitData[]>;
+  partnerInstallationPairs: PartnerInstallationPair[];
+  visitFrequency: Record<string, any>;
+  temporalPatterns: Record<string, any>;
+  summary: {
+    avgVisitsPerPartner: number;
+    avgVisitsPerInstallation: number;
+    strongRelationships: number;
+    recentVisits: number;
+  };
+}
+
+interface PartnerInstallationPair {
+  partnerId: string;
+  partnerName: string;
+  installationCode: string;
+  installationName: string;
+  visits: VisitData[];
+  visitCount: number;
+  firstVisit: string;
+  lastVisit: string;
+}
+
+interface RelationshipStrength {
+  score: number;
+  type: 'exclusive' | 'primary' | 'regular' | 'occasional' | 'weak' | 'unknown';
+  factors: {
+    visitFrequency: number;
+    recency: number;
+    consistency: number;
+    serviceMatch: number;
+  };
+}
+
+interface IdentifiedRelationship extends PartnerInstallationPair {
+  relationshipStrength: number;
+  relationshipType: string;
+  averageInterval: number;
+  serviceTypes: string[];
+  confidenceFactors: RelationshipStrength['factors'];
+  migrationPriority: number;
+}
+
+interface ContractAssignmentResults {
+  successful: number;
+  failed: number;
+  warnings: number;
+  unassigned: InstallationData[];
+  assignments: ContractAssignment[];
+}
+
+interface BatchAssignmentResults {
+  successful: number;
+  failed: number;
+  warnings: number;
+  assignments: ContractAssignment[];
+}
+
+interface ContractAssignment {
+  contractId: string;
+  contractCode: string;
+  partnerId: string;
+  partnerName: string;
+  installationCode: string;
+  installationName: string;
+  confidence: number;
+  migrationDate: string;
+}
+
+interface InstallationData {
+  id: string;
+  installation_code: string;
+  company_name: string;
+  address: string;
+  employees_count: number;
+  category: string;
+}
+
+interface ContractParameters {
+  serviceType: string;
+  startDate: string;
+  endDate: string;
+  contractValue: number;
+  services: any[];
+}
+
+interface ContractData {
+  contract_code: string;
+  installation_code: string;
+  partner_id: string;
+  service_type: string;
+  start_date: string;
+  end_date: string;
+  contract_value: number;
+  status: string;
+  migration_source: string;
+  migration_confidence: number;
+  migration_date: string;
+  notes: string;
+  created_by: string;
+  metadata: {
+    originalVisitCount: number;
+    relationshipStrength: number;
+    lastHistoricalVisit: string;
+    migrationReason: string;
+  };
+}
+
+interface AssignmentStrategy {
+  type: 'suggest_partners' | 'auto_assign' | 'manual_review';
+  suggestions?: any[];
+  partner?: any;
+  reason?: string;
+}
+
+interface UnassignedResults {
+  processed: number;
+  assigned: number;
+  flagged: number;
+  strategies: Record<string, number>;
+}
+
+interface ValidationResults {
+  duplicates: number;
+  missing: number;
+  integrityIssues: number;
+  coverage: {
+    percentage: number;
+  };
+  validationPassed: boolean;
+  warnings: string[];
+}
+
+interface MigrationReport {
+  migrationSummary: {
+    executionDate: string;
+    totalProcessed: number;
+    successfulAssignments: number;
+    failedAssignments: number;
+    warnings: number;
+    successRate: number;
+  };
+  dataAnalysis: {
+    historicalVisits: number;
+    uniquePartners: number;
+    uniqueInstallations: number;
+    strongRelationships: number;
+    averageRelationshipStrength: number;
+  };
+  assignmentResults: {
+    automaticAssignments: number;
+    failedAssignments: number;
+    unassignedInstallations: number;
+    coveragePercentage: number;
+  };
+  validationResults: ValidationResults;
+  recommendations: string[];
+  nextSteps: string[];
+}
 
 /**
  * Contract Migration Service
@@ -8,6 +203,10 @@ const { supabaseAdmin } = require('../config/supabase');
  * Maintains historical preferences and performance data
  */
 class ContractMigrationService {
+    private migrationBatchSize: number;
+    private confidenceThreshold: number;
+    private migrationStats: MigrationStats;
+
     constructor() {
         this.migrationBatchSize = 50;
         this.confidenceThreshold = 0.7;
@@ -22,7 +221,7 @@ class ContractMigrationService {
     /**
      * Execute complete contract migration process
      */
-    async executeFullMigration() {
+    async executeFullMigration(): Promise<MigrationReport> {
         try {
             logger.info('Starting complete contract migration process');
             this.resetMigrationStats();
@@ -54,7 +253,9 @@ class ContractMigrationService {
             return report;
 
         } catch (error) {
-            logger.error('Contract migration failed:', error);
+            logger.error('Contract migration failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -62,7 +263,7 @@ class ContractMigrationService {
     /**
      * Analyze existing visit data to understand patterns
      */
-    async analyzeExistingVistData() {
+    async analyzeExistingVistData(): Promise<VisitAnalysis> {
         try {
             logger.info('Analyzing existing visit data patterns');
 
@@ -80,17 +281,24 @@ class ContractMigrationService {
                 throw error;
             }
 
+            const visitsData = visits as VisitData[];
+
             // Analyze patterns
-            const analysis = {
-                totalVisits: visits.length,
-                uniquePartners: new Set(visits.map(v => v.partner_id)).size,
-                uniqueInstallations: new Set(visits.map(v => v.installation_code)).size,
-                visitsByPartner: this.groupVisitsByPartner(visits),
-                visitsByInstallation: this.groupVisitsByInstallation(visits),
-                partnerInstallationPairs: this.identifyPartnerInstallationPairs(visits),
-                visitFrequency: this.analyzeVisitFrequency(visits),
-                temporalPatterns: this.analyzeTemporalPatterns(visits),
-                summary: {}
+            const analysis: VisitAnalysis = {
+                totalVisits: visitsData.length,
+                uniquePartners: new Set(visitsData.map(v => v.partner_id)).size,
+                uniqueInstallations: new Set(visitsData.map(v => v.installation_code)).size,
+                visitsByPartner: this.groupVisitsByPartner(visitsData),
+                visitsByInstallation: this.groupVisitsByInstallation(visitsData),
+                partnerInstallationPairs: this.identifyPartnerInstallationPairs(visitsData),
+                visitFrequency: await this.analyzeVisitFrequency(visitsData),
+                temporalPatterns: await this.analyzeTemporalPatterns(visitsData),
+                summary: {
+                    avgVisitsPerPartner: 0,
+                    avgVisitsPerInstallation: 0,
+                    strongRelationships: 0,
+                    recentVisits: 0
+                }
             };
 
             // Calculate summary statistics
@@ -98,13 +306,15 @@ class ContractMigrationService {
                 avgVisitsPerPartner: analysis.totalVisits / analysis.uniquePartners,
                 avgVisitsPerInstallation: analysis.totalVisits / analysis.uniqueInstallations,
                 strongRelationships: analysis.partnerInstallationPairs.filter(p => p.visitCount >= 5).length,
-                recentVisits: visits.filter(v => this.isRecentVisit(v.visit_date)).length
+                recentVisits: visitsData.filter(v => this.isRecentVisit(v.visit_date)).length
             };
 
             return analysis;
 
         } catch (error) {
-            logger.error('Visit data analysis failed:', error);
+            logger.error('Visit data analysis failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -112,10 +322,10 @@ class ContractMigrationService {
     /**
      * Identify strong partner-installation relationships
      */
-    async identifyPartnerInstallationRelationships() {
+    async identifyPartnerInstallationRelationships(): Promise<IdentifiedRelationship[]> {
         try {
             const visitAnalysis = await this.analyzeExistingVistData();
-            const relationships = [];
+            const relationships: IdentifiedRelationship[] = [];
 
             for (const pair of visitAnalysis.partnerInstallationPairs) {
                 // Calculate relationship strength
@@ -123,13 +333,7 @@ class ContractMigrationService {
                 
                 if (strength.score >= this.confidenceThreshold) {
                     relationships.push({
-                        partnerId: pair.partnerId,
-                        partnerName: pair.partnerName,
-                        installationCode: pair.installationCode,
-                        installationName: pair.installationName,
-                        visitCount: pair.visitCount,
-                        lastVisit: pair.lastVisit,
-                        firstVisit: pair.firstVisit,
+                        ...pair,
                         relationshipStrength: strength.score,
                         relationshipType: strength.type,
                         averageInterval: this.calculateAverageVisitInterval(pair.visits),
@@ -151,7 +355,9 @@ class ContractMigrationService {
             return relationships;
 
         } catch (error) {
-            logger.error('Relationship identification failed:', error);
+            logger.error('Relationship identification failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -159,11 +365,11 @@ class ContractMigrationService {
     /**
      * Create automatic contract assignments based on relationships
      */
-    async createAutomaticContractAssignments(relationships) {
+    async createAutomaticContractAssignments(relationships: IdentifiedRelationship[]): Promise<ContractAssignmentResults> {
         try {
             logger.info(`Creating contract assignments for ${relationships.length} relationships`);
 
-            const results = {
+            const results: ContractAssignmentResults = {
                 successful: 0,
                 failed: 0,
                 warnings: 0,
@@ -198,7 +404,9 @@ class ContractMigrationService {
             return results;
 
         } catch (error) {
-            logger.error('Contract assignment creation failed:', error);
+            logger.error('Contract assignment creation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -206,8 +414,8 @@ class ContractMigrationService {
     /**
      * Process batch of contract assignments
      */
-    async processBatchAssignments(batch) {
-        const results = {
+    private async processBatchAssignments(batch: IdentifiedRelationship[]): Promise<BatchAssignmentResults> {
+        const results: BatchAssignmentResults = {
             successful: 0,
             failed: 0,
             warnings: 0,
@@ -243,7 +451,9 @@ class ContractMigrationService {
                 this.migrationStats.processed++;
 
             } catch (error) {
-                logger.error(`Failed to process assignment for ${relationship.partnerName} -> ${relationship.installationName}:`, error);
+                logger.error(`Failed to process assignment for ${relationship.partnerName} -> ${relationship.installationName}:`, { 
+                    error: error instanceof Error ? error.message : String(error) 
+                });
                 results.failed++;
                 this.migrationStats.failed++;
             }
@@ -255,7 +465,7 @@ class ContractMigrationService {
     /**
      * Create individual contract assignment
      */
-    async createContractAssignment(relationship) {
+    private async createContractAssignment(relationship: IdentifiedRelationship): Promise<ContractAssignment | null> {
         try {
             // Generate contract code
             const contractCode = this.generateContractCode(relationship);
@@ -267,7 +477,7 @@ class ContractMigrationService {
             const contractParams = await this.calculateContractParameters(relationship, installation);
 
             // Create contract record
-            const contractData = {
+            const contractData: ContractData = {
                 contract_code: contractCode,
                 installation_code: relationship.installationCode,
                 partner_id: relationship.partnerId,
@@ -319,7 +529,9 @@ class ContractMigrationService {
             };
 
         } catch (error) {
-            logger.error('Contract assignment creation failed:', error);
+            logger.error('Contract assignment creation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -327,11 +539,11 @@ class ContractMigrationService {
     /**
      * Handle unassigned installations
      */
-    async handleUnassignedInstallations(unassigned) {
+    async handleUnassignedInstallations(unassigned: InstallationData[]): Promise<UnassignedResults> {
         try {
             logger.info(`Processing ${unassigned.length} unassigned installations`);
 
-            const results = {
+            const results: UnassignedResults = {
                 processed: 0,
                 assigned: 0,
                 flagged: 0,
@@ -349,7 +561,7 @@ class ContractMigrationService {
 
                     switch (strategy.type) {
                         case 'suggest_partners':
-                            await this.createPartnerSuggestions(installation, strategy.suggestions);
+                            await this.createPartnerSuggestions(installation, strategy.suggestions || []);
                             results.flagged++;
                             break;
                         
@@ -359,7 +571,7 @@ class ContractMigrationService {
                             break;
                         
                         case 'manual_review':
-                            await this.flagForManualReview(installation, strategy.reason);
+                            await this.flagForManualReview(installation, strategy.reason || 'No clear match');
                             results.flagged++;
                             break;
                     }
@@ -367,14 +579,18 @@ class ContractMigrationService {
                     results.processed++;
 
                 } catch (error) {
-                    logger.error(`Failed to process unassigned installation ${installation.installation_code}:`, error);
+                    logger.error(`Failed to process unassigned installation ${installation.installation_code}:`, { 
+                        error: error instanceof Error ? error.message : String(error) 
+                    });
                 }
             }
 
             return results;
 
         } catch (error) {
-            logger.error('Unassigned installations processing failed:', error);
+            logger.error('Unassigned installations processing failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -382,10 +598,15 @@ class ContractMigrationService {
     /**
      * Calculate relationship strength between partner and installation
      */
-    async calculateRelationshipStrength(pair) {
+    async calculateRelationshipStrength(pair: PartnerInstallationPair): Promise<RelationshipStrength> {
         try {
             let score = 0;
-            const factors = {};
+            const factors = {
+                visitFrequency: 0,
+                recency: 0,
+                consistency: 0,
+                serviceMatch: 0
+            };
 
             // Visit frequency factor (40% weight)
             const visitFrequencyScore = this.calculateVisitFrequencyScore(pair);
@@ -408,7 +629,7 @@ class ContractMigrationService {
             factors.serviceMatch = serviceMatchScore;
 
             // Determine relationship type
-            let type = 'weak';
+            let type: RelationshipStrength['type'] = 'weak';
             if (score >= 0.9) type = 'exclusive';
             else if (score >= 0.8) type = 'primary';
             else if (score >= 0.7) type = 'regular';
@@ -421,15 +642,17 @@ class ContractMigrationService {
             };
 
         } catch (error) {
-            logger.error('Relationship strength calculation failed:', error);
-            return { score: 0, type: 'unknown', factors: {} };
+            logger.error('Relationship strength calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
+            return { score: 0, type: 'unknown', factors: { visitFrequency: 0, recency: 0, consistency: 0, serviceMatch: 0 } };
         }
     }
 
     /**
      * Calculate contract parameters based on relationship data
      */
-    async calculateContractParameters(relationship, installation) {
+    private async calculateContractParameters(relationship: IdentifiedRelationship, installation: any): Promise<ContractParameters> {
         try {
             // Determine service type based on historical visits
             const serviceType = this.determineServiceType(relationship.serviceTypes, installation);
@@ -454,7 +677,9 @@ class ContractMigrationService {
             };
 
         } catch (error) {
-            logger.error('Contract parameters calculation failed:', error);
+            logger.error('Contract parameters calculation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -462,7 +687,7 @@ class ContractMigrationService {
     /**
      * Validate migration results
      */
-    async validateMigrationResults() {
+    private async validateMigrationResults(): Promise<ValidationResults> {
         try {
             logger.info('Validating migration results');
 
@@ -488,7 +713,9 @@ class ContractMigrationService {
             };
 
         } catch (error) {
-            logger.error('Migration validation failed:', error);
+            logger.error('Migration validation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -496,9 +723,14 @@ class ContractMigrationService {
     /**
      * Generate comprehensive migration report
      */
-    async generateMigrationReport(visitAnalysis, relationships, assignments, validation) {
+    private async generateMigrationReport(
+        visitAnalysis: VisitAnalysis, 
+        relationships: IdentifiedRelationship[], 
+        assignments: ContractAssignmentResults, 
+        validation: ValidationResults
+    ): Promise<MigrationReport> {
         try {
-            const report = {
+            const report: MigrationReport = {
                 migrationSummary: {
                     executionDate: new Date().toISOString(),
                     totalProcessed: this.migrationStats.processed,
@@ -531,13 +763,15 @@ class ContractMigrationService {
             return report;
 
         } catch (error) {
-            logger.error('Migration report generation failed:', error);
+            logger.error('Migration report generation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
 
     // Helper methods
-    groupVisitsByPartner(visits) {
+    private groupVisitsByPartner(visits: VisitData[]): Record<string, VisitData[]> {
         return visits.reduce((groups, visit) => {
             const partnerId = visit.partner_id;
             if (!groups[partnerId]) {
@@ -545,10 +779,10 @@ class ContractMigrationService {
             }
             groups[partnerId].push(visit);
             return groups;
-        }, {});
+        }, {} as Record<string, VisitData[]>);
     }
 
-    groupVisitsByInstallation(visits) {
+    private groupVisitsByInstallation(visits: VisitData[]): Record<string, VisitData[]> {
         return visits.reduce((groups, visit) => {
             const installationCode = visit.installation_code;
             if (!groups[installationCode]) {
@@ -556,11 +790,11 @@ class ContractMigrationService {
             }
             groups[installationCode].push(visit);
             return groups;
-        }, {});
+        }, {} as Record<string, VisitData[]>);
     }
 
-    identifyPartnerInstallationPairs(visits) {
-        const pairs = {};
+    private identifyPartnerInstallationPairs(visits: VisitData[]): PartnerInstallationPair[] {
+        const pairs: Record<string, PartnerInstallationPair> = {};
         
         visits.forEach(visit => {
             const key = `${visit.partner_id}-${visit.installation_code}`;
@@ -592,7 +826,7 @@ class ContractMigrationService {
         return Object.values(pairs).filter(pair => pair.visitCount > 0);
     }
 
-    calculateVisitFrequencyScore(pair) {
+    private calculateVisitFrequencyScore(pair: PartnerInstallationPair): number {
         // Higher visit count = higher score
         if (pair.visitCount >= 20) return 1.0;
         if (pair.visitCount >= 10) return 0.8;
@@ -601,7 +835,7 @@ class ContractMigrationService {
         return 0.2;
     }
 
-    calculateRecencyScore(lastVisit) {
+    private calculateRecencyScore(lastVisit: string): number {
         const daysSinceLastVisit = (Date.now() - new Date(lastVisit).getTime()) / (1000 * 60 * 60 * 24);
         
         if (daysSinceLastVisit <= 30) return 1.0;
@@ -611,15 +845,15 @@ class ContractMigrationService {
         return 0.2;
     }
 
-    calculateConsistencyScore(visits) {
+    private calculateConsistencyScore(visits: VisitData[]): number {
         if (visits.length < 2) return 0.5;
         
         // Calculate intervals between visits
-        const sortedVisits = visits.sort((a, b) => new Date(a.visit_date) - new Date(b.visit_date));
-        const intervals = [];
+        const sortedVisits = visits.sort((a, b) => new Date(a.visit_date).getTime() - new Date(b.visit_date).getTime());
+        const intervals: number[] = [];
         
         for (let i = 1; i < sortedVisits.length; i++) {
-            const interval = (new Date(sortedVisits[i].visit_date) - new Date(sortedVisits[i-1].visit_date)) / (1000 * 60 * 60 * 24);
+            const interval = (new Date(sortedVisits[i].visit_date).getTime() - new Date(sortedVisits[i-1].visit_date).getTime()) / (1000 * 60 * 60 * 24);
             intervals.push(interval);
         }
         
@@ -633,7 +867,7 @@ class ContractMigrationService {
         return Math.min(1, consistencyScore);
     }
 
-    resetMigrationStats() {
+    private resetMigrationStats(): void {
         this.migrationStats = {
             processed: 0,
             successful: 0,
@@ -642,13 +876,13 @@ class ContractMigrationService {
         };
     }
 
-    isRecentVisit(visitDate) {
+    private isRecentVisit(visitDate: string): boolean {
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         return new Date(visitDate) >= sixMonthsAgo;
     }
 
-    generateContractCode(relationship) {
+    private generateContractCode(relationship: IdentifiedRelationship): string {
         const prefix = 'AUTO';
         const partnerCode = relationship.partnerId.toString().padStart(3, '0');
         const installationCode = relationship.installationCode.slice(-4);
@@ -657,38 +891,40 @@ class ContractMigrationService {
         return `${prefix}-${partnerCode}-${installationCode}-${timestamp}`;
     }
 
-    // Placeholder methods for additional functionality
-    async analyzeVisitFrequency(visits) { return {}; }
-    async analyzeTemporalPatterns(visits) { return {}; }
-    calculateMigrationPriority(pair, strength) { return strength.score; }
-    calculateAverageVisitInterval(visits) { return 30; }
-    extractServiceTypes(visits) { return ['occupational_doctor']; }
-    async checkExistingAssignment(partnerId, installationCode) { return null; }
-    async getInstallationDetails(installationCode) { return {}; }
-    async createContractServices(contractId, services) { return true; }
-    async updateInstallationAssignmentStatus(installationCode, partnerId) { return true; }
-    async getAllInstallations() { return []; }
-    async determineAssignmentStrategy(installation) { return { type: 'manual_review', reason: 'No clear match' }; }
-    async createPartnerSuggestions(installation, suggestions) { return true; }
-    async autoAssignBestMatch(installation, partner) { return true; }
-    async flagForManualReview(installation, reason) { return true; }
-    async calculateServiceMatchScore(pair) { return 0.8; }
-    determineServiceType(serviceTypes, installation) { return 'occupational_doctor'; }
-    async estimateContractValue(relationship, installation) { return 10000; }
-    determineRequiredServices(installation, serviceType) { return []; }
-    async findDuplicateAssignments() { return []; }
-    async findMissingAssignments() { return []; }
-    async checkDataIntegrity() { return []; }
-    async calculateCoverageStatistics() { return { percentage: 85 }; }
-    calculateAverageRelationshipStrength(relationships) { 
+    private calculateAverageRelationshipStrength(relationships: IdentifiedRelationship[]): number { 
         return relationships.reduce((sum, r) => sum + r.relationshipStrength, 0) / relationships.length; 
     }
-    calculateCoveragePercentage(assignments) { 
+
+    private calculateCoveragePercentage(assignments: ContractAssignmentResults): number { 
         return assignments.successful / (assignments.successful + assignments.unassigned.length) * 100; 
     }
-    generateMigrationRecommendations(visitAnalysis, relationships, assignments, validation) { return []; }
-    generateNextSteps(assignments, validation) { return []; }
-    async storeMigrationReport(report) { return true; }
+
+    // Placeholder methods for additional functionality
+    private async analyzeVisitFrequency(visits: VisitData[]): Promise<Record<string, any>> { return {}; }
+    private async analyzeTemporalPatterns(visits: VisitData[]): Promise<Record<string, any>> { return {}; }
+    private calculateMigrationPriority(pair: PartnerInstallationPair, strength: RelationshipStrength): number { return strength.score; }
+    private calculateAverageVisitInterval(visits: VisitData[]): number { return 30; }
+    private extractServiceTypes(visits: VisitData[]): string[] { return ['occupational_doctor']; }
+    private async checkExistingAssignment(partnerId: string, installationCode: string): Promise<any> { return null; }
+    private async getInstallationDetails(installationCode: string): Promise<any> { return {}; }
+    private async createContractServices(contractId: string, services: any[]): Promise<boolean> { return true; }
+    private async updateInstallationAssignmentStatus(installationCode: string, partnerId: string): Promise<boolean> { return true; }
+    private async getAllInstallations(): Promise<InstallationData[]> { return []; }
+    private async determineAssignmentStrategy(installation: InstallationData): Promise<AssignmentStrategy> { return { type: 'manual_review', reason: 'No clear match' }; }
+    private async createPartnerSuggestions(installation: InstallationData, suggestions: any[]): Promise<boolean> { return true; }
+    private async autoAssignBestMatch(installation: InstallationData, partner: any): Promise<boolean> { return true; }
+    private async flagForManualReview(installation: InstallationData, reason: string): Promise<boolean> { return true; }
+    private async calculateServiceMatchScore(pair: PartnerInstallationPair): Promise<number> { return 0.8; }
+    private determineServiceType(serviceTypes: string[], installation: any): string { return 'occupational_doctor'; }
+    private async estimateContractValue(relationship: IdentifiedRelationship, installation: any): Promise<number> { return 10000; }
+    private determineRequiredServices(installation: any, serviceType: string): any[] { return []; }
+    private async findDuplicateAssignments(): Promise<any[]> { return []; }
+    private async findMissingAssignments(): Promise<any[]> { return []; }
+    private async checkDataIntegrity(): Promise<any[]> { return []; }
+    private async calculateCoverageStatistics(): Promise<{ percentage: number }> { return { percentage: 85 }; }
+    private generateMigrationRecommendations(visitAnalysis: VisitAnalysis, relationships: IdentifiedRelationship[], assignments: ContractAssignmentResults, validation: ValidationResults): string[] { return []; }
+    private generateNextSteps(assignments: ContractAssignmentResults, validation: ValidationResults): string[] { return []; }
+    private async storeMigrationReport(report: MigrationReport): Promise<boolean> { return true; }
 }
 
-module.exports = ContractMigrationService;
+export default ContractMigrationService;

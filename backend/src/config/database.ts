@@ -32,7 +32,7 @@ export const testDatabaseConnection = async (): Promise<boolean> => {
 };
 
 // Execute query with error handling
-export const query = async <T = any>(text: string, params?: any[]): Promise<QueryResult<T>> => {
+export const query = async <T extends Record<string, any> = any>(text: string, params?: any[]): Promise<QueryResult<T>> => {
   try {
     const client = await dbPool.connect();
     const result = await client.query<T>(text, params);

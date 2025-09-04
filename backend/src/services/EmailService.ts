@@ -1,7 +1,41 @@
-const sgMail = require('@sendgrid/mail');
-const logger = require('../utils/logger');
+import sgMail from '@sendgrid/mail';
+import { Logger, Partner, CustomerRequest } from '../types';
+
+const logger: Logger = require('../utils/logger');
+
+interface EmailData {
+  partner: Partner;
+  request: CustomerRequest;
+  assignment: {
+    id: string;
+    assigned_hours: number;
+    hourly_rate: number;
+    response_deadline: string;
+  };
+  acceptUrl?: string;
+  declineUrl?: string;
+  deadline?: string;
+  hoursRemaining?: number;
+}
+
+interface EmailOptions {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  templateData?: Record<string, any>;
+}
+
+interface EmailResponse {
+  success: boolean;
+  messageId: string;
+}
 
 class EmailService {
+  private enabled: boolean;
+  private fromEmail: string;
+  private fromName: string;
+
   constructor() {
     if (process.env.SENDGRID_API_KEY) {
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -16,12 +50,58 @@ class EmailService {
   }
 
   /**
+   * Send verification email for user registration
+   */
+  async sendVerificationEmail(email: string, token: string, firstName: string): Promise<EmailResponse> {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}`;
+    const subject = 'Verify your GEP account';
+    
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Verify your GEP account</title>
+    </head>
+    <body>
+      <h2>Welcome to GEP Assignment System</h2>
+      <p>Dear ${firstName},</p>
+      <p>Please verify your email address by clicking the link below:</p>
+      <p><a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Verify Email</a></p>
+      <p>If you didn't create this account, please ignore this email.</p>
+      <p>Best regards,<br>GEP Assignment System</p>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Welcome to GEP Assignment System
+
+Dear ${firstName},
+
+Please verify your email address by visiting: ${verificationUrl}
+
+If you didn't create this account, please ignore this email.
+
+Best regards,
+GEP Assignment System
+    `.trim();
+
+    return this.sendEmail({
+      to: email,
+      subject,
+      text: textContent,
+      html: htmlContent
+    });
+  }
+
+  /**
    * Send assignment notification to partner
    */
-  async sendAssignmentNotification(partner, request, assignment) {
+  async sendAssignmentNotification(partner: Partner, request: CustomerRequest, assignment: EmailData['assignment']): Promise<EmailResponse> {
     const subject = `New Assignment Opportunity - ${request.client_name}`;
     
-    const emailData = {
+    const emailData: EmailData = {
       partner,
       request,
       assignment,
@@ -34,7 +114,7 @@ class EmailService {
     const textContent = this.generateAssignmentEmailText(emailData);
 
     return this.sendEmail({
-      to: partner.email,
+      to: partner.email || '',
       subject,
       text: textContent,
       html: htmlContent,
@@ -45,11 +125,11 @@ class EmailService {
   /**
    * Send deadline reminder to partner
    */
-  async sendDeadlineReminder(partner, request, assignment) {
-    const hoursRemaining = Math.ceil((new Date(assignment.response_deadline) - new Date()) / (1000 * 60 * 60));
+  async sendDeadlineReminder(partner: Partner, request: CustomerRequest, assignment: EmailData['assignment']): Promise<EmailResponse> {
+    const hoursRemaining = Math.ceil((new Date(assignment.response_deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60));
     const subject = `Response Required - Assignment Deadline Approaching (${hoursRemaining}h remaining)`;
     
-    const emailData = {
+    const emailData: EmailData = {
       partner,
       request,
       assignment,
@@ -62,7 +142,7 @@ class EmailService {
     const textContent = this.generateReminderEmailText(emailData);
 
     return this.sendEmail({
-      to: partner.email,
+      to: partner.email || '',
       subject,
       text: textContent,
       html: htmlContent,
@@ -73,10 +153,10 @@ class EmailService {
   /**
    * Send assignment confirmation to client
    */
-  async sendAssignmentConfirmation(clientEmail, partner, request, assignment) {
+  async sendAssignmentConfirmation(clientEmail: string, partner: Partner, request: CustomerRequest, assignment: EmailData['assignment']): Promise<EmailResponse> {
     const subject = `Assignment Confirmed - ${partner.name}`;
     
-    const emailData = {
+    const emailData: EmailData = {
       partner,
       request,
       assignment
@@ -97,7 +177,7 @@ class EmailService {
   /**
    * Generic email sending method
    */
-  async sendEmail({ to, subject, text, html, templateData = {} }) {
+  async sendEmail({ to, subject, text, html, templateData = {} }: EmailOptions): Promise<EmailResponse> {
     const msg = {
       to,
       from: {
@@ -133,7 +213,7 @@ class EmailService {
           messageId: 'dev_' + Date.now()
         };
       }
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Email send failed', {
         to,
         subject,
@@ -146,10 +226,10 @@ class EmailService {
   /**
    * Generate assignment notification email template
    */
-  generateAssignmentEmailTemplate(data) {
+  private generateAssignmentEmailTemplate(data: EmailData): string {
     const { partner, request, assignment, acceptUrl, declineUrl, deadline } = data;
     const totalCost = (assignment.assigned_hours * assignment.hourly_rate).toFixed(2);
-    const deadlineFormatted = new Date(deadline).toLocaleDateString('en-US', {
+    const deadlineFormatted = new Date(deadline!).toLocaleDateString('en-US', {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
@@ -248,10 +328,10 @@ class EmailService {
   /**
    * Generate text version of assignment email
    */
-  generateAssignmentEmailText(data) {
+  private generateAssignmentEmailText(data: EmailData): string {
     const { partner, request, assignment, acceptUrl, declineUrl, deadline } = data;
     const totalCost = (assignment.assigned_hours * assignment.hourly_rate).toFixed(2);
-    const deadlineFormatted = new Date(deadline).toLocaleDateString('en-US');
+    const deadlineFormatted = new Date(deadline!).toLocaleDateString('en-US');
 
     return `
 Dear ${partner.name},
@@ -288,8 +368,8 @@ This is an automated message. Please do not reply directly to this email.
   /**
    * Generate reminder email template
    */
-  generateReminderEmailTemplate(data) {
-    const { partner, request, assignment, hoursRemaining, acceptUrl, declineUrl } = data;
+  private generateReminderEmailTemplate(data: EmailData): string {
+    const { partner, request, hoursRemaining, acceptUrl, declineUrl } = data;
 
     return `
     <!DOCTYPE html>
@@ -336,7 +416,7 @@ This is an automated message. Please do not reply directly to this email.
   /**
    * Generate text version of reminder email
    */
-  generateReminderEmailText(data) {
+  private generateReminderEmailText(data: EmailData): string {
     const { partner, request, hoursRemaining, acceptUrl, declineUrl } = data;
 
     return `
@@ -360,7 +440,7 @@ GEP Assignment System
   /**
    * Generate confirmation email template
    */
-  generateConfirmationEmailTemplate(data) {
+  private generateConfirmationEmailTemplate(data: EmailData): string {
     const { partner, request, assignment } = data;
 
     return `
@@ -394,7 +474,7 @@ GEP Assignment System
   /**
    * Generate text version of confirmation email
    */
-  generateConfirmationEmailText(data) {
+  private generateConfirmationEmailText(data: EmailData): string {
     const { partner, request, assignment } = data;
 
     return `
@@ -418,4 +498,4 @@ GEP Assignment System
   }
 }
 
-module.exports = EmailService;
+export default new EmailService();

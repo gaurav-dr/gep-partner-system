@@ -201,6 +201,129 @@ class DirectAuthService {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
+
+    /**
+     * Refresh JWT token
+     */
+    async refreshToken(oldToken: string): Promise<{ token: string; expiresIn: string; }> {
+        try {
+            const decoded = jwt.verify(oldToken, this.jwtSecret, { ignoreExpiration: true }) as { userId: string };
+            const user = await this.getUserById(decoded.userId);
+            
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            const token = jwt.sign(
+                { userId: user.id, email: user.email, role: user.role },
+                this.jwtSecret,
+                { expiresIn: this.jwtExpiration }
+            );
+
+            return {
+                token,
+                expiresIn: this.jwtExpiration
+            };
+        } catch (error) {
+            this.logger.error('Token refresh error:', (error as Error).message);
+            throw new Error('Invalid token');
+        }
+    }
+
+    /**
+     * Change user password
+     */
+    async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+        try {
+            const result = await query(
+                'SELECT password_hash FROM users WHERE id = $1',
+                [userId]
+            );
+
+            if (!result.rows.length) {
+                throw new Error('User not found');
+            }
+
+            const isValidOldPassword = await this.verifyPassword(oldPassword, result.rows[0].password_hash);
+            if (!isValidOldPassword) {
+                throw new Error('Invalid old password');
+            }
+
+            const newPasswordHash = await this.hashPassword(newPassword);
+            await query(
+                'UPDATE users SET password_hash = $1 WHERE id = $2',
+                [newPasswordHash, userId]
+            );
+        } catch (error) {
+            this.logger.error('Change password error:', (error as Error).message);
+            throw error;
+        }
+    }
+
+    /**
+     * Request password reset
+     */
+    async requestPasswordReset(email: string): Promise<void> {
+        try {
+            // In a real implementation, this would send an email with a reset token
+            // For now, just log the request
+            this.logger.info('Password reset requested for:', { email });
+        } catch (error) {
+            this.logger.error('Password reset request error:', (error as Error).message);
+            throw error;
+        }
+    }
+
+    /**
+     * Reset password with token
+     */
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        try {
+            // In a real implementation, this would verify the reset token
+            // For now, just log the attempt
+            this.logger.info('Password reset attempted with token');
+            throw new Error('Password reset not implemented');
+        } catch (error) {
+            this.logger.error('Password reset error:', (error as Error).message);
+            throw error;
+        }
+    }
+
+    /**
+     * Verify email
+     */
+    async verifyEmail(token: string): Promise<void> {
+        try {
+            // In a real implementation, this would verify the email token
+            // For now, just log the attempt
+            this.logger.info('Email verification attempted');
+            throw new Error('Email verification not implemented');
+        } catch (error) {
+            this.logger.error('Email verification error:', (error as Error).message);
+            throw error;
+        }
+    }
+
+    /**
+     * Get user by ID
+     */
+    private async getUserById(userId: string): Promise<User | null> {
+        try {
+            const result = await query(
+                'SELECT id, email, name, role, is_active, created_at FROM users WHERE id = $1',
+                [userId]
+            );
+
+            if (!result.rows.length) {
+                return null;
+            }
+
+            return result.rows[0] as User;
+        } catch (error) {
+            this.logger.error('Get user by ID error:', (error as Error).message);
+            return null;
+        }
+    }
 }
 
 export default DirectAuthService;

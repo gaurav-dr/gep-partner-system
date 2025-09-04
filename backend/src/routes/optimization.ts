@@ -1,12 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { Logger, OptimizationRequest, OptimizationConstraints, OptimizationResult } from '../types';
-import OptimizationEngine from '../services/OptimizationEngine';
+import { Logger, CustomerRequest, Partner } from '../types';
+import OptimizationEngine, { OptimizationConstraints } from '../services/OptimizationEngine';
 
 const { supabase, supabaseAdmin } = require('../config/supabase');
 const logger: Logger = require('../utils/logger');
 const { validateRequest } = require('../middleware/validation');
-const EmailService = require('../services/EmailService');
+import EmailService from '../services/EmailService';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ interface TestOptimizationRequest {
 }
 
 // POST /api/optimization/assign - Run optimization and create assignment
-router.post('/assign', validateRequest(optimizationSchema), async (req: Request<{}, any, OptimizationRequestBody>, res: Response, next: NextFunction) => {
+router.post('/assign', validateRequest(optimizationSchema), async (req: Request<{}, any, OptimizationRequestBody>, res: Response, next: NextFunction): Promise<void> => {
   const startTime = Date.now();
   
   try {
@@ -49,16 +49,18 @@ router.post('/assign', validateRequest(optimizationSchema), async (req: Request<
 
     if (requestError) {
       if (requestError.code === 'PGRST116') {
-        return res.status(404).json({ error: 'Customer request not found' });
+        res.status(404).json({ error: 'Customer request not found' });
+        return;
       }
       throw requestError;
     }
 
     // Check if already assigned and not forcing reassignment
     if (request.status === 'assigned' && !forceReassign) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Request already assigned. Use forceReassign=true to reassign.'
       });
+      return;
     }
 
     // Get available partners for the service type
@@ -79,9 +81,10 @@ router.post('/assign', validateRequest(optimizationSchema), async (req: Request<
     if (partnersError) throw partnersError;
 
     if (partners.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         error: 'No available partners found for the requested service type'
       });
+      return;
     }
 
     // Initialize optimization engine
@@ -103,13 +106,14 @@ router.post('/assign', validateRequest(optimizationSchema), async (req: Request<
       serviceType: request.service_type
     });
 
-    const optimizationResult: OptimizationResult = await optimizationEngine.optimize(request, partners, constraints);
+    const optimizationResult = await optimizationEngine.optimize(request, partners, constraints);
 
     if (!optimizationResult || !optimizationResult.selectedPartner) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'No suitable partner found for assignment',
         evaluation: optimizationResult?.evaluation || {}
       });
+      return;
     }
 
     const executionTime = Date.now() - startTime;
@@ -146,7 +150,13 @@ router.post('/assign', validateRequest(optimizationSchema), async (req: Request<
         selected_partner_id: optimizationResult.selectedPartner.id,
         optimization_parameters: JSON.stringify({
           constraints,
-          weights: optimizationEngine.weights
+          weights: {
+            location: 0.4,
+            availability: 0.3,
+            cost: 0.2,
+            specialty: 0.1,
+            performance: 0.0
+          }
         })
       }]);
 
@@ -167,8 +177,7 @@ router.post('/assign', validateRequest(optimizationSchema), async (req: Request<
 
     // Send email notification to partner
     try {
-      const emailService = new EmailService();
-      await emailService.sendAssignmentNotification(
+      await EmailService.sendAssignmentNotification(
         optimizationResult.selectedPartner,
         request,
         assignment
@@ -248,20 +257,21 @@ router.get('/results/:requestId', async (req: Request<{ requestId: string }>, re
 });
 
 // POST /api/optimization/test - Test optimization algorithm with sample data
-router.post('/test', async (req: Request<{}, any, TestOptimizationRequest>, res: Response, next: NextFunction) => {
+router.post('/test', async (req: Request<{}, any, TestOptimizationRequest>, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { serviceType = 'occupational_doctor', constraints = {} } = req.body;
 
     // Create a test request
-    const testRequest = {
+    const testRequest: CustomerRequest = {
       id: 999999, // Test ID
       client_name: 'Test Client',
       installation_address: '123 Test St, Athens',
-      service_type: serviceType as any,
+      service_type: (serviceType as any) || 'installation',
       employee_count: 50,
+      estimated_hours: 8,
       start_date: new Date().toISOString(),
       end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      status: 'pending' as const,
+      status: 'pending',
       created_at: new Date().toISOString()
     };
 

@@ -1,6 +1,159 @@
-const logger = require('../utils/logger');
-const { supabaseAdmin } = require('../config/supabase');
-const EmailService = require('./EmailService');
+import { Logger } from '../types';
+import { supabaseAdmin } from '../config/supabase';
+import EmailService from './EmailService';
+
+const logger: Logger = require('../utils/logger');
+
+interface StepCondition {
+  field: string;
+  operator: '>' | '<' | '=' | '!=' | '>=' | '<=';
+  value: any;
+  required: boolean;
+}
+
+interface StepActions {
+  approved?: string;
+  rejected?: string;
+  timeout?: string;
+  success?: string;
+  error?: string;
+  [key: string]: string | undefined;
+}
+
+interface WorkflowStep {
+  id: string;
+  name: string;
+  type: 'approval' | 'review' | 'verification' | 'automated' | 'external_verification';
+  roles?: string[];
+  requiredApprovals?: number;
+  timeoutHours?: number;
+  escalationRoles?: string[];
+  requiredDocuments?: string[];
+  externalService?: string;
+  conditions?: StepCondition[];
+  actions: StepActions;
+}
+
+interface WorkflowDefinition {
+  id: string;
+  name: string;
+  description: string;
+  triggerEvent: string;
+  steps: WorkflowStep[];
+  onComplete: string;
+  onReject: string;
+}
+
+interface WorkflowInstance {
+  id: string;
+  definitionId: string;
+  entityId: string;
+  entityType: string;
+  initiatorId: string;
+  status: 'running' | 'completed' | 'cancelled' | 'error';
+  currentStepIndex: number;
+  currentStepId: string;
+  context: {
+    startTime: string;
+    definition: WorkflowDefinition;
+    [key: string]: any;
+  };
+  approvals: WorkflowApproval[];
+  history: WorkflowHistoryEntry[];
+  createdAt: string;
+  completedAt?: string;
+  error?: string;
+}
+
+interface WorkflowApproval {
+  id: string;
+  stepId: string;
+  userId: string;
+  action: 'approved' | 'rejected' | 'pending';
+  comments: string;
+  attachments: string[];
+  timestamp: string;
+}
+
+interface WorkflowHistoryEntry {
+  stepId: string;
+  eventType: string;
+  timestamp: string;
+  data?: any;
+}
+
+interface WorkflowStatus {
+  id: string;
+  status: string;
+  currentStep: {
+    id: string;
+    name: string;
+    type: string;
+  } | null;
+  progress: {
+    currentStepIndex: number;
+    totalSteps: number;
+    percentage: number;
+  };
+  approvals: WorkflowApproval[];
+  createdAt: string;
+  completedAt?: string;
+  entityId: string;
+  entityType: string;
+  initiatorId: string;
+}
+
+interface PendingApproval {
+  workflowId: string;
+  stepId: string;
+  stepName: string;
+  stepType: string;
+  entityId: string;
+  entityType: string;
+  initiatorId: string;
+  createdAt: string;
+  timeoutAt: string | null;
+}
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  partner_id?: string;
+  is_active: boolean;
+}
+
+interface DatabaseWorkflow {
+  id: string;
+  definition_id: string;
+  entity_id: string;
+  entity_type: string;
+  initiator_id: string;
+  status: string;
+  current_step_index: number;
+  current_step_id: string;
+  context: any;
+  approvals: any[];
+  history: any[];
+  created_at: string;
+  completed_at?: string;
+}
+
+interface ApprovalRequestData {
+  to: string;
+  approverName: string;
+  workflowId: string;
+  stepName: string;
+  entityType: string;
+  entityId: string;
+}
+
+interface StepExecutionResult {
+  success: boolean;
+  error?: string;
+  [key: string]: any;
+}
 
 /**
  * Workflow Management System
@@ -8,8 +161,12 @@ const EmailService = require('./EmailService');
  * Supports role-based approvals, escalation, and audit trails
  */
 class WorkflowManager {
+    private emailService: typeof EmailService;
+    private workflowDefinitions: Map<string, WorkflowDefinition>;
+    private activeWorkflows: Map<string, WorkflowInstance>;
+
     constructor() {
-        this.emailService = new EmailService();
+        this.emailService = EmailService;
         this.workflowDefinitions = new Map();
         this.activeWorkflows = new Map();
         
@@ -20,7 +177,7 @@ class WorkflowManager {
     /**
      * Initialize workflow definitions
      */
-    async loadWorkflowDefinitions() {
+    async loadWorkflowDefinitions(): Promise<void> {
         try {
             // Define standard approval workflows
             this.workflowDefinitions.set('schedule_approval', {
@@ -160,14 +317,22 @@ class WorkflowManager {
             logger.info(`Loaded ${this.workflowDefinitions.size} workflow definitions`);
 
         } catch (error) {
-            logger.error('Failed to load workflow definitions:', error);
+            logger.error('Failed to load workflow definitions:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     /**
      * Start a new workflow
      */
-    async startWorkflow(workflowId, entityId, entityType, initiatorId, context = {}) {
+    async startWorkflow(
+        workflowId: string, 
+        entityId: string, 
+        entityType: string, 
+        initiatorId: string, 
+        context: Record<string, any> = {}
+    ): Promise<WorkflowInstance> {
         try {
             const definition = this.workflowDefinitions.get(workflowId);
             if (!definition) {
@@ -175,7 +340,7 @@ class WorkflowManager {
             }
 
             // Create workflow instance
-            const workflowInstance = {
+            const workflowInstance: WorkflowInstance = {
                 id: this.generateWorkflowInstanceId(),
                 definitionId: workflowId,
                 entityId,
@@ -212,7 +377,9 @@ class WorkflowManager {
             return workflowInstance;
 
         } catch (error) {
-            logger.error('Failed to start workflow:', error);
+            logger.error('Failed to start workflow:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -220,7 +387,13 @@ class WorkflowManager {
     /**
      * Process workflow approval/rejection
      */
-    async processWorkflowAction(workflowInstanceId, action, userId, comments = '', attachments = []) {
+    async processWorkflowAction(
+        workflowInstanceId: string, 
+        action: 'approved' | 'rejected', 
+        userId: string, 
+        comments: string = '', 
+        attachments: string[] = []
+    ): Promise<WorkflowInstance> {
         try {
             const workflow = this.activeWorkflows.get(workflowInstanceId) || 
                             await this.loadWorkflowInstance(workflowInstanceId);
@@ -244,7 +417,7 @@ class WorkflowManager {
             }
 
             // Record the action
-            const approval = {
+            const approval: WorkflowApproval = {
                 id: this.generateApprovalId(),
                 stepId: currentStep.id,
                 userId,
@@ -281,7 +454,9 @@ class WorkflowManager {
             return workflow;
 
         } catch (error) {
-            logger.error('Failed to process workflow action:', error);
+            logger.error('Failed to process workflow action:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -289,7 +464,7 @@ class WorkflowManager {
     /**
      * Execute workflow step
      */
-    async executeWorkflowStep(workflow) {
+    private async executeWorkflowStep(workflow: WorkflowInstance): Promise<void> {
         try {
             const currentStep = this.getCurrentStep(workflow);
             if (!currentStep) {
@@ -330,7 +505,9 @@ class WorkflowManager {
             }
 
         } catch (error) {
-            logger.error('Failed to execute workflow step:', error);
+            logger.error('Failed to execute workflow step:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             await this.handleWorkflowError(workflow, error);
         }
     }
@@ -338,10 +515,10 @@ class WorkflowManager {
     /**
      * Execute approval step
      */
-    async executeApprovalStep(workflow, step) {
+    private async executeApprovalStep(workflow: WorkflowInstance, step: WorkflowStep): Promise<void> {
         try {
             // Find eligible approvers
-            const approvers = await this.findEligibleApprovers(step.roles, workflow);
+            const approvers = await this.findEligibleApprovers(step.roles || [], workflow);
             
             if (approvers.length === 0) {
                 logger.warn(`No eligible approvers found for step ${step.id}`);
@@ -362,7 +539,9 @@ class WorkflowManager {
             });
 
         } catch (error) {
-            logger.error('Failed to execute approval step:', error);
+            logger.error('Failed to execute approval step:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -370,10 +549,10 @@ class WorkflowManager {
     /**
      * Execute automated step
      */
-    async executeAutomatedStep(workflow, step) {
+    private async executeAutomatedStep(workflow: WorkflowInstance, step: WorkflowStep): Promise<void> {
         try {
             // Perform automated actions based on step configuration
-            let result = { success: true };
+            let result: StepExecutionResult = { success: true };
 
             // Example automated actions
             if (step.id === 'system_setup') {
@@ -388,24 +567,32 @@ class WorkflowManager {
             const actionKey = result.success ? 'success' : 'error';
             const nextAction = step.actions[actionKey];
 
-            await this.processStepAction(workflow, step, nextAction, result);
+            if (nextAction) {
+                await this.processStepAction(workflow, step, nextAction, result);
+            }
 
         } catch (error) {
-            logger.error('Failed to execute automated step:', error);
-            await this.processStepAction(workflow, step, 'error', { error: error.message });
+            logger.error('Failed to execute automated step:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
+            await this.processStepAction(workflow, step, 'error', { error: error instanceof Error ? error.message : String(error) });
         }
     }
 
     /**
      * Complete workflow step and move to next
      */
-    async completeStep(workflow, step, action) {
+    private async completeStep(workflow: WorkflowInstance, step: WorkflowStep, action: string): Promise<void> {
         try {
             const nextAction = step.actions[action];
-            await this.processStepAction(workflow, step, nextAction, { action });
+            if (nextAction) {
+                await this.processStepAction(workflow, step, nextAction, { action });
+            }
 
         } catch (error) {
-            logger.error('Failed to complete step:', error);
+            logger.error('Failed to complete step:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -413,7 +600,7 @@ class WorkflowManager {
     /**
      * Process step action
      */
-    async processStepAction(workflow, step, nextAction, context) {
+    private async processStepAction(workflow: WorkflowInstance, step: WorkflowStep, nextAction: string, context: any): Promise<void> {
         try {
             switch (nextAction) {
                 case 'next_step':
@@ -451,7 +638,9 @@ class WorkflowManager {
             }
 
         } catch (error) {
-            logger.error('Failed to process step action:', error);
+            logger.error('Failed to process step action:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -459,7 +648,7 @@ class WorkflowManager {
     /**
      * Move to next workflow step
      */
-    async moveToNextStep(workflow) {
+    private async moveToNextStep(workflow: WorkflowInstance): Promise<void> {
         try {
             const definition = workflow.context.definition;
             const nextStepIndex = workflow.currentStepIndex + 1;
@@ -480,7 +669,9 @@ class WorkflowManager {
             await this.executeWorkflowStep(workflow);
 
         } catch (error) {
-            logger.error('Failed to move to next step:', error);
+            logger.error('Failed to move to next step:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -488,7 +679,7 @@ class WorkflowManager {
     /**
      * Complete workflow
      */
-    async completeWorkflow(workflow) {
+    private async completeWorkflow(workflow: WorkflowInstance): Promise<void> {
         try {
             workflow.status = 'completed';
             workflow.completedAt = new Date().toISOString();
@@ -514,7 +705,9 @@ class WorkflowManager {
             logger.info(`Completed workflow ${workflow.id}`);
 
         } catch (error) {
-            logger.error('Failed to complete workflow:', error);
+            logger.error('Failed to complete workflow:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -522,7 +715,7 @@ class WorkflowManager {
     /**
      * Get workflow status
      */
-    async getWorkflowStatus(workflowInstanceId) {
+    async getWorkflowStatus(workflowInstanceId: string): Promise<WorkflowStatus | null> {
         try {
             const workflow = this.activeWorkflows.get(workflowInstanceId) || 
                             await this.loadWorkflowInstance(workflowInstanceId);
@@ -556,7 +749,9 @@ class WorkflowManager {
             };
 
         } catch (error) {
-            logger.error('Failed to get workflow status:', error);
+            logger.error('Failed to get workflow status:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -564,7 +759,7 @@ class WorkflowManager {
     /**
      * Get pending approvals for user
      */
-    async getPendingApprovals(userId) {
+    async getPendingApprovals(userId: string): Promise<PendingApproval[]> {
         try {
             const { data: workflows, error } = await supabaseAdmin
                 .from('approval_workflows')
@@ -575,9 +770,9 @@ class WorkflowManager {
                 throw error;
             }
 
-            const pendingApprovals = [];
+            const pendingApprovals: PendingApproval[] = [];
 
-            for (const workflow of workflows) {
+            for (const workflow of (workflows || [])) {
                 const workflowInstance = await this.loadWorkflowInstance(workflow.id);
                 if (!workflowInstance) continue;
 
@@ -610,18 +805,20 @@ class WorkflowManager {
             return pendingApprovals;
 
         } catch (error) {
-            logger.error('Failed to get pending approvals:', error);
+            logger.error('Failed to get pending approvals:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
 
     // Helper methods
-    getCurrentStep(workflow) {
+    private getCurrentStep(workflow: WorkflowInstance): WorkflowStep | null {
         const definition = workflow.context.definition;
-        return definition.steps[workflow.currentStepIndex];
+        return definition.steps[workflow.currentStepIndex] || null;
     }
 
-    async canUserPerformAction(userId, step, workflow) {
+    private async canUserPerformAction(userId: string, step: WorkflowStep, workflow: WorkflowInstance): Promise<boolean> {
         try {
             // Get user details
             const { data: user, error } = await supabaseAdmin
@@ -635,15 +832,17 @@ class WorkflowManager {
             }
 
             // Check if user role is in step roles
-            return step.roles.includes(user.role);
+            return step.roles?.includes(user.role) || false;
 
         } catch (error) {
-            logger.error('Failed to check user permissions:', error);
+            logger.error('Failed to check user permissions:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return false;
         }
     }
 
-    async isStepComplete(step, workflow) {
+    private async isStepComplete(step: WorkflowStep, workflow: WorkflowInstance): Promise<boolean> {
         // Count approvals for this step
         const stepApprovals = workflow.approvals.filter(approval => 
             approval.stepId === step.id && approval.action === 'approved'
@@ -652,16 +851,16 @@ class WorkflowManager {
         return stepApprovals.length >= (step.requiredApprovals || 1);
     }
 
-    generateWorkflowInstanceId() {
+    private generateWorkflowInstanceId(): string {
         return `wf_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
-    generateApprovalId() {
+    private generateApprovalId(): string {
         return `ap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     }
 
-    // Database operations (would be implemented with actual database calls)
-    async storeWorkflowInstance(workflow) {
+    // Database operations
+    private async storeWorkflowInstance(workflow: WorkflowInstance): Promise<void> {
         const { error } = await supabaseAdmin
             .from('approval_workflows')
             .insert([{
@@ -684,7 +883,7 @@ class WorkflowManager {
         }
     }
 
-    async updateWorkflowInstance(workflow) {
+    private async updateWorkflowInstance(workflow: WorkflowInstance): Promise<void> {
         const { error } = await supabaseAdmin
             .from('approval_workflows')
             .update({
@@ -703,7 +902,7 @@ class WorkflowManager {
         }
     }
 
-    async loadWorkflowInstance(workflowInstanceId) {
+    private async loadWorkflowInstance(workflowInstanceId: string): Promise<WorkflowInstance | null> {
         const { data, error } = await supabaseAdmin
             .from('approval_workflows')
             .select('*')
@@ -731,7 +930,7 @@ class WorkflowManager {
         };
     }
 
-    async logWorkflowEvent(workflowId, eventType, eventData) {
+    private async logWorkflowEvent(workflowId: string, eventType: string, eventData: any): Promise<void> {
         const { error } = await supabaseAdmin
             .from('workflow_audit_log')
             .insert([{
@@ -742,22 +941,22 @@ class WorkflowManager {
             }]);
 
         if (error) {
-            logger.error('Failed to log workflow event:', error);
+            logger.error('Failed to log workflow event:', { error: error.message });
         }
     }
 
     // Placeholder implementations for additional functionality
-    async findEligibleApprovers(roles, workflow) {
+    private async findEligibleApprovers(roles: string[], workflow: WorkflowInstance): Promise<User[]> {
         const { data: users, error } = await supabaseAdmin
             .from('users')
-            .select('id, email, name, role')
+            .select('id, email, name, role, is_active')
             .in('role', roles)
             .eq('is_active', true);
 
-        return error ? [] : users;
+        return error ? [] : (users || []);
     }
 
-    async sendApprovalRequest(workflow, step, approver) {
+    private async sendApprovalRequest(workflow: WorkflowInstance, step: WorkflowStep, approver: User): Promise<void> {
         // Send email notification
         await this.emailService.sendApprovalRequest({
             to: approver.email,
@@ -769,72 +968,72 @@ class WorkflowManager {
         });
     }
 
-    async sendWorkflowNotifications(workflow, action, userId, comments) {
+    private async sendWorkflowNotifications(workflow: WorkflowInstance, action: string, userId: string, comments: string): Promise<void> {
         // Implementation for workflow notifications
         logger.debug(`Sending workflow notifications for ${workflow.id}`);
     }
 
-    async sendCompletionNotifications(workflow) {
+    private async sendCompletionNotifications(workflow: WorkflowInstance): Promise<void> {
         // Implementation for completion notifications
         logger.debug(`Sending completion notifications for ${workflow.id}`);
     }
 
-    async evaluateStepConditions(conditions, workflow) {
+    private async evaluateStepConditions(conditions: StepCondition[], workflow: WorkflowInstance): Promise<boolean> {
         // Implementation for condition evaluation
         return true;
     }
 
-    async setStepTimeout(workflowId, stepId, hours) {
+    private async setStepTimeout(workflowId: string, stepId: string, hours: number): Promise<void> {
         // Implementation for step timeout
         logger.debug(`Setting timeout for workflow ${workflowId}, step ${stepId}: ${hours} hours`);
     }
 
-    async executeExternalVerificationStep(workflow, step) {
+    private async executeExternalVerificationStep(workflow: WorkflowInstance, step: WorkflowStep): Promise<void> {
         // Implementation for external verification
         logger.debug(`Executing external verification for step ${step.id}`);
     }
 
-    async performSystemSetup(workflow) {
+    private async performSystemSetup(workflow: WorkflowInstance): Promise<StepExecutionResult> {
         // Implementation for automated system setup
         return { success: true };
     }
 
-    async performNotificationSend(workflow) {
+    private async performNotificationSend(workflow: WorkflowInstance): Promise<StepExecutionResult> {
         // Implementation for automated notifications
         return { success: true };
     }
 
-    async performRecordUpdate(workflow) {
+    private async performRecordUpdate(workflow: WorkflowInstance): Promise<StepExecutionResult> {
         // Implementation for automated record updates
         return { success: true };
     }
 
-    async escalateWorkflow(workflow, reason) {
+    private async escalateWorkflow(workflow: WorkflowInstance, reason: string): Promise<void> {
         // Implementation for workflow escalation
         logger.warn(`Escalating workflow ${workflow.id}: ${reason}`);
     }
 
-    async autoApproveStep(workflow, step) {
+    private async autoApproveStep(workflow: WorkflowInstance, step: WorkflowStep): Promise<void> {
         // Implementation for auto-approval
         logger.info(`Auto-approving step ${step.id} in workflow ${workflow.id}`);
     }
 
-    async requestManualIntervention(workflow, step, context) {
+    private async requestManualIntervention(workflow: WorkflowInstance, step: WorkflowStep, context: any): Promise<void> {
         // Implementation for manual intervention request
         logger.warn(`Manual intervention requested for workflow ${workflow.id}, step ${step.id}`);
     }
 
-    async requestChanges(workflow, context) {
+    private async requestChanges(workflow: WorkflowInstance, context: any): Promise<void> {
         // Implementation for change requests
         logger.info(`Changes requested for workflow ${workflow.id}`);
     }
 
-    async executeCompletionAction(workflow, action) {
+    private async executeCompletionAction(workflow: WorkflowInstance, action: string): Promise<void> {
         // Implementation for completion actions
         logger.info(`Executing completion action ${action} for workflow ${workflow.id}`);
     }
 
-    async endWorkflow(workflow, reason) {
+    private async endWorkflow(workflow: WorkflowInstance, reason: string): Promise<void> {
         workflow.status = 'cancelled';
         workflow.completedAt = new Date().toISOString();
         await this.updateWorkflowInstance(workflow);
@@ -842,14 +1041,16 @@ class WorkflowManager {
         logger.info(`Ended workflow ${workflow.id}: ${reason}`);
     }
 
-    async handleWorkflowError(workflow, error) {
+    private async handleWorkflowError(workflow: WorkflowInstance, error: any): Promise<void> {
         workflow.status = 'error';
-        workflow.error = error.message;
+        workflow.error = error instanceof Error ? error.message : String(error);
         await this.updateWorkflowInstance(workflow);
-        logger.error(`Workflow error ${workflow.id}:`, error);
+        logger.error(`Workflow error ${workflow.id}:`, { 
+            error: error instanceof Error ? error.message : String(error) 
+        });
     }
 
-    calculateStepTimeout(workflow, step) {
+    private calculateStepTimeout(workflow: WorkflowInstance, step: WorkflowStep): string | null {
         if (!step.timeoutHours) return null;
         
         const stepStartTime = workflow.history
@@ -862,4 +1063,4 @@ class WorkflowManager {
     }
 }
 
-module.exports = WorkflowManager;
+export default WorkflowManager;

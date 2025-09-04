@@ -1,5 +1,154 @@
-const BaseScheduler = require('./BaseScheduler');
-const logger = require('../../utils/logger');
+import BaseScheduler from './BaseScheduler';
+import { Logger, Partner } from '../../types';
+
+const logger: Logger = require('../../utils/logger');
+
+interface MLFeatures {
+  employeeCount: number;
+  installationCategory: number;
+  serviceType: number;
+  contractValue: number;
+  contractDuration: number;
+  requiredHours: number;
+  visitFrequency: number;
+  monthOfYear: number;
+  dayOfWeek: number;
+  seasonality: number;
+  availablePartnersCount: number;
+  avgPartnerCost: number;
+  avgPartnerDistance: number;
+  previousSchedulesCount: number;
+  avgHistoricalScore: number;
+}
+
+interface MLOutcome {
+  partnerId: string;
+  score: number;
+  success: boolean;
+}
+
+interface TrainingExample {
+  features: MLFeatures;
+  outcome: MLOutcome;
+  timestamp?: Date;
+  context?: {
+    installationCode: string;
+    serviceType: string;
+  };
+}
+
+interface DecisionRule {
+  partnerId: string;
+  conditions: RuleCondition[];
+  confidence: number;
+  support: number;
+}
+
+interface RuleCondition {
+  feature: string;
+  operator: 'approx' | '>' | '<' | '=' | '!=';
+  value: number;
+  tolerance?: number;
+}
+
+interface MLModel {
+  type: 'decision_tree' | 'random_forest' | 'neural_network' | 'baseline';
+  rules: DecisionRule[];
+  featureImportance: Record<string, number>;
+}
+
+interface PredictionResult {
+  confidence: number;
+  score: number;
+  reasoning: string;
+}
+
+interface PartnerPrediction {
+  partnerId: string;
+  partnerName: string;
+  partner: Partner;
+  confidence: number;
+  expectedScore: number;
+  reasoning: string;
+}
+
+interface OptimalParameters {
+  optimalVisitDuration: number;
+  optimalVisitsPerMonth: number;
+  preferredVisitTimes: string[];
+  seasonalAdjustments: Record<string, any>;
+}
+
+interface HistoricalSchedule {
+  partner_id: string;
+  optimization_score: number;
+  status: string;
+  installation?: {
+    employees_count?: number;
+    category?: string;
+  };
+  service_type?: string;
+  contract_value?: number;
+  total_hours?: number;
+  visits_per_month?: number;
+  created_at: string;
+  start_date?: string;
+  end_date?: string;
+  visit_duration_hours?: number;
+}
+
+interface SchedulingContext {
+  installation: {
+    installation_code: string;
+    address: string;
+    service_type: string;
+    work_hours: string;
+    special_requirements?: string;
+    employees_count?: number;
+    category?: string;
+  };
+  contract: {
+    contract_value: number;
+    start_date?: string;
+    end_date?: string;
+  };
+  regulatoryRequirements: {
+    totalHours: number;
+    minimumHoursPerMonth: number;
+    requiredVisitFrequency?: string;
+  };
+  constraints: {
+    excludeWeekends?: boolean;
+  };
+  historicalData?: HistoricalSchedule[];
+  availablePartners: Partner[];
+  clientPreferences?: {
+    preferredPartners: string[];
+  };
+}
+
+interface MLScheduleResult {
+  partnerId: string;
+  partnerName: string;
+  optimizationScore: number;
+  totalHours: number;
+  visitDuration: number;
+  visitsPerMonth: number;
+  visits: any[];
+  feasible: boolean;
+  confidence: number;
+  executionTime: number;
+  metadata: {
+    algorithm: string;
+    modelType: string;
+    modelAccuracy: number;
+    trainingDataSize: number;
+    featuresUsed: number;
+    predictionConfidence: number;
+    constraintViolations: number;
+    lastTrainingTime: Date | null;
+  };
+}
 
 /**
  * Machine Learning Scheduler
@@ -7,7 +156,21 @@ const logger = require('../../utils/logger');
  * Implements pattern recognition and predictive scheduling
  */
 class MachineLearningScheduler extends BaseScheduler {
-    constructor(config) {
+    private modelType: string;
+    private trainingRatio: number;
+    private minTrainingData: number;
+    private featureWeights: Record<string, number>;
+    private predictionThreshold: number;
+    private retrainThreshold: number;
+    
+    // Model storage
+    private model: MLModel | null;
+    private trainingData: TrainingExample[];
+    private features: string[];
+    private lastTrainingTime: Date | null;
+    private modelAccuracy: number;
+
+    constructor(config: any) {
         super(config);
         this.modelType = this.parameters.model_type || 'decision_tree';
         this.trainingRatio = this.parameters.training_ratio || 0.8;
@@ -27,7 +190,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Initialize the machine learning scheduler
      */
-    async initialize() {
+    async initialize(): Promise<void> {
         try {
             logger.info('Initializing MachineLearningScheduler');
             
@@ -46,7 +209,9 @@ class MachineLearningScheduler extends BaseScheduler {
             logger.info('MachineLearningScheduler initialized successfully');
 
         } catch (error) {
-            logger.error('Failed to initialize MachineLearningScheduler:', error);
+            logger.error('Failed to initialize MachineLearningScheduler:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -54,7 +219,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Generate optimal schedule using machine learning predictions
      */
-    async generateSchedule(context) {
+    async generateSchedule(context: SchedulingContext): Promise<MLScheduleResult> {
         try {
             const startTime = Date.now();
             logger.info('Starting ML-based optimization');
@@ -91,7 +256,7 @@ class MachineLearningScheduler extends BaseScheduler {
 
             const executionTime = Date.now() - startTime;
             
-            const result = {
+            const result: MLScheduleResult = {
                 partnerId: bestPrediction.partnerId,
                 partnerName: bestPrediction.partnerName,
                 optimizationScore: bestPrediction.confidence,
@@ -121,7 +286,9 @@ class MachineLearningScheduler extends BaseScheduler {
             return result;
 
         } catch (error) {
-            logger.error('ML schedule generation failed:', error);
+            logger.error('ML schedule generation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -129,7 +296,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Load historical training data
      */
-    async loadTrainingData() {
+    private async loadTrainingData(): Promise<void> {
         try {
             // In a real implementation, this would load from a database
             // For now, we'll simulate training data structure
@@ -141,7 +308,7 @@ class MachineLearningScheduler extends BaseScheduler {
             for (const schedule of historicalSchedules) {
                 if (schedule.status === 'completed' && schedule.optimization_score > 0.5) {
                     const features = this.extractHistoricalFeatures(schedule);
-                    const outcome = {
+                    const outcome: MLOutcome = {
                         partnerId: schedule.partner_id,
                         score: schedule.optimization_score,
                         success: true
@@ -154,7 +321,9 @@ class MachineLearningScheduler extends BaseScheduler {
             logger.info(`Loaded ${this.trainingData.length} training examples`);
 
         } catch (error) {
-            logger.warn('Failed to load training data:', error);
+            logger.warn('Failed to load training data:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             this.trainingData = [];
         }
     }
@@ -162,8 +331,8 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Extract features from scheduling context
      */
-    extractFeatures(context) {
-        const features = {
+    private extractFeatures(context: SchedulingContext): MLFeatures {
+        const features: MLFeatures = {
             // Installation features
             employeeCount: context.installation?.employees_count || 0,
             installationCategory: this.encodeCategorical(context.installation?.category, ['A', 'B', 'C']),
@@ -202,7 +371,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Extract features from historical schedule data
      */
-    extractHistoricalFeatures(schedule) {
+    private extractHistoricalFeatures(schedule: HistoricalSchedule): MLFeatures {
         return {
             employeeCount: schedule.installation?.employees_count || 0,
             installationCategory: this.encodeCategorical(schedule.installation?.category, ['A', 'B', 'C']),
@@ -214,14 +383,19 @@ class MachineLearningScheduler extends BaseScheduler {
             visitFrequency: schedule.visits_per_month || 2,
             monthOfYear: new Date(schedule.created_at).getMonth() + 1,
             dayOfWeek: new Date(schedule.created_at).getDay(),
-            seasonality: Math.floor((new Date(schedule.created_at).getMonth()) / 3)
+            seasonality: Math.floor((new Date(schedule.created_at).getMonth()) / 3),
+            availablePartnersCount: 5, // Default value
+            avgPartnerCost: 50, // Default value
+            avgPartnerDistance: 25, // Default value
+            previousSchedulesCount: 0, // Default value
+            avgHistoricalScore: 0.5 // Default value
         };
     }
 
     /**
      * Train the machine learning model
      */
-    async trainModel() {
+    private async trainModel(): Promise<void> {
         try {
             logger.info(`Training ${this.modelType} model with ${this.trainingData.length} examples`);
             
@@ -249,7 +423,9 @@ class MachineLearningScheduler extends BaseScheduler {
             logger.info(`Model training completed. Accuracy: ${(this.modelAccuracy * 100).toFixed(2)}%`);
 
         } catch (error) {
-            logger.error('Model training failed:', error);
+            logger.error('Model training failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             this.initializeBaselineModel();
         }
     }
@@ -257,12 +433,12 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Train a decision tree model (simplified implementation)
      */
-    async trainDecisionTree(trainingSet) {
+    private async trainDecisionTree(trainingSet: TrainingExample[]): Promise<MLModel> {
         try {
             // Simplified decision tree implementation
             // In production, you would use a proper ML library like TensorFlow.js or brain.js
             
-            const model = {
+            const model: MLModel = {
                 type: 'decision_tree',
                 rules: [],
                 featureImportance: {}
@@ -281,16 +457,34 @@ class MachineLearningScheduler extends BaseScheduler {
             return model;
 
         } catch (error) {
-            logger.error('Decision tree training failed:', error);
+            logger.error('Decision tree training failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
 
     /**
+     * Train a random forest model (placeholder)
+     */
+    private async trainRandomForest(trainingSet: TrainingExample[]): Promise<MLModel> {
+        // Placeholder - would implement random forest algorithm
+        return this.trainDecisionTree(trainingSet);
+    }
+
+    /**
+     * Train a neural network model (placeholder)
+     */
+    private async trainNeuralNetwork(trainingSet: TrainingExample[]): Promise<MLModel> {
+        // Placeholder - would implement neural network
+        return this.trainDecisionTree(trainingSet);
+    }
+
+    /**
      * Generate decision rules from training data
      */
-    generateDecisionRules(examples) {
-        const rules = [];
+    private generateDecisionRules(examples: TrainingExample[]): DecisionRule[] {
+        const rules: DecisionRule[] = [];
 
         // Group examples by partner and find patterns
         const partnerGroups = this.groupByPartner(examples);
@@ -318,9 +512,9 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Predict optimal assignment using trained model
      */
-    async predictOptimalAssignment(features, context) {
+    private async predictOptimalAssignment(features: MLFeatures, context: SchedulingContext): Promise<PartnerPrediction[]> {
         try {
-            const predictions = [];
+            const predictions: PartnerPrediction[] = [];
 
             for (const partner of context.availablePartners) {
                 const prediction = await this.predictPartnerFitness(features, partner);
@@ -338,7 +532,9 @@ class MachineLearningScheduler extends BaseScheduler {
             return predictions.sort((a, b) => b.confidence - a.confidence);
 
         } catch (error) {
-            logger.error('Prediction failed:', error);
+            logger.error('Prediction failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             // Fallback to baseline scoring
             return this.fallbackPrediction(context);
         }
@@ -347,7 +543,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Predict fitness for a specific partner
      */
-    async predictPartnerFitness(features, partner) {
+    private async predictPartnerFitness(features: MLFeatures, partner: Partner): Promise<PredictionResult> {
         if (!this.model) {
             return this.baselinePrediction(features, partner);
         }
@@ -360,7 +556,9 @@ class MachineLearningScheduler extends BaseScheduler {
                     return this.baselinePrediction(features, partner);
             }
         } catch (error) {
-            logger.warn('Model prediction failed, using baseline:', error);
+            logger.warn('Model prediction failed, using baseline:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return this.baselinePrediction(features, partner);
         }
     }
@@ -368,8 +566,12 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Make prediction using decision tree
      */
-    predictWithDecisionTree(features, partner) {
-        let bestMatch = null;
+    private predictWithDecisionTree(features: MLFeatures, partner: Partner): PredictionResult {
+        if (!this.model) {
+            return this.baselinePrediction(features, partner);
+        }
+
+        let bestMatch: DecisionRule | null = null;
         let maxConfidence = 0;
 
         for (const rule of this.model.rules) {
@@ -397,11 +599,14 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Baseline prediction when model is not available
      */
-    baselinePrediction(features, partner) {
+    private baselinePrediction(features: MLFeatures, partner: Partner): PredictionResult {
         // Use composite scoring as baseline
-        const mockContext = {
+        const mockContext: SchedulingContext = {
             installation: {
+                installation_code: 'MOCK',
+                address: 'Mock Address',
                 service_type: this.decodeServiceType(features.serviceType),
+                work_hours: '09:00-17:00',
                 employees_count: features.employeeCount,
                 category: this.decodeCategory(features.installationCategory)
             },
@@ -409,9 +614,12 @@ class MachineLearningScheduler extends BaseScheduler {
                 contract_value: features.contractValue
             },
             regulatoryRequirements: {
+                totalHours: features.requiredHours * 12,
                 minimumHoursPerMonth: features.requiredHours
             },
-            historicalData: []
+            constraints: {},
+            historicalData: [],
+            availablePartners: []
         };
 
         const scoreData = this.calculateCompositeScore(partner, mockContext);
@@ -426,7 +634,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Select best prediction from candidates
      */
-    selectBestPrediction(predictions, context) {
+    private selectBestPrediction(predictions: PartnerPrediction[], context: SchedulingContext): PartnerPrediction {
         if (predictions.length === 0) {
             throw new Error('No predictions available');
         }
@@ -445,8 +653,8 @@ class MachineLearningScheduler extends BaseScheduler {
             let currentScore = current.confidence;
 
             // Boost score for partners with recent successful history
-            const bestHistoricalScore = this.calculateHistoricalScore(best.partner, context.installation, context.historicalData);
-            const currentHistoricalScore = this.calculateHistoricalScore(current.partner, context.installation, context.historicalData);
+            const bestHistoricalScore = this.calculateHistoricalScore(best.partner, context.installation, context.historicalData || []);
+            const currentHistoricalScore = this.calculateHistoricalScore(current.partner, context.installation, context.historicalData || []);
             
             bestScore += bestHistoricalScore * 0.1;
             currentScore += currentHistoricalScore * 0.1;
@@ -458,7 +666,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Generate optimal schedule using ML insights
      */
-    generateOptimalSchedule(prediction, context) {
+    private generateOptimalSchedule(prediction: PartnerPrediction, context: SchedulingContext): any {
         // Use base scheduler with ML-informed parameters
         const partner = prediction.partner;
         
@@ -489,7 +697,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Predict optimal visit parameters using ML
      */
-    predictOptimalVisitParameters(prediction, context) {
+    private predictOptimalVisitParameters(prediction: PartnerPrediction, context: SchedulingContext): OptimalParameters {
         // Look for similar historical cases
         const similarCases = this.findSimilarHistoricalCases(context);
         
@@ -517,7 +725,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Apply ML-based schedule optimizations
      */
-    applyMLOptimizations(schedule, optimalParams, context) {
+    private applyMLOptimizations(schedule: any, optimalParams: OptimalParameters, context: SchedulingContext): any {
         const optimized = { ...schedule };
 
         // Adjust visit duration based on ML prediction
@@ -525,7 +733,7 @@ class MachineLearningScheduler extends BaseScheduler {
             optimized.visitDuration = optimalParams.optimalVisitDuration;
             
             // Recalculate visits with new duration
-            optimized.visits = optimized.visits.map(visit => ({
+            optimized.visits = optimized.visits.map((visit: any) => ({
                 ...visit,
                 duration: optimalParams.optimalVisitDuration,
                 endTime: this.addHours(visit.startTime, optimalParams.optimalVisitDuration)
@@ -535,7 +743,7 @@ class MachineLearningScheduler extends BaseScheduler {
         // Optimize visit timing based on historical preferences
         if (optimalParams.preferredVisitTimes.length > 0) {
             const preferredTime = optimalParams.preferredVisitTimes[0];
-            optimized.visits = optimized.visits.map(visit => ({
+            optimized.visits = optimized.visits.map((visit: any) => ({
                 ...visit,
                 startTime: preferredTime,
                 endTime: this.addHours(preferredTime, visit.duration)
@@ -543,7 +751,7 @@ class MachineLearningScheduler extends BaseScheduler {
         }
 
         // Recalculate total hours
-        optimized.totalHours = optimized.visits.reduce((sum, visit) => sum + visit.duration, 0);
+        optimized.totalHours = optimized.visits.reduce((sum: number, visit: any) => sum + visit.duration, 0);
 
         return optimized;
     }
@@ -551,10 +759,10 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Store training example for future model improvement
      */
-    async storeTrainingExample(features, prediction, result, context) {
+    private async storeTrainingExample(features: MLFeatures, prediction: PartnerPrediction, result: MLScheduleResult, context: SchedulingContext): Promise<void> {
         try {
             // Store the example for future training
-            const example = {
+            const example: TrainingExample = {
                 features,
                 outcome: {
                     partnerId: prediction.partnerId,
@@ -581,21 +789,25 @@ class MachineLearningScheduler extends BaseScheduler {
             }
 
         } catch (error) {
-            logger.warn('Failed to store training example:', error);
+            logger.warn('Failed to store training example:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     /**
      * Retrain the model with new data
      */
-    async retrain() {
+    async retrain(): Promise<void> {
         try {
             logger.info('Starting model retraining...');
             await this.loadTrainingData();
             await this.trainModel();
             logger.info('Model retraining completed');
         } catch (error) {
-            logger.error('Model retraining failed:', error);
+            logger.error('Model retraining failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -603,7 +815,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Check if model should be retrained
      */
-    shouldRetrain() {
+    private shouldRetrain(): boolean {
         if (!this.lastTrainingTime) return true;
         
         const daysSinceTraining = (Date.now() - this.lastTrainingTime.getTime()) / (1000 * 60 * 60 * 24);
@@ -617,7 +829,7 @@ class MachineLearningScheduler extends BaseScheduler {
     /**
      * Initialize baseline model when training data is insufficient
      */
-    initializeBaselineModel() {
+    private initializeBaselineModel(): void {
         this.model = {
             type: 'baseline',
             rules: [],
@@ -634,63 +846,63 @@ class MachineLearningScheduler extends BaseScheduler {
     }
 
     // Helper methods for encoding and calculations
-    encodeCategorical(value, categories) {
-        const index = categories.indexOf(value);
+    private encodeCategorical(value: string | undefined, categories: string[]): number {
+        const index = categories.indexOf(value || '');
         return index >= 0 ? index : 0;
     }
 
-    decodeCategory(encoded) {
+    private decodeCategory(encoded: number): string {
         const categories = ['A', 'B', 'C'];
         return categories[encoded] || 'C';
     }
 
-    decodeServiceType(encoded) {
+    private decodeServiceType(encoded: number): string {
         const types = ['occupational_doctor', 'safety_engineer', 'specialist_consultation'];
         return types[encoded] || 'occupational_doctor';
     }
 
-    encodeFrequency(frequency) {
-        const frequencies = { 'weekly': 4, 'monthly': 1, 'quarterly': 0.33 };
-        return frequencies[frequency] || 1;
+    private encodeFrequency(frequency: string | undefined): number {
+        const frequencies: Record<string, number> = { 'weekly': 4, 'monthly': 1, 'quarterly': 0.33 };
+        return frequencies[frequency || ''] || 1;
     }
 
-    calculateContractDuration(contract) {
+    private calculateContractDuration(contract: SchedulingContext['contract']): number {
         if (!contract || !contract.start_date || !contract.end_date) return 12;
         const start = new Date(contract.start_date);
         const end = new Date(contract.end_date);
-        return Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24 * 30)));
+        return Math.max(1, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
     }
 
-    calculateScheduleDuration(schedule) {
+    private calculateScheduleDuration(schedule: HistoricalSchedule): number {
         if (!schedule.start_date || !schedule.end_date) return 12;
         const start = new Date(schedule.start_date);
         const end = new Date(schedule.end_date);
-        return Math.max(1, Math.floor((end - start) / (1000 * 60 * 60 * 24 * 30)));
+        return Math.max(1, Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30)));
     }
 
-    calculateAveragePartnerCost(partners) {
+    private calculateAveragePartnerCost(partners: Partner[]): number {
         if (!partners || partners.length === 0) return 50;
         return partners.reduce((sum, p) => sum + (p.hourly_rate || 50), 0) / partners.length;
     }
 
-    calculateAveragePartnerDistance(partners, installation) {
+    private calculateAveragePartnerDistance(partners: Partner[], installation: SchedulingContext['installation']): number {
         if (!partners || partners.length === 0) return 25;
         return partners.reduce((sum, p) => {
             return sum + this.calculateDistance(p.city, installation?.address || '');
         }, 0) / partners.length;
     }
 
-    calculateAverageHistoricalScore(historicalData) {
+    private calculateAverageHistoricalScore(historicalData?: HistoricalSchedule[]): number {
         if (!historicalData || historicalData.length === 0) return 0.5;
         return historicalData.reduce((sum, h) => sum + (h.optimization_score || 0.5), 0) / historicalData.length;
     }
 
-    async getHistoricalSchedulingData() {
+    private async getHistoricalSchedulingData(): Promise<HistoricalSchedule[]> {
         // Simulated historical data - in production this would query the database
         return [];
     }
 
-    splitTrainingData() {
+    private splitTrainingData(): { trainingSet: TrainingExample[]; validationSet: TrainingExample[] } {
         const shuffled = [...this.trainingData].sort(() => Math.random() - 0.5);
         const splitIndex = Math.floor(shuffled.length * this.trainingRatio);
         
@@ -700,52 +912,52 @@ class MachineLearningScheduler extends BaseScheduler {
         };
     }
 
-    calculateFeatureImportance(feature, trainingSet) {
+    private calculateFeatureImportance(feature: string, trainingSet: TrainingExample[]): number {
         // Simplified feature importance calculation
         return Math.random() * 0.5 + 0.25; // Placeholder
     }
 
-    validateModel(validationSet) {
+    private validateModel(validationSet: TrainingExample[]): number {
         // Simplified model validation
         return Math.random() * 0.3 + 0.7; // Placeholder accuracy
     }
 
-    groupByPartner(examples) {
+    private groupByPartner(examples: TrainingExample[]): Record<string, TrainingExample[]> {
         return examples.reduce((groups, example) => {
             const partnerId = example.outcome.partnerId;
             if (!groups[partnerId]) groups[partnerId] = [];
             groups[partnerId].push(example);
             return groups;
-        }, {});
+        }, {} as Record<string, TrainingExample[]>);
     }
 
-    calculateAverageFeatures(examples) {
-        const avgFeatures = {};
+    private calculateAverageFeatures(examples: TrainingExample[]): Record<string, number> {
+        const avgFeatures: Record<string, number> = {};
         const features = Object.keys(examples[0].features);
         
         for (const feature of features) {
-            avgFeatures[feature] = examples.reduce((sum, ex) => sum + ex.features[feature], 0) / examples.length;
+            avgFeatures[feature] = examples.reduce((sum, ex) => sum + (ex.features as any)[feature], 0) / examples.length;
         }
         
         return avgFeatures;
     }
 
-    createConditions(avgFeatures) {
+    private createConditions(avgFeatures: Record<string, number>): RuleCondition[] {
         // Create simple threshold conditions
         return Object.entries(avgFeatures).map(([feature, value]) => ({
             feature,
-            operator: 'approx',
+            operator: 'approx' as const,
             value,
             tolerance: value * 0.2
         }));
     }
 
-    evaluateRuleMatch(conditions, features) {
+    private evaluateRuleMatch(conditions: RuleCondition[], features: MLFeatures): number {
         let matchScore = 0;
         let totalConditions = conditions.length;
         
         for (const condition of conditions) {
-            const featureValue = features[condition.feature];
+            const featureValue = (features as any)[condition.feature];
             if (featureValue !== undefined) {
                 const diff = Math.abs(featureValue - condition.value);
                 const tolerance = condition.tolerance || condition.value * 0.2;
@@ -759,22 +971,22 @@ class MachineLearningScheduler extends BaseScheduler {
         return matchScore / totalConditions;
     }
 
-    findSimilarHistoricalCases(context) {
+    private findSimilarHistoricalCases(context: SchedulingContext): HistoricalSchedule[] {
         // Placeholder for finding similar historical cases
         return [];
     }
 
-    extractPreferredTimes(cases) {
+    private extractPreferredTimes(cases: HistoricalSchedule[]): string[] {
         // Extract most common visit times from historical cases
         return ['10:00:00']; // Placeholder
     }
 
-    calculateSeasonalAdjustments(cases) {
+    private calculateSeasonalAdjustments(cases: HistoricalSchedule[]): Record<string, any> {
         // Calculate seasonal patterns from historical data
         return {}; // Placeholder
     }
 
-    fallbackPrediction(context) {
+    private fallbackPrediction(context: SchedulingContext): PartnerPrediction[] {
         return context.availablePartners.map(partner => ({
             partnerId: partner.id,
             partnerName: partner.name,
@@ -785,10 +997,11 @@ class MachineLearningScheduler extends BaseScheduler {
         }));
     }
 
-    async applyMLFixes(schedule, violations, context) {
+    private async applyMLFixes(schedule: any, violations: string[], context: SchedulingContext): Promise<any> {
         // Placeholder for ML-based schedule fixing
         return null;
     }
+
 }
 
-module.exports = MachineLearningScheduler;
+export default MachineLearningScheduler;

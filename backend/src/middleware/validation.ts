@@ -1,9 +1,13 @@
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const logger = require('../utils/logger');
+import { Request, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import { Schema, ValidationError } from 'joi';
+import { Logger } from '../types';
 
-const validateRequest = (schema) => {
-  return (req, res, next) => {
+const logger: Logger = require('../utils/logger');
+
+export const validateRequest = (schema: Schema) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     // Enhanced validation with security checks
     const { error, value } = schema.validate(req.body, {
       abortEarly: false,
@@ -19,7 +23,7 @@ const validateRequest = (schema) => {
         errors: error.details.map(d => d.message)
       });
 
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Validation failed',
         details: error.details.map(detail => ({
           field: detail.path.join('.'),
@@ -27,6 +31,7 @@ const validateRequest = (schema) => {
           // Removed value exposure for security
         }))
       });
+      return;
     }
 
     req.body = value;
@@ -34,8 +39,8 @@ const validateRequest = (schema) => {
   };
 };
 
-const validateParams = (schema) => {
-  return (req, res, next) => {
+export const validateParams = (schema: Schema) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error, value } = schema.validate(req.params, {
       abortEarly: false,
       stripUnknown: true
@@ -48,13 +53,14 @@ const validateParams = (schema) => {
         errors: error.details.map(d => d.message)
       });
 
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid parameters',
         details: error.details.map(detail => ({
           field: detail.path.join('.'),
           message: detail.message
         }))
       });
+      return;
     }
 
     req.params = value;
@@ -62,21 +68,22 @@ const validateParams = (schema) => {
   };
 };
 
-const validateQuery = (schema) => {
-  return (req, res, next) => {
+export const validateQuery = (schema: Schema) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const { error, value } = schema.validate(req.query, {
       abortEarly: false,
       stripUnknown: true
     });
 
     if (error) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'Invalid query parameters',
         details: error.details.map(detail => ({
           field: detail.path.join('.'),
           message: detail.message
         }))
       });
+      return;
     }
 
     req.query = value;
@@ -85,7 +92,7 @@ const validateQuery = (schema) => {
 };
 
 // Security middleware
-const securityHeaders = helmet({
+export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -101,16 +108,16 @@ const securityHeaders = helmet({
   }
 });
 
-const apiRateLimit = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+export const apiRateLimit = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: '15 minutes'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req, res) => {
+  handler: (req: Request, res: Response) => {
     logger.warn('Rate limit exceeded', {
       ip: req.ip,
       userAgent: req.get('User-Agent'),
@@ -123,9 +130,9 @@ const apiRateLimit = rateLimit({
   }
 });
 
-const sanitizeInput = (req, res, next) => {
+export const sanitizeInput = (req: Request, res: Response, next: NextFunction): void => {
   // Basic XSS protection for string inputs
-  const sanitize = (obj) => {
+  const sanitize = (obj: any): void => {
     for (let key in obj) {
       if (typeof obj[key] === 'string') {
         // Remove potentially dangerous characters
@@ -147,13 +154,4 @@ const sanitizeInput = (req, res, next) => {
   if (req.params) sanitize(req.params);
   
   next();
-};
-
-module.exports = {
-  validateRequest,
-  validateParams,
-  validateQuery,
-  securityHeaders,
-  apiRateLimit,
-  sanitizeInput
 };

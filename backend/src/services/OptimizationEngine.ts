@@ -1,13 +1,6 @@
-import { 
-  Partner, 
-  CustomerRequest, 
-  OptimizationConstraints, 
-  OptimizationResult, 
-  ScoredPartner,
-  OptimizationWeights,
-  FilteringReasons,
-  Logger 
-} from '../types';
+import { Logger, Partner, CustomerRequest, ServiceType } from '../types';
+
+const logger: Logger = require('../utils/logger');
 
 interface OptimizationConfig {
   maxDistance?: number;
@@ -15,7 +8,23 @@ interface OptimizationConfig {
   timeout?: number;
 }
 
-interface PartnerScores {
+interface OptimizationWeights {
+  location: number;
+  availability: number;
+  cost: number;
+  specialty: number;
+  performance: number;
+}
+
+export interface OptimizationConstraints {
+  maxDistance?: number;
+  excludedPartners?: string[];
+  maxHourlyRate?: number;
+  requiredSkills?: string[];
+  preferredPartners?: string[];
+}
+
+interface PartnerScore {
   location: number;
   availability: number;
   cost: number;
@@ -24,11 +33,46 @@ interface PartnerScores {
   distance: number;
 }
 
+interface ScoredPartner extends Partner {
+  score: number;
+  location_score: number;
+  availability_score: number;
+  cost_score: number;
+  specialty_score: number;
+  performance_score: number;
+  distance: number;
+}
+
+interface TopCandidate {
+  id: string;
+  name: string;
+  score: number;
+  hourly_rate: number;
+  distance: number;
+  availability_score: number;
+  cost_score: number;
+  location_score: number;
+  specialty_score: number;
+  performance_score: number;
+}
+
+interface OptimizationResult {
+  selectedPartner: ScoredPartner | null;
+  topCandidates: TopCandidate[];
+  executionTimeMs?: number;
+  evaluation: {
+    totalPartnersEvaluated: number;
+    candidatesAfterFiltering: number;
+    executionTimeMs?: number;
+    weights?: OptimizationWeights;
+    filteringReasons?: string[];
+  };
+}
+
 class OptimizationEngine {
   private maxDistance: number;
   private weights: OptimizationWeights;
   private timeout: number;
-  private logger: Logger;
 
   constructor(config: OptimizationConfig = {}) {
     this.maxDistance = config.maxDistance || 50; // km
@@ -41,21 +85,16 @@ class OptimizationEngine {
       ...config.weights
     };
     this.timeout = config.timeout || 5000; // ms
-    this.logger = require('../utils/logger');
   }
 
   /**
    * Main optimization function
    */
-  async optimize(
-    request: CustomerRequest, 
-    partners: Partner[], 
-    constraints: OptimizationConstraints = {}
-  ): Promise<OptimizationResult> {
+  async optimize(request: CustomerRequest, partners: Partner[], constraints: OptimizationConstraints = {}): Promise<OptimizationResult> {
     const startTime = Date.now();
     
     try {
-      this.logger.info('Starting optimization', {
+      logger.info('Starting optimization', {
         requestId: request.id,
         partnersCount: partners.length,
         serviceType: request.service_type
@@ -65,16 +104,15 @@ class OptimizationEngine {
       const candidatePartners = this.filterPartners(request, partners, constraints);
       
       if (candidatePartners.length === 0) {
-        this.logger.warn('No candidate partners after filtering', { requestId: request.id });
+        logger.warn('No candidate partners after filtering', { 
+          requestId: request.id 
+        });
         return {
           selectedPartner: null,
           topCandidates: [],
-          executionTimeMs: Date.now() - startTime,
           evaluation: {
             totalPartnersEvaluated: partners.length,
             candidatesAfterFiltering: 0,
-            executionTimeMs: Date.now() - startTime,
-            weights: this.weights,
             filteringReasons: this.getFilteringReasons(request, partners, constraints)
           }
         };
@@ -86,23 +124,26 @@ class OptimizationEngine {
       // Sort by score (highest first)
       scoredPartners.sort((a, b) => b.score - a.score);
 
-      const topCandidates = scoredPartners.slice(0, 5).map(partner => ({
-        ...partner,
+      const topCandidates: TopCandidate[] = scoredPartners.slice(0, 5).map(partner => ({
+        id: partner.id,
+        name: partner.name,
         score: Math.round(partner.score * 100) / 100,
-        availability_score: Math.round(partner.availability_score * 100) / 100,
-        cost_score: Math.round(partner.cost_score * 100) / 100,
-        location_score: Math.round(partner.location_score * 100) / 100,
-        specialty_score: Math.round(partner.specialty_score * 100) / 100,
-        performance_score: Math.round(partner.performance_score * 100) / 100
+        hourly_rate: partner.hourly_rate,
+        distance: partner.distance,
+        availability_score: partner.availability_score,
+        cost_score: partner.cost_score,
+        location_score: partner.location_score,
+        specialty_score: partner.specialty_score,
+        performance_score: partner.performance_score
       }));
 
-      const selectedPartner = scoredPartners[0];
+      const selectedPartner = scoredPartners[0] || null;
       const executionTime = Date.now() - startTime;
 
-      this.logger.info('Optimization completed', {
+      logger.info('Optimization completed', {
         requestId: request.id,
-        selectedPartnerId: selectedPartner.id,
-        score: selectedPartner.score,
+        selectedPartnerId: selectedPartner?.id,
+        score: selectedPartner?.score,
         executionTimeMs: executionTime
       });
 
@@ -118,10 +159,10 @@ class OptimizationEngine {
         }
       };
 
-    } catch (error) {
-      this.logger.error('Optimization failed', {
+    } catch (error: any) {
+      logger.error('Optimization failed', {
         requestId: request.id,
-        error: (error as Error).message,
+        error: error.message,
         executionTimeMs: Date.now() - startTime
       });
       throw error;
@@ -131,12 +172,13 @@ class OptimizationEngine {
   /**
    * Filter partners based on requirements and constraints
    */
-  private filterPartners(
-    request: CustomerRequest, 
-    partners: Partner[], 
-    constraints: OptimizationConstraints
-  ): Partner[] {
+  private filterPartners(request: CustomerRequest, partners: Partner[], constraints: OptimizationConstraints): Partner[] {
     return partners.filter(partner => {
+      // Check if partner is active
+      if (!partner.is_active) {
+        return false;
+      }
+
       // Check if partner is in excluded list
       if (constraints.excludedPartners && constraints.excludedPartners.includes(partner.id)) {
         return false;
@@ -184,17 +226,17 @@ class OptimizationEngine {
           ...partner,
           score: totalScore,
           location_score: scores.location,
-          performance_score: scores.performance,
           availability_score: scores.availability,
           cost_score: scores.cost,
           specialty_score: scores.specialty,
+          performance_score: scores.performance,
           distance: scores.distance
         });
 
-      } catch (error) {
-        this.logger.warn('Failed to score partner', {
+      } catch (error: any) {
+        logger.warn('Failed to score partner', {
           partnerId: partner.id,
-          error: (error as Error).message
+          error: error.message
         });
       }
     }
@@ -205,8 +247,8 @@ class OptimizationEngine {
   /**
    * Calculate individual scores for a partner
    */
-  private async calculatePartnerScore(request: CustomerRequest, partner: Partner): Promise<PartnerScores> {
-    const scores: PartnerScores = {
+  private async calculatePartnerScore(request: CustomerRequest, partner: Partner): Promise<PartnerScore> {
+    const scores: PartnerScore = {
       location: 0,
       availability: 0,
       cost: 0,
@@ -221,7 +263,7 @@ class OptimizationEngine {
     scores.location = Math.max(0, 100 - (distance / this.maxDistance) * 100);
 
     // Availability Score
-    scores.availability = this.calculateAvailabilityScore(partner);
+    scores.availability = this.calculateAvailabilityScore(partner, request);
 
     // Cost Score (lower cost = higher score)
     scores.cost = this.calculateCostScore(partner);
@@ -230,16 +272,16 @@ class OptimizationEngine {
     scores.specialty = this.calculateSpecialtyScore(request.service_type, partner.specialty);
 
     // Performance Score (based on completion rate, response time, satisfaction)
-    scores.performance = this.calculatePerformanceScore(partner, request);
+    scores.performance = this.calculatePerformanceScore(partner);
 
     return scores;
   }
 
   /**
-   * Calculate distance between request location and partner
+   * Calculate distance between request location and partner location
    */
   private calculateDistance(request: CustomerRequest, partner: Partner): number {
-    // For demo purposes, calculate distance based on city
+    // Simplified distance calculation based on Greek cities
     const cityDistances: Record<string, Record<string, number>> = {
       'Athens': { 'Athens': 5, 'Thessaloniki': 20, 'Patras': 15, 'Heraklion': 30 },
       'Thessaloniki': { 'Athens': 20, 'Thessaloniki': 5, 'Patras': 25, 'Heraklion': 35 },
@@ -259,9 +301,9 @@ class OptimizationEngine {
   }
 
   /**
-   * Calculate availability score based on partner's availability
+   * Calculate availability score based on partner's current workload
    */
-  private calculateAvailabilityScore(partner: Partner): number {
+  private calculateAvailabilityScore(partner: Partner, request: CustomerRequest): number {
     // If partner has availability data
     if (partner.partner_availability && partner.partner_availability.length > 0) {
       const totalAvailable = partner.partner_availability.reduce((sum, day) => {
@@ -278,158 +320,112 @@ class OptimizationEngine {
   }
 
   /**
-   * Calculate cost score (inverse of hourly rate)
+   * Calculate cost score - lower hourly rate gets higher score
    */
   private calculateCostScore(partner: Partner): number {
-    // Assume max reasonable rate is 100 EUR/hour
+    // Normalize against typical rate range (€20-100)
+    const minRate = 20;
     const maxRate = 100;
-    const rate = partner.hourly_rate;
-    return Math.max(0, ((maxRate - rate) / maxRate) * 100);
+    const normalizedRate = Math.max(0, Math.min(1, (partner.hourly_rate - minRate) / (maxRate - minRate)));
+    
+    // Invert so lower cost = higher score
+    return (1 - normalizedRate) * 100;
   }
 
   /**
    * Calculate specialty match score
    */
-  private calculateSpecialtyScore(requestedServiceType: string, partnerSpecialty: string): number {
-    const specialtyMap: Record<string, string[]> = {
-      'occupational_doctor': ['Occupational Doctor', 'Doctor', 'Παθολόγος', 'Ιατρός'],
-      'safety_engineer': ['Safety Engineer', 'Engineer', 'Μηχανικός', 'Τεχνικός Ασφαλείας']
+  private calculateSpecialtyScore(serviceType: ServiceType, partnerSpecialty: string): number {
+    // Direct specialty match mappings
+    const specialtyMappings: Record<ServiceType, string[]> = {
+      'installation': ['installation', 'installer', 'technician'],
+      'maintenance': ['maintenance', 'service', 'technician'],
+      'repair': ['repair', 'maintenance', 'technician'],
+      'consultation': ['consultation', 'consultant', 'advisor'],
+      'training': ['training', 'trainer', 'educator']
     };
 
-    const requiredSpecialties = specialtyMap[requestedServiceType] || [];
-    
-    for (const specialty of requiredSpecialties) {
-      if (partnerSpecialty.includes(specialty)) {
+    const relevantSpecialties = specialtyMappings[serviceType] || [];
+    const partnerSpecialtyLower = partnerSpecialty.toLowerCase();
+
+    // Check for exact matches
+    for (const specialty of relevantSpecialties) {
+      if (partnerSpecialtyLower.includes(specialty)) {
         return 100; // Perfect match
       }
     }
 
-    // Partial match for related specialties
-    if (requestedServiceType === 'occupational_doctor' && partnerSpecialty.includes('Doctor')) {
-      return 75;
-    }
-    if (requestedServiceType === 'safety_engineer' && partnerSpecialty.includes('Engineer')) {
-      return 75;
+    // Check for partial matches
+    if (relevantSpecialties.some(s => partnerSpecialtyLower.includes(s.substring(0, 4)))) {
+      return 75; // Good match
     }
 
-    return 50; // Default score for any qualified professional
+    return 50; // Basic match (partner can potentially handle the service)
   }
 
   /**
-   * Calculate performance score based on partner's historical performance
+   * Calculate performance score based on metrics
    */
-  private calculatePerformanceScore(partner: Partner, request: CustomerRequest): number {
+  private calculatePerformanceScore(partner: Partner): number {
     if (!partner.performance_metrics) {
-      return 50; // Default score for partners without performance data
+      return 60; // Default score for partners without metrics
     }
 
     const metrics = partner.performance_metrics;
-    let performanceScore = 0;
-
-    // Completion Rate Score (0-100 scale) - Highest weight
-    const completionRate = metrics.completion_rate || 0;
-    let completionScore = completionRate;
     
-    // Bonus for high performers (>70% completion rate)
-    if (completionRate > 70) {
-      completionScore = completionScore * 1.2; // 20% bonus
-    }
-    
-    // Penalty for very low performers (<30% completion rate)
-    if (completionRate < 30) {
-      completionScore = completionScore * 0.7; // 30% penalty
-    }
+    // Weighted performance calculation
+    const completionScore = metrics.completion_rate * 100;
+    const responseScore = Math.max(0, 100 - (metrics.avg_response_time - 1) * 20); // Penalize slow response
+    const satisfactionScore = metrics.client_satisfaction * 100;
 
-    // Response Time Score (inverse - faster is better)
-    const responseTime = metrics.avg_response_time || 5.0;
-    const maxResponseTime = 8.0; // Anything over 8 hours is poor
-    const responseScore = Math.max(0, ((maxResponseTime - responseTime) / maxResponseTime) * 100);
-
-    // Client Satisfaction Score (1-5 scale normalized to 0-100)
-    const satisfaction = metrics.client_satisfaction || 3.0;
-    const satisfactionScore = ((satisfaction - 1) / 4) * 100; // Convert 1-5 to 0-100
-
-    // Weighted combination of performance factors
-    performanceScore = (
-      completionScore * 0.6 +      // 60% weight on completion rate
-      responseScore * 0.25 +       // 25% weight on response time
-      satisfactionScore * 0.15     // 15% weight on satisfaction
-    );
-
-    // Handle urgency level - critical installations need proven performers
-    if (request.urgency_level === 'high' || request.urgency_level === 'urgent') {
-      if (completionRate > 80) {
-        performanceScore *= 1.3; // 30% bonus for urgent requests
-      } else if (completionRate < 50) {
-        performanceScore *= 0.5; // 50% penalty for urgent requests
-      }
-    }
-
-    return Math.min(100, Math.max(0, performanceScore));
+    return (completionScore * 0.4 + responseScore * 0.3 + satisfactionScore * 0.3);
   }
 
   /**
-   * Check if partner specialty matches request
+   * Check if partner's specialty matches the service type
    */
-  private checkSpecialtyMatch(requestedServiceType: string, partnerSpecialty: string): boolean {
-    const specialtyMap: Record<string, string[]> = {
-      'occupational_doctor': ['Occupational Doctor', 'Doctor', 'Παθολόγος', 'Ιατρός'],
-      'safety_engineer': ['Safety Engineer', 'Engineer', 'Μηχανικός', 'Τεχνικός Ασφαλείας']
-    };
-
-    const requiredSpecialties = specialtyMap[requestedServiceType] || [];
-    
-    return requiredSpecialties.some(specialty => 
-      partnerSpecialty.toLowerCase().includes(specialty.toLowerCase())
-    );
+  private checkSpecialtyMatch(serviceType: ServiceType, partnerSpecialty: string): boolean {
+    const specialtyScore = this.calculateSpecialtyScore(serviceType, partnerSpecialty);
+    return specialtyScore >= 50; // Minimum threshold for specialty match
   }
 
   /**
-   * Check basic availability
+   * Check basic availability of partner
    */
   private checkBasicAvailability(partner: Partner): boolean {
-    // Check if partner is active
-    if (!partner.is_active) {
-      return false;
-    }
-
-    // Check if has availability data
+    // Check if partner has availability data
     if (partner.partner_availability && partner.partner_availability.length > 0) {
-      return partner.partner_availability.some(day => 
-        day.is_available && (day.available_hours - day.booked_hours) > 0
+      return partner.partner_availability.some(slot => 
+        slot.is_available && (slot.available_hours - slot.booked_hours) > 0
       );
     }
 
-    // Default to available if no availability data
-    return true;
+    // If no detailed availability, assume available if max_hours_per_week is set
+    return partner.max_hours_per_week ? partner.max_hours_per_week > 0 : true;
   }
 
   /**
    * Get reasons why partners were filtered out
    */
-  private getFilteringReasons(
-    request: CustomerRequest, 
-    partners: Partner[], 
-    constraints: OptimizationConstraints
-  ): FilteringReasons {
-    const reasons: FilteringReasons = {
-      excludedPartners: 0,
-      specialtyMismatch: 0,
-      tooExpensive: 0,
-      notAvailable: 0
-    };
+  private getFilteringReasons(request: CustomerRequest, partners: Partner[], constraints: OptimizationConstraints): string[] {
+    const reasons: string[] = [];
+    
+    let inactiveCount = 0;
+    let specialtyMismatchCount = 0;
+    let costConstraintCount = 0;
+    let unavailableCount = 0;
 
     partners.forEach(partner => {
-      if (constraints.excludedPartners && constraints.excludedPartners.includes(partner.id)) {
-        reasons.excludedPartners++;
-      } else if (!this.checkSpecialtyMatch(request.service_type, partner.specialty)) {
-        reasons.specialtyMismatch++;
-      } else if (constraints.maxHourlyRate && partner.hourly_rate > constraints.maxHourlyRate) {
-        reasons.tooExpensive++;
-      } else if (!this.checkBasicAvailability(partner)) {
-        reasons.notAvailable++;
-      }
+      if (!partner.is_active) inactiveCount++;
+      else if (!this.checkSpecialtyMatch(request.service_type, partner.specialty)) specialtyMismatchCount++;
+      else if (constraints.maxHourlyRate && partner.hourly_rate > constraints.maxHourlyRate) costConstraintCount++;
+      else if (!this.checkBasicAvailability(partner)) unavailableCount++;
     });
+
+    if (inactiveCount > 0) reasons.push(`${inactiveCount} partners inactive`);
+    if (specialtyMismatchCount > 0) reasons.push(`${specialtyMismatchCount} partners with specialty mismatch`);
+    if (costConstraintCount > 0) reasons.push(`${costConstraintCount} partners exceed cost constraint`);
+    if (unavailableCount > 0) reasons.push(`${unavailableCount} partners unavailable`);
 
     return reasons;
   }

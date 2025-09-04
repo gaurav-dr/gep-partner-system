@@ -1,8 +1,170 @@
-const ExcelJS = require('exceljs');
-const logger = require('../utils/logger');
-const { supabaseAdmin } = require('../config/supabase');
-const path = require('path');
-const fs = require('fs').promises;
+import * as ExcelJS from 'exceljs';
+import { Logger } from '../types';
+import { supabaseAdmin } from '../config/supabase';
+import * as path from 'path';
+import { promises as fs } from 'fs';
+
+const logger: Logger = require('../utils/logger');
+
+interface SEPEFilters {
+  startDate?: string;
+  endDate?: string;
+  partnerIds?: string[];
+  installationCodes?: string[];
+  serviceTypes?: string[];
+  activeOnly?: boolean;
+  specialties?: string[];
+}
+
+interface VisitData {
+  installation_code: string;
+  company_name: string;
+  tax_number: string;
+  address: string;
+  city: string;
+  postal_code: string;
+  employees_count: number;
+  risk_category: string;
+  visit_date: string;
+  start_time: string;
+  end_time: string;
+  duration_hours: number;
+  service_type: string;
+  partner_name: string;
+  partner_license: string;
+  partner_specialty: string;
+  notes: string;
+  status: string;
+}
+
+interface PartnerData {
+  partner_id: string;
+  full_name: string;
+  tax_number: string;
+  social_security_number: string;
+  license_number: string;
+  specialty: string;
+  license_issued_date: string;
+  license_expiry_date: string;
+  address: string;
+  phone: string;
+  email: string;
+  status: string;
+  activation_date: string;
+}
+
+interface MonthlySummaryData {
+  totalVisits: number;
+  totalServiceHours: string;
+  activePartners: number;
+  visitedInstallations: number;
+  averageHoursPerVisit: string;
+  complianceRate: number;
+  serviceTypeBreakdown: ServiceTypeBreakdown[];
+}
+
+interface ServiceTypeBreakdown {
+  type: string;
+  visits: number;
+  hours: number;
+  average: string;
+}
+
+interface ComplianceData {
+  totalInstallations: number;
+  compliantInstallations: number;
+  nonCompliantInstallations: number;
+  overallComplianceRate: string;
+  installations: ComplianceInstallation[];
+}
+
+interface ComplianceInstallation {
+  installation_code: string;
+  company_name: string;
+  category: string;
+  required_hours: number;
+  actual_hours: string;
+  compliant: boolean;
+  notes: string;
+}
+
+interface ExportResult {
+  success: boolean;
+  filename: string;
+  filepath: string;
+  recordCount?: number;
+  summary?: any;
+  downloadUrl: string;
+  complianceRate?: string;
+}
+
+interface ExportSummary {
+  exportType: string;
+  recordCount: number;
+  exportDate: string;
+  filters: any;
+  generatedBy: string;
+}
+
+interface DatabaseVisit {
+  id: string;
+  installation_code: string;
+  partner_id: string;
+  visit_date: string;
+  start_time: string;
+  end_time: string;
+  duration_hours?: number;
+  service_type: string;
+  notes?: string;
+  status: string;
+  installations?: {
+    installation_code: string;
+    company_name: string;
+    tax_number: string;
+    address: string;
+    city: string;
+    postal_code: string;
+    employees_count: number;
+    category: string;
+  };
+  partners?: {
+    name: string;
+    license_number: string;
+    specialty: string;
+    tax_number: string;
+  };
+}
+
+interface DatabasePartner {
+  id: string;
+  name: string;
+  tax_number?: string;
+  social_security_number?: string;
+  license_number?: string;
+  specialty?: string;
+  license_issued_date?: string;
+  license_expiry_date?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+interface DatabaseInstallation {
+  id: string;
+  installation_code: string;
+  company_name: string;
+  category?: string;
+  employees_count?: number;
+  visits: {
+    visit_date: string;
+    duration_hours?: number;
+    start_time: string;
+    end_time: string;
+    status: string;
+  }[];
+}
 
 /**
  * SEPE.net Excel Export Service
@@ -10,6 +172,14 @@ const fs = require('fs').promises;
  * Handles visit records, partner certifications, and regulatory compliance data
  */
 class SEPEExportService {
+    private templatePath: string;
+    private outputPath: string;
+    private exportFormats: Record<string, string>;
+    private fieldMappings: {
+        visits: Record<string, string>;
+        partners: Record<string, string>;
+    };
+    
     constructor() {
         this.templatePath = path.join(__dirname, '../templates/sepe');
         this.outputPath = path.join(__dirname, '../exports/sepe');
@@ -66,7 +236,7 @@ class SEPEExportService {
     /**
      * Export visits data for SEPE compliance
      */
-    async exportVisitsData(filters = {}) {
+    async exportVisitsData(filters: SEPEFilters = {}): Promise<ExportResult> {
         try {
             logger.info('Starting SEPE visits export', filters);
 
@@ -111,7 +281,9 @@ class SEPEExportService {
             };
 
         } catch (error) {
-            logger.error('SEPE visits export failed:', error);
+            logger.error('SEPE visits export failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -119,7 +291,7 @@ class SEPEExportService {
     /**
      * Export partners data for SEPE compliance
      */
-    async exportPartnersData(filters = {}) {
+    async exportPartnersData(filters: SEPEFilters = {}): Promise<ExportResult> {
         try {
             logger.info('Starting SEPE partners export', filters);
 
@@ -159,7 +331,9 @@ class SEPEExportService {
             };
 
         } catch (error) {
-            logger.error('SEPE partners export failed:', error);
+            logger.error('SEPE partners export failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -167,7 +341,7 @@ class SEPEExportService {
     /**
      * Export monthly compliance summary
      */
-    async exportMonthlySummary(year, month) {
+    async exportMonthlySummary(year: number, month: number): Promise<ExportResult> {
         try {
             logger.info(`Starting SEPE monthly summary export for ${year}-${month}`);
 
@@ -199,7 +373,9 @@ class SEPEExportService {
             };
 
         } catch (error) {
-            logger.error('SEPE monthly summary export failed:', error);
+            logger.error('SEPE monthly summary export failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -207,7 +383,7 @@ class SEPEExportService {
     /**
      * Export compliance report
      */
-    async exportComplianceReport(filters = {}) {
+    async exportComplianceReport(filters: SEPEFilters = {}): Promise<ExportResult> {
         try {
             logger.info('Starting SEPE compliance report export', filters);
 
@@ -240,7 +416,9 @@ class SEPEExportService {
             };
 
         } catch (error) {
-            logger.error('SEPE compliance export failed:', error);
+            logger.error('SEPE compliance export failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -248,7 +426,7 @@ class SEPEExportService {
     /**
      * Create visits worksheet
      */
-    async createVisitsWorksheet(workbook, visitsData, filters) {
+    private async createVisitsWorksheet(workbook: ExcelJS.Workbook, visitsData: VisitData[], filters: SEPEFilters): Promise<ExcelJS.Worksheet> {
         const worksheet = workbook.addWorksheet('Επισκέψεις');
 
         // Set up headers
@@ -271,10 +449,10 @@ class SEPEExportService {
         // Add data rows
         let rowIndex = 2;
         for (const visit of visitsData) {
-            const rowData = [];
+            const rowData: any[] = [];
             
             for (const [greekHeader, fieldName] of Object.entries(this.fieldMappings.visits)) {
-                let value = visit[fieldName];
+                let value = (visit as any)[fieldName];
                 
                 // Format specific fields
                 value = this.formatFieldValue(fieldName, value);
@@ -307,7 +485,7 @@ class SEPEExportService {
     /**
      * Create partners worksheet
      */
-    async createPartnersWorksheet(workbook, partnersData, filters) {
+    private async createPartnersWorksheet(workbook: ExcelJS.Workbook, partnersData: PartnerData[], filters: SEPEFilters): Promise<ExcelJS.Worksheet> {
         const worksheet = workbook.addWorksheet('Συνεργάτες');
 
         // Set up headers
@@ -330,10 +508,10 @@ class SEPEExportService {
         // Add data rows
         let rowIndex = 2;
         for (const partner of partnersData) {
-            const rowData = [];
+            const rowData: any[] = [];
             
             for (const [greekHeader, fieldName] of Object.entries(this.fieldMappings.partners)) {
-                let value = partner[fieldName];
+                let value = (partner as any)[fieldName];
                 value = this.formatFieldValue(fieldName, value);
                 rowData.push(value);
             }
@@ -358,7 +536,7 @@ class SEPEExportService {
     /**
      * Create monthly summary worksheet
      */
-    async createMonthlySummaryWorksheet(workbook, summaryData, year, month) {
+    private async createMonthlySummaryWorksheet(workbook: ExcelJS.Workbook, summaryData: MonthlySummaryData, year: number, month: number): Promise<ExcelJS.Worksheet> {
         const worksheet = workbook.addWorksheet('Μηνιαία Σύνοψη');
 
         // Add title
@@ -421,7 +599,7 @@ class SEPEExportService {
     /**
      * Create compliance worksheet
      */
-    async createComplianceWorksheet(workbook, complianceData, filters) {
+    private async createComplianceWorksheet(workbook: ExcelJS.Workbook, complianceData: ComplianceData, filters: SEPEFilters): Promise<ExcelJS.Worksheet> {
         const worksheet = workbook.addWorksheet('Συμμόρφωση');
 
         // Add title
@@ -497,7 +675,7 @@ class SEPEExportService {
     /**
      * Get visits data from database
      */
-    async getVisitsData(filters) {
+    private async getVisitsData(filters: SEPEFilters): Promise<VisitData[]> {
         try {
             let query = supabaseAdmin
                 .from('visits')
@@ -520,8 +698,8 @@ class SEPEExportService {
                         tax_number
                     )
                 `)
-                .gte('visit_date', filters.startDate)
-                .lte('visit_date', filters.endDate)
+                .gte('visit_date', filters.startDate!)
+                .lte('visit_date', filters.endDate!)
                 .eq('status', 'completed'); // Only export completed visits
 
             // Apply additional filters
@@ -544,7 +722,7 @@ class SEPEExportService {
             }
 
             // Transform data for SEPE format
-            return data.map(visit => ({
+            return (data as DatabaseVisit[]).map(visit => ({
                 installation_code: visit.installations?.installation_code || visit.installation_code,
                 company_name: visit.installations?.company_name || '',
                 tax_number: visit.installations?.tax_number || '',
@@ -566,7 +744,9 @@ class SEPEExportService {
             }));
 
         } catch (error) {
-            logger.error('Failed to get visits data:', error);
+            logger.error('Failed to get visits data:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -574,7 +754,7 @@ class SEPEExportService {
     /**
      * Get partners data from database
      */
-    async getPartnersData(filters) {
+    private async getPartnersData(filters: SEPEFilters): Promise<PartnerData[]> {
         try {
             let query = supabaseAdmin
                 .from('partners')
@@ -595,7 +775,7 @@ class SEPEExportService {
                 throw error;
             }
 
-            return data.map(partner => ({
+            return (data as DatabasePartner[]).map(partner => ({
                 partner_id: partner.id,
                 full_name: partner.name,
                 tax_number: partner.tax_number || '',
@@ -612,7 +792,9 @@ class SEPEExportService {
             }));
 
         } catch (error) {
-            logger.error('Failed to get partners data:', error);
+            logger.error('Failed to get partners data:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -620,7 +802,7 @@ class SEPEExportService {
     /**
      * Get monthly summary data
      */
-    async getMonthlySummaryData(year, month) {
+    private async getMonthlySummaryData(year: number, month: number): Promise<MonthlySummaryData> {
         try {
             const startDate = `${year}-${month.toString().padStart(2, '0')}-01`;
             const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // Last day of month
@@ -638,21 +820,21 @@ class SEPEExportService {
             }
 
             // Calculate summary statistics
-            const totalVisits = visits.length;
-            const totalServiceHours = visits.reduce((sum, visit) => {
+            const totalVisits = visits?.length || 0;
+            const totalServiceHours = (visits || []).reduce((sum, visit) => {
                 return sum + (visit.duration_hours || this.calculateDuration(visit.start_time, visit.end_time));
             }, 0);
 
-            const uniquePartners = new Set(visits.map(v => v.partner_id)).size;
-            const uniqueInstallations = new Set(visits.map(v => v.installation_code)).size;
+            const uniquePartners = new Set((visits || []).map(v => v.partner_id)).size;
+            const uniqueInstallations = new Set((visits || []).map(v => v.installation_code)).size;
 
-            const averageHoursPerVisit = totalVisits > 0 ? (totalServiceHours / totalVisits).toFixed(2) : 0;
+            const averageHoursPerVisit = totalVisits > 0 ? (totalServiceHours / totalVisits).toFixed(2) : '0';
 
             // Service type breakdown
-            const serviceTypeBreakdown = visits.reduce((breakdown, visit) => {
+            const serviceTypeBreakdown = (visits || []).reduce((breakdown: Record<string, ServiceTypeBreakdown>, visit) => {
                 const type = this.translateServiceType(visit.service_type);
                 if (!breakdown[type]) {
-                    breakdown[type] = { type, visits: 0, hours: 0 };
+                    breakdown[type] = { type, visits: 0, hours: 0, average: '0' };
                 }
                 breakdown[type].visits++;
                 breakdown[type].hours += visit.duration_hours || this.calculateDuration(visit.start_time, visit.end_time);
@@ -661,7 +843,7 @@ class SEPEExportService {
 
             // Calculate averages for breakdown
             Object.values(serviceTypeBreakdown).forEach(service => {
-                service.average = service.visits > 0 ? (service.hours / service.visits).toFixed(2) : 0;
+                service.average = service.visits > 0 ? (service.hours / service.visits).toFixed(2) : '0';
             });
 
             // Calculate compliance rate (simplified)
@@ -678,7 +860,9 @@ class SEPEExportService {
             };
 
         } catch (error) {
-            logger.error('Failed to get monthly summary data:', error);
+            logger.error('Failed to get monthly summary data:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -686,7 +870,7 @@ class SEPEExportService {
     /**
      * Get compliance data
      */
-    async getComplianceData(filters) {
+    private async getComplianceData(filters: SEPEFilters): Promise<ComplianceData> {
         try {
             // Get all installations with their visit data
             const { data: installations, error } = await supabaseAdmin
@@ -706,15 +890,15 @@ class SEPEExportService {
                 throw error;
             }
 
-            const complianceData = {
-                totalInstallations: installations.length,
+            const complianceData: ComplianceData = {
+                totalInstallations: installations?.length || 0,
                 compliantInstallations: 0,
                 nonCompliantInstallations: 0,
-                overallComplianceRate: 0,
+                overallComplianceRate: '0',
                 installations: []
             };
 
-            installations.forEach(installation => {
+            (installations || []).forEach((installation: DatabaseInstallation) => {
                 // Calculate required hours based on SEPE regulations
                 const requiredHours = this.calculateRequiredHours(installation);
                 
@@ -735,7 +919,7 @@ class SEPEExportService {
                 complianceData.installations.push({
                     installation_code: installation.installation_code,
                     company_name: installation.company_name,
-                    category: installation.category,
+                    category: installation.category || '',
                     required_hours: requiredHours,
                     actual_hours: actualHours.toFixed(2),
                     compliant,
@@ -750,13 +934,15 @@ class SEPEExportService {
             return complianceData;
 
         } catch (error) {
-            logger.error('Failed to get compliance data:', error);
+            logger.error('Failed to get compliance data:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
 
     // Helper methods
-    formatFieldValue(fieldName, value) {
+    private formatFieldValue(fieldName: string, value: any): string {
         if (value === null || value === undefined) {
             return '';
         }
@@ -776,15 +962,15 @@ class SEPEExportService {
                 return value ? parseFloat(value).toFixed(2) : '';
             
             case 'employees_count':
-                return value ? parseInt(value) : 0;
+                return value ? parseInt(value).toString() : '0';
             
             default:
                 return value.toString();
         }
     }
 
-    translateServiceType(serviceType) {
-        const translations = {
+    private translateServiceType(serviceType: string): string {
+        const translations: Record<string, string> = {
             'occupational_doctor': 'Ιατρός Εργασίας',
             'safety_engineer': 'Μηχανικός Ασφαλείας',
             'specialist_consultation': 'Ειδική Συμβουλευτική'
@@ -792,8 +978,8 @@ class SEPEExportService {
         return translations[serviceType] || serviceType;
     }
 
-    translateStatus(status) {
-        const translations = {
+    private translateStatus(status: string): string {
+        const translations: Record<string, string> = {
             'scheduled': 'Προγραμματισμένη',
             'confirmed': 'Επιβεβαιωμένη',
             'completed': 'Ολοκληρωμένη',
@@ -802,31 +988,31 @@ class SEPEExportService {
         return translations[status] || status;
     }
 
-    calculateDuration(startTime, endTime) {
+    private calculateDuration(startTime: string, endTime: string): number {
         if (!startTime || !endTime) return 0;
         
         const start = new Date(`2000-01-01T${startTime}`);
         const end = new Date(`2000-01-01T${endTime}`);
         
-        return Math.max(0, (end - start) / (1000 * 60 * 60)); // Hours
+        return Math.max(0, (end.getTime() - start.getTime()) / (1000 * 60 * 60)); // Hours
     }
 
-    calculateRequiredHours(installation) {
+    private calculateRequiredHours(installation: DatabaseInstallation): number {
         // Simplified SEPE calculation - would be more complex in reality
-        const baseHours = {
+        const baseHours: Record<string, number> = {
             'A': 40, // High risk
             'B': 20, // Medium risk
             'C': 10  // Low risk
         };
         
         const category = installation.category || 'C';
-        const employeeMultiplier = Math.max(1, Math.floor(installation.employees_count / 50));
+        const employeeMultiplier = Math.max(1, Math.floor((installation.employees_count || 0) / 50));
         
         return (baseHours[category] || 10) * employeeMultiplier;
     }
 
-    getColumnWidth(header) {
-        const widths = {
+    private getColumnWidth(header: string): number {
+        const widths: Record<string, number> = {
             'Κωδικός Εγκατάστασης': 20,
             'Επωνυμία Επιχείρησης': 30,
             'ΑΦΜ': 15,
@@ -839,7 +1025,7 @@ class SEPEExportService {
         return widths[header] || 15;
     }
 
-    getGreekMonthName(month) {
+    private getGreekMonthName(month: number): string {
         const months = [
             'Ιανουάριος', 'Φεβρουάριος', 'Μάρτιος', 'Απρίλιος',
             'Μάιος', 'Ιούνιος', 'Ιούλιος', 'Αύγουστος',
@@ -848,9 +1034,9 @@ class SEPEExportService {
         return months[month - 1] || 'Άγνωστος';
     }
 
-    generateFilename(type, filters) {
+    private generateFilename(type: string, filters: SEPEFilters): string {
         const timestamp = new Date().toISOString().split('T')[0];
-        const typeMap = {
+        const typeMap: Record<string, string> = {
             'VISITS': 'Επισκεψεις',
             'PARTNERS': 'Συνεργατες',
             'COMPLIANCE': 'Συμμορφωση'
@@ -859,7 +1045,7 @@ class SEPEExportService {
         return `SEPE_${typeMap[type]}_${timestamp}.xlsx`;
     }
 
-    generateExportSummary(type, data, filters) {
+    private generateExportSummary(type: string, data: any[], filters: any): ExportSummary {
         return {
             exportType: type,
             recordCount: data.length,
@@ -869,15 +1055,17 @@ class SEPEExportService {
         };
     }
 
-    async initializeExportDirectory() {
+    private async initializeExportDirectory(): Promise<void> {
         try {
             await fs.mkdir(this.outputPath, { recursive: true });
         } catch (error) {
-            logger.error('Failed to initialize export directory:', error);
+            logger.error('Failed to initialize export directory:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
-    async logExport(type, filename, summary, filters) {
+    private async logExport(type: string, filename: string, summary: any, filters: any): Promise<void> {
         try {
             await supabaseAdmin
                 .from('export_log')
@@ -891,16 +1079,18 @@ class SEPEExportService {
                     created_at: new Date().toISOString()
                 }]);
         } catch (error) {
-            logger.error('Failed to log export:', error);
+            logger.error('Failed to log export:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     // Placeholder methods for worksheet formatting
-    applyVisitRowFormatting(row, visit) {
+    private applyVisitRowFormatting(row: ExcelJS.Row, visit: VisitData): void {
         // Apply conditional formatting based on visit status, compliance, etc.
     }
 
-    applyPartnerRowFormatting(row, partner) {
+    private applyPartnerRowFormatting(row: ExcelJS.Row, partner: PartnerData): void {
         // Highlight partners with expiring licenses
         if (partner.license_expiry_date) {
             const expiryDate = new Date(partner.license_expiry_date);
@@ -917,10 +1107,10 @@ class SEPEExportService {
         }
     }
 
-    async addVisitsSummarySection(worksheet, visitsData, startRow) {
+    private async addVisitsSummarySection(worksheet: ExcelJS.Worksheet, visitsData: VisitData[], startRow: number): Promise<void> {
         // Add summary statistics at the bottom
         const totalVisits = visitsData.length;
-        const totalHours = visitsData.reduce((sum, visit) => sum + (parseFloat(visit.duration_hours) || 0), 0);
+        const totalHours = visitsData.reduce((sum, visit) => sum + (parseFloat(visit.duration_hours.toString()) || 0), 0);
         
         worksheet.getCell(`A${startRow}`).value = 'ΣΥΝΟΨΗ:';
         worksheet.getCell(`A${startRow}`).font = { bold: true };
@@ -928,7 +1118,7 @@ class SEPEExportService {
         worksheet.getCell(`A${startRow + 2}`).value = `Συνολικές Ώρες: ${totalHours.toFixed(2)}`;
     }
 
-    async addPartnersSummarySection(worksheet, partnersData, startRow) {
+    private async addPartnersSummarySection(worksheet: ExcelJS.Worksheet, partnersData: PartnerData[], startRow: number): Promise<void> {
         const activePartners = partnersData.filter(p => p.status === 'ΕΝΕΡΓΟΣ').length;
         
         worksheet.getCell(`A${startRow}`).value = 'ΣΥΝΟΨΗ:';
@@ -937,12 +1127,12 @@ class SEPEExportService {
         worksheet.getCell(`A${startRow + 2}`).value = `Ενεργοί Συνεργάτες: ${activePartners}`;
     }
 
-    applyDataValidation(worksheet, type) {
+    private applyDataValidation(worksheet: ExcelJS.Worksheet, type: string): void {
         // Apply data validation rules for specific columns
         // This would include dropdown lists, date formats, etc.
     }
 
-    formatSummaryWorksheet(worksheet) {
+    private formatSummaryWorksheet(worksheet: ExcelJS.Worksheet): void {
         // Apply professional formatting to summary worksheet
         worksheet.eachRow((row, rowNumber) => {
             row.eachCell((cell, colNumber) => {
@@ -957,4 +1147,4 @@ class SEPEExportService {
     }
 }
 
-module.exports = SEPEExportService;
+export default SEPEExportService;

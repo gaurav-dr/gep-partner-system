@@ -34,24 +34,27 @@ const validateRegistration = (req: Request, res: Response, next: NextFunction): 
     const { email, password, firstName, lastName, role }: RegistrationRequest = req.body;
     
     if (!email || !password || !firstName || !lastName || !role) {
-        return res.status(400).json({
+        res.status(400).json({
             error: 'All fields are required: email, password, firstName, lastName, role',
             code: 'MISSING_REQUIRED_FIELDS'
         });
+        return;
     }
 
     if (password.length < 8) {
-        return res.status(400).json({
+        res.status(400).json({
             error: 'Password must be at least 8 characters long',
             code: 'WEAK_PASSWORD'
         });
+        return;
     }
 
     if (!['partner', 'manager', 'admin', 'client'].includes(role)) {
-        return res.status(400).json({
+        res.status(400).json({
             error: 'Invalid role. Must be one of: partner, manager, admin, client',
             code: 'INVALID_ROLE'
         });
+        return;
     }
 
     next();
@@ -61,10 +64,11 @@ const validateLogin = (req: Request, res: Response, next: NextFunction): void =>
     const { email, password }: LoginRequest = req.body;
     
     if (!email || !password) {
-        return res.status(400).json({
+        res.status(400).json({
             error: 'Email and password are required',
             code: 'MISSING_CREDENTIALS'
         });
+        return;
     }
 
     next();
@@ -75,16 +79,17 @@ const validateLogin = (req: Request, res: Response, next: NextFunction): void =>
  * @desc    Register a new user
  * @access  Public (but may be restricted by admin in production)
  */
-router.post('/register', authLimiter, validateRegistration, auditLog('create', 'user'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/register', authLimiter, validateRegistration, auditLog('create', 'user'), async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { email, password, firstName, lastName, role, partnerId, clientCompanyCode }: RegistrationRequest = req.body;
         
         // In production, only admins should be able to create users
         if (process.env.NODE_ENV === 'production' && process.env.ALLOW_SELF_REGISTRATION !== 'true') {
-            return res.status(403).json({
+            res.status(403).json({
                 error: 'User registration is restricted. Please contact an administrator.',
                 code: 'REGISTRATION_RESTRICTED'
             });
+            return;
         }
 
         const result = await AuthService.register({
@@ -104,20 +109,24 @@ router.post('/register', authLimiter, validateRegistration, auditLog('create', '
         });
 
     } catch (error) {
-        logger.error('Registration failed:', error);
+        logger.error('Registration failed', { 
+            error: error instanceof Error ? error.message : String(error) 
+        });
         
         if ((error as Error).message.includes('already exists')) {
-            return res.status(409).json({
+            res.status(409).json({
                 error: (error as Error).message,
                 code: 'USER_EXISTS'
             });
+            return;
         }
 
         if ((error as Error).message.includes('Invalid')) {
-            return res.status(400).json({
+            res.status(400).json({
                 error: (error as Error).message,
                 code: 'VALIDATION_ERROR'
             });
+            return;
         }
 
         next(error);
@@ -142,11 +151,13 @@ router.post('/login', authLimiter, validateLogin, async (req: Request, res: Resp
             result = await AuthService.login(email, password, ipAddress, userAgent);
             logger.info('Login successful via Supabase AuthService');
         } catch (supabaseError) {
-            logger.warn('Supabase auth failed, trying direct database auth:', (supabaseError as Error).message);
+            logger.warn('Supabase auth failed, trying direct database auth', { 
+                error: supabaseError instanceof Error ? supabaseError.message : String(supabaseError) 
+            });
             
             // Fallback to direct database authentication
             const directAuthService = new DirectAuthService();
-            result = await directAuthService.login(email, password, ipAddress, userAgent);
+            result = await directAuthService.login(email, password, ipAddress || '', userAgent || '');
             logger.info('Login successful via DirectAuthService');
         }
 
@@ -159,7 +170,9 @@ router.post('/login', authLimiter, validateLogin, async (req: Request, res: Resp
         });
 
     } catch (error) {
-        logger.error('Login failed:', error);
+        logger.error('Login failed', { 
+            error: error instanceof Error ? error.message : String(error) 
+        });
         
         // Don't reveal specific error details for security
         res.status(401).json({

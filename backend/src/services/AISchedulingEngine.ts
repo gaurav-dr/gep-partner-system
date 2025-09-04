@@ -1,17 +1,188 @@
-const logger = require('../utils/logger');
-const { supabaseAdmin } = require('../config/supabase');
-const LinearProgrammingScheduler = require('./schedulers/LinearProgrammingScheduler');
-const GeneticAlgorithmScheduler = require('./schedulers/GeneticAlgorithmScheduler');
-const MachineLearningScheduler = require('./schedulers/MachineLearningScheduler');
-const RuleBasedScheduler = require('./schedulers/RuleBasedScheduler');
-const AnthropicScheduler = require('./schedulers/AnthropicScheduler');
-const PerformanceMetrics = require('./PerformanceMetrics');
+import { Logger } from '../types';
+import { supabaseAdmin } from '../config/supabase';
+import LinearProgrammingScheduler from './schedulers/LinearProgrammingScheduler';
+import GeneticAlgorithmScheduler from './schedulers/GeneticAlgorithmScheduler';
+import MachineLearningScheduler from './schedulers/MachineLearningScheduler';
+import RuleBasedScheduler from './schedulers/RuleBasedScheduler';
+import AnthropicScheduler from './schedulers/AnthropicScheduler';
+import PerformanceMetrics from './PerformanceMetrics';
+
+const logger: Logger = require('../utils/logger');
+
+interface AlgorithmConfig {
+  id: string;
+  name: string;
+  algorithm_type: 'linear_programming' | 'genetic' | 'ml_based' | 'rule_based' | 'anthropic';
+  version: string;
+  parameters: Record<string, any>;
+  weights: {
+    location: number;
+    availability: number;
+    cost: number;
+    specialty: number;
+  };
+  is_production: boolean;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  total_runs?: number;
+  successful_runs?: number;
+  average_execution_time_ms?: number;
+  average_optimization_score?: number;
+}
+
+interface AlgorithmData {
+  scheduler: any;
+  config: AlgorithmConfig;
+  stats: {
+    totalRuns: number;
+    successfulRuns: number;
+    averageExecutionTime: number;
+    averageOptimizationScore: number;
+  };
+}
+
+interface ScheduleRequest {
+  contractCode: string;
+  installationCode: string;
+  serviceType: string;
+  startDate: string;
+  endDate: string;
+  createdBy: string;
+}
+
+interface SchedulingContext {
+  contract: any;
+  installation: any;
+  availablePartners: any[];
+  historicalData: any[];
+  regulatoryRequirements: RegulatoryRequirements;
+  partnerPatterns: any[];
+  constraints: SchedulingConstraints;
+  objectives: SchedulingObjectives;
+}
+
+interface RegulatoryRequirements {
+  minimumHoursPerMonth: number;
+  maximumHoursPerMonth: number;
+  requiredVisitFrequency: 'weekly' | 'monthly' | 'quarterly';
+  specialRequirements: string[];
+}
+
+interface SchedulingConstraints {
+  workingHours: string;
+  maxHoursPerWeek: number;
+  minTimeBetweenVisits: number;
+  maxTravelDistance: number;
+  excludeWeekends: boolean;
+  excludeHolidays: boolean;
+  partnerAvailability: boolean;
+}
+
+interface SchedulingObjectives {
+  minimizeCost: boolean;
+  minimizeTravelTime: boolean;
+  maximizePartnerSatisfaction: boolean;
+  maximizeClientSatisfaction: boolean;
+  maximizeScheduleStability: boolean;
+}
+
+interface AlgorithmResult {
+  algorithmId: string;
+  algorithmName: string;
+  algorithmType: string;
+  result: any;
+  score: number;
+  executionTime: number;
+  feasible: boolean;
+  confidence: number;
+  metadata: Record<string, any>;
+  error?: string;
+  compositeScore?: number;
+}
+
+interface ScheduleData {
+  contract_code: string;
+  installation_code: string;
+  partner_id: string;
+  service_type: string;
+  schedule_name: string;
+  description: string;
+  status: string;
+  start_date: string;
+  end_date: string;
+  total_hours: number;
+  visit_duration_hours: number;
+  visits_per_month: number;
+  optimization_score: number;
+  algorithm_used: string;
+  confidence_level: number;
+  created_by: string;
+}
+
+interface Visit {
+  date: string;
+  startTime: string;
+  endTime: string;
+  type: string;
+  notes?: string;
+  specialRequirements?: string;
+}
+
+interface VisitRecord {
+  schedule_id: string;
+  visit_date: string;
+  start_time: string;
+  end_time: string;
+  visit_type: string;
+  notes?: string;
+  special_requirements?: string;
+}
+
+interface PerformanceComparison {
+  totalAlgorithms: number;
+  bestScore: number;
+  averageScore: number;
+  fastestTime: number;
+  averageTime: number;
+  algorithms: {
+    name: string;
+    type: string;
+    score: number;
+    executionTime: number;
+    confidence: number;
+    rank: number;
+  }[];
+}
+
+interface AlgorithmPerformanceSummary {
+  id: string;
+  name: string;
+  type: string;
+  version: string;
+  isProduction: boolean;
+  stats: AlgorithmData['stats'];
+  lastUpdated?: string;
+}
+
+interface PerformanceMetricData {
+  algorithm_id: string;
+  schedule_id: string | null;
+  execution_time_ms: number;
+  optimization_score: number;
+  confidence_level: number;
+  feasibility_score: number;
+  constraint_violations: number;
+}
 
 /**
  * Advanced AI Scheduling Engine
  * Orchestrates multiple scheduling algorithms and compares their performance
  */
 class AISchedulingEngine {
+    private algorithms: Map<string, AlgorithmData>;
+    private performanceMetrics: PerformanceMetrics;
+
     constructor() {
         this.algorithms = new Map();
         this.performanceMetrics = new PerformanceMetrics();
@@ -21,7 +192,7 @@ class AISchedulingEngine {
     /**
      * Initialize all available scheduling algorithms
      */
-    async initializeAlgorithms() {
+    async initializeAlgorithms(): Promise<void> {
         try {
             // Load algorithm configurations from database
             const { data: algorithmConfigs, error } = await supabaseAdmin
@@ -31,7 +202,9 @@ class AISchedulingEngine {
                 .order('created_at');
 
             if (error) {
-                logger.error('Failed to load algorithm configurations:', error);
+                logger.error('Failed to load algorithm configurations:', { 
+                    error: error.message 
+                });
                 // Use default configurations
                 this.initializeDefaultAlgorithms();
                 return;
@@ -45,7 +218,9 @@ class AISchedulingEngine {
             logger.info(`Initialized ${this.algorithms.size} scheduling algorithms`);
 
         } catch (error) {
-            logger.error('Failed to initialize AI scheduling algorithms:', error);
+            logger.error('Failed to initialize AI scheduling algorithms:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             this.initializeDefaultAlgorithms();
         }
     }
@@ -53,9 +228,9 @@ class AISchedulingEngine {
     /**
      * Initialize a specific algorithm from configuration
      */
-    async initializeAlgorithm(config) {
+    async initializeAlgorithm(config: AlgorithmConfig): Promise<void> {
         try {
-            let scheduler;
+            let scheduler: any;
 
             switch (config.algorithm_type) {
                 case 'linear_programming':
@@ -95,15 +270,17 @@ class AISchedulingEngine {
             logger.info(`Initialized ${config.name} (${config.algorithm_type})`);
 
         } catch (error) {
-            logger.error(`Failed to initialize algorithm ${config.name}:`, error);
+            logger.error(`Failed to initialize algorithm ${config.name}:`, { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     /**
      * Initialize default algorithms if database loading fails
      */
-    initializeDefaultAlgorithms() {
-        const defaultConfigs = [
+    private initializeDefaultAlgorithms(): void {
+        const defaultConfigs: AlgorithmConfig[] = [
             {
                 id: 'default-lp',
                 name: 'Linear Programming Optimizer',
@@ -132,7 +309,12 @@ class AISchedulingEngine {
     /**
      * Generate optimal schedule using multiple algorithms and compare results
      */
-    async generateOptimalSchedule(scheduleRequest) {
+    async generateOptimalSchedule(scheduleRequest: ScheduleRequest): Promise<{
+        schedule: any;
+        bestResult: AlgorithmResult;
+        alternativeResults: AlgorithmResult[];
+        performanceComparison: PerformanceComparison | null;
+    }> {
         try {
             logger.info(`Generating schedule for contract ${scheduleRequest.contractCode}`);
 
@@ -170,7 +352,9 @@ class AISchedulingEngine {
             };
 
         } catch (error) {
-            logger.error('Schedule generation failed:', error);
+            logger.error('Schedule generation failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -178,7 +362,7 @@ class AISchedulingEngine {
     /**
      * Prepare comprehensive scheduling context
      */
-    async prepareSchedulingContext(scheduleRequest) {
+    private async prepareSchedulingContext(scheduleRequest: ScheduleRequest): Promise<SchedulingContext> {
         try {
             // Get contract details
             const contract = await this.getContractDetails(scheduleRequest.contractCode);
@@ -210,7 +394,9 @@ class AISchedulingEngine {
             };
 
         } catch (error) {
-            logger.error('Failed to prepare scheduling context:', error);
+            logger.error('Failed to prepare scheduling context:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -218,9 +404,8 @@ class AISchedulingEngine {
     /**
      * Run multiple algorithms in parallel and collect results
      */
-    async runMultipleAlgorithms(context) {
-        const results = [];
-        const algorithmPromises = [];
+    private async runMultipleAlgorithms(context: SchedulingContext): Promise<AlgorithmResult[]> {
+        const algorithmPromises: Promise<AlgorithmResult>[] = [];
 
         // Get production algorithms first, then experimental ones
         const productionAlgorithms = Array.from(this.algorithms.values())
@@ -237,14 +422,20 @@ class AISchedulingEngine {
         for (const algorithmData of algorithmsToRun) {
             const promise = this.runSingleAlgorithmWithTimeout(algorithmData, context)
                 .catch(error => {
-                    logger.error(`Algorithm ${algorithmData.config.name} failed:`, error);
+                    logger.error(`Algorithm ${algorithmData.config.name} failed:`, { 
+                        error: error instanceof Error ? error.message : String(error) 
+                    });
                     return {
                         algorithmId: algorithmData.config.id,
                         algorithmName: algorithmData.config.name,
-                        error: error.message,
+                        algorithmType: algorithmData.config.algorithm_type,
+                        error: error instanceof Error ? error.message : String(error),
+                        result: null,
                         score: 0,
                         executionTime: 0,
-                        feasible: false
+                        feasible: false,
+                        confidence: 0,
+                        metadata: {}
                     };
                 });
             
@@ -263,7 +454,11 @@ class AISchedulingEngine {
     /**
      * Run a single algorithm with timeout protection
      */
-    async runSingleAlgorithmWithTimeout(algorithmData, context, timeoutMs = 300000) { // 5 minute timeout
+    private async runSingleAlgorithmWithTimeout(
+        algorithmData: AlgorithmData, 
+        context: SchedulingContext, 
+        timeoutMs: number = 300000
+    ): Promise<AlgorithmResult> {
         return new Promise(async (resolve, reject) => {
             const timeoutId = setTimeout(() => {
                 reject(new Error(`Algorithm ${algorithmData.config.name} timed out after ${timeoutMs}ms`));
@@ -303,7 +498,7 @@ class AISchedulingEngine {
     /**
      * Select the best schedule from multiple algorithm results
      */
-    async selectBestSchedule(algorithmResults, context) {
+    private async selectBestSchedule(algorithmResults: AlgorithmResult[], context: SchedulingContext): Promise<AlgorithmResult> {
         if (algorithmResults.length === 0) {
             throw new Error('No feasible schedule found by any algorithm');
         }
@@ -340,7 +535,7 @@ class AISchedulingEngine {
         });
 
         // Sort by composite score and return the best
-        scoredResults.sort((a, b) => b.compositeScore - a.compositeScore);
+        scoredResults.sort((a, b) => b.compositeScore! - a.compositeScore!);
         
         const bestResult = scoredResults[0];
         
@@ -357,9 +552,9 @@ class AISchedulingEngine {
     /**
      * Create schedule record in database
      */
-    async createScheduleRecord(bestResult, scheduleRequest) {
+    private async createScheduleRecord(bestResult: AlgorithmResult, scheduleRequest: ScheduleRequest): Promise<any> {
         try {
-            const scheduleData = {
+            const scheduleData: ScheduleData = {
                 contract_code: scheduleRequest.contractCode,
                 installation_code: scheduleRequest.installationCode,
                 partner_id: bestResult.result.partnerId,
@@ -396,7 +591,9 @@ class AISchedulingEngine {
             return schedule;
 
         } catch (error) {
-            logger.error('Failed to create schedule record:', error);
+            logger.error('Failed to create schedule record:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -404,9 +601,9 @@ class AISchedulingEngine {
     /**
      * Create individual scheduled visits
      */
-    async createScheduledVisits(scheduleId, visits) {
+    private async createScheduledVisits(scheduleId: string, visits: Visit[]): Promise<void> {
         try {
-            const visitRecords = visits.map(visit => ({
+            const visitRecords: VisitRecord[] = visits.map(visit => ({
                 schedule_id: scheduleId,
                 visit_date: visit.date,
                 start_time: visit.startTime,
@@ -427,7 +624,9 @@ class AISchedulingEngine {
             logger.info(`Created ${visitRecords.length} scheduled visits for schedule ${scheduleId}`);
 
         } catch (error) {
-            logger.error('Failed to create scheduled visits:', error);
+            logger.error('Failed to create scheduled visits:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
@@ -435,7 +634,7 @@ class AISchedulingEngine {
     /**
      * Get contract details
      */
-    async getContractDetails(contractCode) {
+    private async getContractDetails(contractCode: string): Promise<any> {
         const { data: contract, error } = await supabaseAdmin
             .from('contracts')
             .select(`
@@ -455,7 +654,7 @@ class AISchedulingEngine {
     /**
      * Get installation details
      */
-    async getInstallationDetails(installationCode) {
+    private async getInstallationDetails(installationCode: string): Promise<any> {
         const { data: installation, error } = await supabaseAdmin
             .from('installations')
             .select(`
@@ -475,7 +674,7 @@ class AISchedulingEngine {
     /**
      * Get available partners based on criteria
      */
-    async getAvailablePartners(scheduleRequest) {
+    private async getAvailablePartners(scheduleRequest: ScheduleRequest): Promise<any[]> {
         const { data: partners, error } = await supabaseAdmin
             .from('partners')
             .select(`
@@ -489,7 +688,7 @@ class AISchedulingEngine {
         }
 
         // Filter partners based on specialty and availability
-        return partners.filter(partner => {
+        return (partners || []).filter(partner => {
             // Add filtering logic based on service type, availability, etc.
             return true; // Placeholder
         });
@@ -498,7 +697,7 @@ class AISchedulingEngine {
     /**
      * Get historical scheduling data for learning
      */
-    async getHistoricalData(scheduleRequest) {
+    private async getHistoricalData(scheduleRequest: ScheduleRequest): Promise<any[]> {
         const { data: historicalSchedules, error } = await supabaseAdmin
             .from('schedules')
             .select(`
@@ -512,7 +711,9 @@ class AISchedulingEngine {
             .limit(10);
 
         if (error) {
-            logger.warn('Failed to fetch historical data:', error);
+            logger.warn('Failed to fetch historical data:', { 
+                error: error.message 
+            });
             return [];
         }
 
@@ -522,7 +723,7 @@ class AISchedulingEngine {
     /**
      * Calculate SEPE regulatory requirements
      */
-    async calculateRegulatoryRequirements(installation) {
+    private async calculateRegulatoryRequirements(installation: any): Promise<RegulatoryRequirements> {
         // Implement SEPE hour calculation logic
         const baseHours = installation.employees_count * 0.5; // Simplified calculation
         const categoryMultiplier = installation.category === 'A' ? 1.5 : installation.category === 'B' ? 1.2 : 1.0;
@@ -538,7 +739,7 @@ class AISchedulingEngine {
     /**
      * Get partner patterns and preferences
      */
-    async getPartnerPatterns(partnerIds) {
+    private async getPartnerPatterns(partnerIds: string[]): Promise<any[]> {
         const { data: patterns, error } = await supabaseAdmin
             .from('historical_patterns')
             .select('*')
@@ -546,7 +747,9 @@ class AISchedulingEngine {
             .gte('confidence_level', 0.6);
 
         if (error) {
-            logger.warn('Failed to fetch partner patterns:', error);
+            logger.warn('Failed to fetch partner patterns:', { 
+                error: error.message 
+            });
             return [];
         }
 
@@ -556,7 +759,7 @@ class AISchedulingEngine {
     /**
      * Build scheduling constraints
      */
-    buildConstraints(scheduleRequest, installation) {
+    private buildConstraints(scheduleRequest: ScheduleRequest, installation: any): SchedulingConstraints {
         return {
             workingHours: installation.work_hours,
             maxHoursPerWeek: 40,
@@ -571,7 +774,7 @@ class AISchedulingEngine {
     /**
      * Build optimization objectives
      */
-    buildObjectives(scheduleRequest) {
+    private buildObjectives(scheduleRequest: ScheduleRequest): SchedulingObjectives {
         return {
             minimizeCost: true,
             minimizeTravelTime: true,
@@ -584,7 +787,7 @@ class AISchedulingEngine {
     /**
      * Update algorithm performance statistics
      */
-    async updateAlgorithmStats(algorithmId, result, executionTime) {
+    private async updateAlgorithmStats(algorithmId: string, result: any, executionTime: number): Promise<void> {
         try {
             const { data: algorithm, error: fetchError } = await supabaseAdmin
                 .from('ai_algorithms')
@@ -593,7 +796,9 @@ class AISchedulingEngine {
                 .single();
 
             if (fetchError) {
-                logger.warn(`Failed to fetch algorithm stats for ${algorithmId}:`, fetchError);
+                logger.warn(`Failed to fetch algorithm stats for ${algorithmId}:`, { 
+                    error: fetchError.message 
+                });
                 return;
             }
 
@@ -613,20 +818,24 @@ class AISchedulingEngine {
                 .eq('id', algorithmId);
 
             if (updateError) {
-                logger.warn(`Failed to update algorithm stats for ${algorithmId}:`, updateError);
+                logger.warn(`Failed to update algorithm stats for ${algorithmId}:`, { 
+                    error: updateError.message 
+                });
             }
 
         } catch (error) {
-            logger.warn('Failed to update algorithm statistics:', error);
+            logger.warn('Failed to update algorithm statistics:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     /**
      * Log performance metrics for analysis
      */
-    async logPerformanceMetrics(algorithmResults, bestResult, context) {
+    private async logPerformanceMetrics(algorithmResults: AlgorithmResult[], bestResult: AlgorithmResult, context: SchedulingContext): Promise<void> {
         try {
-            const metricsData = algorithmResults.map(result => ({
+            const metricsData: PerformanceMetricData[] = algorithmResults.map(result => ({
                 algorithm_id: result.algorithmId,
                 schedule_id: null, // Will be updated after schedule creation
                 execution_time_ms: result.executionTime,
@@ -640,19 +849,21 @@ class AISchedulingEngine {
             await this.performanceMetrics.logAlgorithmPerformance(metricsData);
 
         } catch (error) {
-            logger.warn('Failed to log performance metrics:', error);
+            logger.warn('Failed to log performance metrics:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
         }
     }
 
     /**
      * Generate performance comparison report
      */
-    generatePerformanceComparison(algorithmResults) {
+    private generatePerformanceComparison(algorithmResults: AlgorithmResult[]): PerformanceComparison | null {
         if (algorithmResults.length <= 1) {
             return null;
         }
 
-        const comparison = {
+        const comparison: PerformanceComparison = {
             totalAlgorithms: algorithmResults.length,
             bestScore: Math.max(...algorithmResults.map(r => r.score)),
             averageScore: algorithmResults.reduce((sum, r) => sum + r.score, 0) / algorithmResults.length,
@@ -679,19 +890,19 @@ class AISchedulingEngine {
     /**
      * Validate schedule request parameters
      */
-    validateScheduleRequest(request) {
-        const required = ['contractCode', 'installationCode', 'serviceType', 'startDate', 'endDate'];
+    private validateScheduleRequest(request: ScheduleRequest): boolean {
+        const required: (keyof ScheduleRequest)[] = ['contractCode', 'installationCode', 'serviceType', 'startDate', 'endDate'];
         return required.every(field => request[field] != null);
     }
 
     /**
      * Get algorithm performance summary
      */
-    async getAlgorithmPerformanceSummary() {
+    async getAlgorithmPerformanceSummary(): Promise<AlgorithmPerformanceSummary[]> {
         try {
             const algorithms = Array.from(this.algorithms.values());
             
-            const summary = algorithms.map(alg => ({
+            const summary: AlgorithmPerformanceSummary[] = algorithms.map(alg => ({
                 id: alg.config.id,
                 name: alg.config.name,
                 type: alg.config.algorithm_type,
@@ -704,7 +915,9 @@ class AISchedulingEngine {
             return summary.sort((a, b) => (b.stats.averageOptimizationScore || 0) - (a.stats.averageOptimizationScore || 0));
 
         } catch (error) {
-            logger.error('Failed to get algorithm performance summary:', error);
+            logger.error('Failed to get algorithm performance summary:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             return [];
         }
     }
@@ -712,7 +925,7 @@ class AISchedulingEngine {
     /**
      * Retrain machine learning models with new data
      */
-    async retrainModels() {
+    async retrainModels(): Promise<void> {
         try {
             logger.info('Starting ML model retraining...');
 
@@ -726,7 +939,9 @@ class AISchedulingEngine {
                         logger.info(`Retrained ML model: ${algorithmData.config.name}`);
                     }
                 } catch (error) {
-                    logger.error(`Failed to retrain ${algorithmData.config.name}:`, error);
+                    logger.error(`Failed to retrain ${algorithmData.config.name}:`, { 
+                        error: error instanceof Error ? error.message : String(error) 
+                    });
                 }
             });
 
@@ -735,10 +950,12 @@ class AISchedulingEngine {
             logger.info('ML model retraining completed');
 
         } catch (error) {
-            logger.error('ML model retraining failed:', error);
+            logger.error('ML model retraining failed:', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
             throw error;
         }
     }
 }
 
-module.exports = AISchedulingEngine;
+export default AISchedulingEngine;

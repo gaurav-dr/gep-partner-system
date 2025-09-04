@@ -1,21 +1,114 @@
-const logger = require('../../utils/logger');
+import { Logger, Partner } from '../../types';
+
+const logger: Logger = require('../../utils/logger');
+
+interface SchedulerConfig {
+  name: string;
+  algorithm_type: string;
+  version: string;
+  parameters?: Record<string, any>;
+  weights?: {
+    location?: number;
+    availability?: number;
+    cost?: number;
+    specialty?: number;
+  };
+}
+
+interface SchedulingContext {
+  installation: {
+    installation_code: string;
+    address: string;
+    service_type: string;
+    work_hours: string;
+    special_requirements?: string;
+  };
+  contract: {
+    contract_value: number;
+  };
+  regulatoryRequirements: {
+    totalHours: number;
+    minimumHoursPerMonth: number;
+  };
+  constraints: {
+    excludeWeekends?: boolean;
+  };
+  historicalData?: any[];
+}
+
+interface Visit {
+  date: string;
+  startTime: string;
+  endTime: string;
+  duration: number;
+  type: string;
+  notes: string;
+  specialRequirements?: string | null;
+}
+
+interface ScheduleResult {
+  visits: Visit[];
+  totalHours: number;
+  visitDuration: number;
+  visitsPerMonth: number;
+}
+
+interface ScoreBreakdown {
+  location: number;
+  availability: number;
+  cost: number;
+  specialty: number;
+  historical: number;
+}
+
+interface CompositeScoreResult {
+  compositeScore: number;
+  breakdown: ScoreBreakdown;
+}
+
+interface ValidationResult {
+  valid: boolean;
+  violations: string[];
+}
+
+interface OptimizationResult {
+  optimizationScore: number;
+  feasible: boolean;
+  partnerId: string;
+  visits?: Visit[];
+  totalHours: number;
+}
 
 /**
  * Base class for all scheduling algorithms
  * Provides common interface and utility methods
  */
-class BaseScheduler {
-    constructor(config) {
+abstract class BaseScheduler {
+    protected config: SchedulerConfig;
+    protected name: string;
+    protected type: string;
+    protected version: string;
+    protected parameters: Record<string, any>;
+    protected weights: {
+        location: number;
+        availability: number;
+        cost: number;
+        specialty: number;
+    };
+    protected isInitialized: boolean;
+
+    constructor(config: SchedulerConfig) {
         this.config = config;
         this.name = config.name;
         this.type = config.algorithm_type;
         this.version = config.version;
         this.parameters = config.parameters || {};
-        this.weights = config.weights || {
+        this.weights = {
             location: 0.4,
             availability: 0.3,
             cost: 0.2,
-            specialty: 0.1
+            specialty: 0.1,
+            ...config.weights
         };
         this.isInitialized = false;
     }
@@ -23,26 +116,22 @@ class BaseScheduler {
     /**
      * Initialize the scheduler - must be implemented by subclasses
      */
-    async initialize() {
-        throw new Error('initialize() method must be implemented by subclass');
-    }
+    abstract initialize(): Promise<void>;
 
     /**
      * Generate schedule - must be implemented by subclasses
      */
-    async generateSchedule(context) {
-        throw new Error('generateSchedule() method must be implemented by subclass');
-    }
+    abstract generateSchedule(context: SchedulingContext): Promise<OptimizationResult>;
 
     /**
      * Calculate distance between two locations (simplified)
      */
-    calculateDistance(location1, location2) {
+    protected calculateDistance(location1: string, location2: string): number {
         // Simplified distance calculation - in production, use proper geospatial calculations
         if (!location1 || !location2) return 50; // Default distance
 
         // Mock implementation - replace with actual geospatial calculation
-        const cityDistances = {
+        const cityDistances: Record<string, number> = {
             'ΑΘΗΝΑ-ΚΑΛΛΙΘΕΑ': 8,
             'ΑΘΗΝΑ-ΓΕΡΑΚΑΣ': 25,
             'ΚΑΛΛΙΘΕΑ-ΓΕΡΑΚΑΣ': 30,
@@ -60,7 +149,7 @@ class BaseScheduler {
     /**
      * Calculate location score (higher is better)
      */
-    calculateLocationScore(partnerCity, installationCity) {
+    protected calculateLocationScore(partnerCity: string, installationCity: string): number {
         const distance = this.calculateDistance(partnerCity, installationCity);
         
         // Convert distance to score (0-1, where 1 is best)
@@ -71,13 +160,13 @@ class BaseScheduler {
     /**
      * Calculate availability score based on partner availability
      */
-    calculateAvailabilityScore(partner, timeRequirements) {
+    protected calculateAvailabilityScore(partner: any, timeRequirements: any): number {
         if (!partner.partner_availability || partner.partner_availability.length === 0) {
             return 0.5; // Default availability if no data
         }
 
         // Calculate based on available hours vs required hours
-        const totalAvailableHours = partner.partner_availability.reduce((sum, avail) => {
+        const totalAvailableHours = partner.partner_availability.reduce((sum: number, avail: any) => {
             return sum + (avail.available_hours - avail.booked_hours);
         }, 0);
 
@@ -97,7 +186,7 @@ class BaseScheduler {
     /**
      * Calculate cost score (lower cost = higher score)
      */
-    calculateCostScore(partner, budget) {
+    protected calculateCostScore(partner: Partner, budget: number): number {
         if (!budget || budget <= 0) return 0.5;
 
         const costEfficiency = Math.min(1.0, budget / (partner.hourly_rate * 20)); // Assume 20 hours
@@ -107,8 +196,8 @@ class BaseScheduler {
     /**
      * Calculate specialty match score
      */
-    calculateSpecialtyScore(partner, serviceType) {
-        const specialtyMappings = {
+    protected calculateSpecialtyScore(partner: Partner, serviceType: string): number {
+        const specialtyMappings: Record<string, string[]> = {
             'occupational_doctor': ['Παθολόγος', 'Ιατρός', 'Ειδικός Ιατρός Εργασίας', 'Παιδίατρος'],
             'safety_engineer': ['Μηχανικός', 'Ηλεκτρολόγος Μηχανικός', 'Μηχανολόγος Μηχανικός', 'Μηχανικός Δομικών Έργων ΤΕ', 'Μηχανικός Παραγωγής & Διοίκησης', 'Μηχανολόγος Μηχανικός ΤΕ'],
             'specialist_consultation': ['Ειδικός Ιατρός Εργασίας', 'Παθολόγος']
@@ -134,7 +223,7 @@ class BaseScheduler {
     /**
      * Calculate historical success score based on past performance
      */
-    calculateHistoricalScore(partner, installation, historicalData) {
+    protected calculateHistoricalScore(partner: Partner, installation: any, historicalData: any[]): number {
         if (!historicalData || historicalData.length === 0) {
             return 0.5; // Neutral score if no historical data
         }
@@ -156,14 +245,14 @@ class BaseScheduler {
             }
 
             // Calculate average success rate for this partner
-            const avgScore = partnerSchedules.reduce((sum, schedule) => 
+            const avgScore = partnerSchedules.reduce((sum: number, schedule: any) => 
                 sum + (schedule.optimization_score || 0.5), 0) / partnerSchedules.length;
             
             return Math.min(1.0, avgScore + 0.1); // Small bonus for partner familiarity
         }
 
         // Calculate success rate for this specific partner-installation combination
-        const avgScore = relevantSchedules.reduce((sum, schedule) => 
+        const avgScore = relevantSchedules.reduce((sum: number, schedule: any) => 
             sum + (schedule.optimization_score || 0.5), 0) / relevantSchedules.length;
 
         // Bonus for successful history
@@ -173,12 +262,12 @@ class BaseScheduler {
     /**
      * Calculate composite optimization score
      */
-    calculateCompositeScore(partner, context) {
+    protected calculateCompositeScore(partner: Partner, context: SchedulingContext): CompositeScoreResult {
         const locationScore = this.calculateLocationScore(partner.city, context.installation.address);
         const availabilityScore = this.calculateAvailabilityScore(partner, context.regulatoryRequirements);
         const costScore = this.calculateCostScore(partner, context.contract.contract_value);
         const specialtyScore = this.calculateSpecialtyScore(partner, context.installation.service_type);
-        const historicalScore = this.calculateHistoricalScore(partner, context.installation, context.historicalData);
+        const historicalScore = this.calculateHistoricalScore(partner, context.installation, context.historicalData || []);
 
         const compositeScore = 
             (locationScore * this.weights.location) +
@@ -202,8 +291,8 @@ class BaseScheduler {
     /**
      * Generate visit schedule based on requirements
      */
-    generateVisitSchedule(partner, context, startDate, endDate) {
-        const visits = [];
+    protected generateVisitSchedule(partner: Partner, context: SchedulingContext, startDate: string, endDate: string): ScheduleResult {
+        const visits: Visit[] = [];
         const regulatoryReqs = context.regulatoryRequirements;
         
         // Calculate visit frequency
@@ -244,12 +333,12 @@ class BaseScheduler {
     /**
      * Generate optimal visit dates avoiding conflicts
      */
-    generateVisitDates(startDate, endDate, totalVisits, constraints) {
+    private generateVisitDates(startDate: string, endDate: string, totalVisits: number, constraints: any): Date[] {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const dates = [];
+        const dates: Date[] = [];
         
-        const daysBetween = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+        const daysBetween = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
         const intervalDays = Math.floor(daysBetween / totalVisits);
         
         let currentDate = new Date(start);
@@ -283,8 +372,8 @@ class BaseScheduler {
     /**
      * Get optimal visit time based on working hours and partner availability
      */
-    getOptimalVisitTime(visitDate, workingHours, partner) {
-        // Parse working hours (e.g., "ΔΕΥΤΕΡΑ - ΠΑΡΑΑΣΚΕΥΗ 09:00-17:00")
+    private getOptimalVisitTime(visitDate: Date, workingHours: string, partner: Partner): string {
+        // Parse working hours (e.g., "ΔΕΥΤΕΡΑ - ΠΑΡΑΣΚΕΥΗ 09:00-17:00")
         const timeMatch = workingHours.match(/(\d{2}):(\d{2})-(\d{2}):(\d{2})/);
         
         if (!timeMatch) {
@@ -303,7 +392,7 @@ class BaseScheduler {
     /**
      * Add hours to time string
      */
-    addHours(timeString, hours) {
+    protected addHours(timeString: string, hours: number): string {
         const [hour, minute, second] = timeString.split(':').map(Number);
         const date = new Date();
         date.setHours(hour, minute, second || 0);
@@ -315,7 +404,7 @@ class BaseScheduler {
     /**
      * Calculate months between two dates
      */
-    getMonthsBetween(startDate, endDate) {
+    private getMonthsBetween(startDate: Date, endDate: Date): number {
         const months = (endDate.getFullYear() - startDate.getFullYear()) * 12;
         return months - startDate.getMonth() + endDate.getMonth();
     }
@@ -323,8 +412,8 @@ class BaseScheduler {
     /**
      * Check if generated schedule meets all constraints
      */
-    validateSchedule(schedule, context) {
-        const violations = [];
+    protected validateSchedule(schedule: ScheduleResult, context: SchedulingContext): ValidationResult {
+        const violations: string[] = [];
         
         // Check total hours requirement
         const requiredHours = context.regulatoryRequirements.minimumHoursPerMonth;
@@ -335,7 +424,7 @@ class BaseScheduler {
         }
         
         // Check visit overlaps
-        const visits = schedule.visits.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const visits = schedule.visits.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         for (let i = 1; i < visits.length; i++) {
             const prevVisit = visits[i - 1];
             const currentVisit = visits[i];
@@ -366,7 +455,7 @@ class BaseScheduler {
     /**
      * Check if visit is within working hours
      */
-    isWithinWorkingHours(visit, workingHours) {
+    private isWithinWorkingHours(visit: Visit, workingHours: string): boolean {
         // Simplified check - implement proper parsing for complex working hours
         const timeMatch = workingHours.match(/(\d{2}):(\d{2})-(\d{2}):(\d{2})/);
         
@@ -383,8 +472,8 @@ class BaseScheduler {
     /**
      * Log algorithm execution metrics
      */
-    logMetrics(executionTime, result, context) {
-        logger.info(`${this.name} execution completed`, {
+    protected logMetrics(executionTime: number, result: OptimizationResult, context: SchedulingContext): void {
+        logger.info('Algorithm execution completed', {
             algorithm: this.name,
             type: this.type,
             executionTime,
@@ -397,4 +486,5 @@ class BaseScheduler {
     }
 }
 
-module.exports = BaseScheduler;
+export default BaseScheduler;
+export { OptimizationResult };

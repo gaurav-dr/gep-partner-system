@@ -1,5 +1,7 @@
-const { createClient } = require('@supabase/supabase-js');
-const logger = require('../utils/logger');
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { Logger } from '../types';
+
+const logger: Logger = require('../utils/logger');
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
   logger.error('Missing Supabase configuration in environment variables');
@@ -7,7 +9,7 @@ if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
 }
 
 // Client for authenticated operations
-const supabase = createClient(
+const supabase: SupabaseClient = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_ANON_KEY,
   {
@@ -19,7 +21,7 @@ const supabase = createClient(
 );
 
 // Service role client for admin operations
-const supabaseAdmin = createClient(
+const supabaseAdmin: SupabaseClient = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY,
   {
@@ -31,7 +33,7 @@ const supabaseAdmin = createClient(
 );
 
 // Test connection
-const testConnection = async () => {
+const testConnection = async (): Promise<boolean> => {
   try {
     const { data, error } = await supabase
       .from('system_settings')
@@ -39,19 +41,19 @@ const testConnection = async () => {
       .limit(1);
     
     if (error) {
-      logger.error('Supabase connection test failed:', error);
+      logger.error('Supabase connection test failed:', { error: error.message });
       return false;
     }
     
     logger.info('Supabase connection established successfully');
     return true;
   } catch (err) {
-    logger.error('Supabase connection error:', err);
+    logger.error('Supabase connection error:', { error: err instanceof Error ? err.message : String(err) });
     return false;
   }
 };
 
-module.exports = {
+export {
   supabase,
   supabaseAdmin,
   testConnection
