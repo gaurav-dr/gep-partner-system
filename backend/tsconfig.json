@@ -1,0 +1,71 @@
+{
+  "compilerOptions": {
+    /* Language and Environment */
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+
+    /* Modules */
+    "moduleResolution": "node",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@config/*": ["config/*"],
+      "@services/*": ["services/*"],
+      "@middleware/*": ["middleware/*"],
+      "@routes/*": ["routes/*"],
+      "@utils/*": ["utils/*"],
+      "@types/*": ["types/*"]
+    },
+
+    /* Emit */
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "removeComments": true,
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "sourceMap": true,
+
+    /* Interop Constraints */
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+
+    /* Type Checking */
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+
+    /* Completeness */
+    "skipLibCheck": true,
+
+    /* Advanced */
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ],
+  "ts-node": {
+    "register": {
+      "paths": true
+    }
+  }
+}
