@@ -97,8 +97,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d/migrations:ro
-      - ./supabase/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+      - ../../supabase/migrations:/docker-entrypoint-initdb.d/migrations:ro
+      - ../../supabase/seed_100x_partners.sql:/docker-entrypoint-initdb.d/seed.sql:ro
     networks:
       - gep-network
 
@@ -129,7 +129,7 @@ services:
       - "8000:8000"
       - "8443:8443"
     volumes:
-      - ./supabase/kong.yml:/var/lib/kong/kong.yml:ro
+      - ../../supabase/kong.yml:/var/lib/kong/kong.yml:ro
     depends_on:
       - supabase-auth
       - supabase-rest

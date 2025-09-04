@@ -5,6 +5,9 @@
 -- Based on: GEP Scheduling Spec requirements
 -- =====================================================
 
+-- Enable required extensions for GIST constraints
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
 -- =====================================================
 -- USER MANAGEMENT AND AUTHENTICATION
 -- =====================================================

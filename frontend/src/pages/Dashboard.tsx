@@ -1,7 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
+interface DashboardStats {
+  totalRequests: number;
+  activePartners: number;
+  pendingAssignments: number;
+  completedThisMonth: number;
+}
+
 const Dashboard: React.FC = () => {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalRequests: 0,
+    activePartners: 0,
+    pendingAssignments: 0,
+    completedThisMonth: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        // Fetch data from multiple endpoints
+        const [partnersRes, requestsRes, assignmentsRes] = await Promise.all([
+          fetch('/api/partners'),
+          fetch('/api/customer-requests'),
+          fetch('/api/assignments')
+        ]);
+
+        const partners = partnersRes.ok ? await partnersRes.json() : [];
+        const requests = requestsRes.ok ? await requestsRes.json() : [];
+        const assignments = assignmentsRes.ok ? await assignmentsRes.json() : [];
+
+        // Calculate stats
+        const activePartners = Array.isArray(partners) ? partners.filter(p => p.is_active).length : 0;
+        const totalRequests = Array.isArray(requests) ? requests.length : 0;
+        const pendingAssignments = Array.isArray(assignments) ? assignments.filter(a => a.status === 'proposed' || a.status === 'pending').length : 0;
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+        const completedThisMonth = Array.isArray(assignments) ? assignments.filter(a => {
+          if (a.status !== 'completed' || !a.completed_at) return false;
+          const completedDate = new Date(a.completed_at);
+          return completedDate.getMonth() === currentMonth && completedDate.getFullYear() === currentYear;
+        }).length : 0;
+
+        setStats({
+          totalRequests,
+          activePartners,
+          pendingAssignments,
+          completedThisMonth
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+        // Keep default values on error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardStats();
+  }, []);
   return (
     <div className="px-4 sm:px-0">
       <div className="md:flex md:items-center md:justify-between">
@@ -28,7 +85,9 @@ const Dashboard: React.FC = () => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Requests</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">47</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {loading ? '...' : stats.totalRequests}
+              </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+12%</p>
             </dd>
           </div>
@@ -43,7 +102,9 @@ const Dashboard: React.FC = () => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Active Partners</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">23</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {loading ? '...' : stats.activePartners}
+              </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+3</p>
             </dd>
           </div>
@@ -58,7 +119,9 @@ const Dashboard: React.FC = () => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Pending Assignments</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">8</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {loading ? '...' : stats.pendingAssignments}
+              </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-red-600">-2</p>
             </dd>
           </div>
@@ -73,7 +136,9 @@ const Dashboard: React.FC = () => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Completed This Month</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">31</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {loading ? '...' : stats.completedThisMonth}
+              </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+8%</p>
             </dd>
           </div>
