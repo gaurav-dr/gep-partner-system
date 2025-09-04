@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const AuthService = require('../services/AuthService');
+const DirectAuthService = require('../services/DirectAuthService');
 const { authenticate, authorize, auditLog } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
@@ -133,7 +134,20 @@ router.post('/login', authLimiter, validateLogin, async (req, res, next) => {
         const ipAddress = req.ip;
         const userAgent = req.get('User-Agent');
 
-        const result = await AuthService.login(email, password, ipAddress, userAgent);
+        let result;
+        
+        try {
+            // Try Supabase-based auth first
+            result = await AuthService.login(email, password, ipAddress, userAgent);
+            logger.info('Login successful via Supabase AuthService');
+        } catch (supabaseError) {
+            logger.warn('Supabase auth failed, trying direct database auth:', supabaseError.message);
+            
+            // Fallback to direct database authentication
+            const directAuthService = new DirectAuthService();
+            result = await directAuthService.login(email, password, ipAddress, userAgent);
+            logger.info('Login successful via DirectAuthService');
+        }
 
         res.json({
             success: true,
