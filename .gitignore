@@ -55,7 +55,7 @@ coverage/
 *.xlsx
 *.docx
 !supabase/migrations/*.sql
-!supabase/seed.sql
+!supabase/*.sql
 
 # Claude configuration (keep local settings)
 .claude/settings.local.json
