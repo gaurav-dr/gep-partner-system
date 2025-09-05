@@ -3,7 +3,7 @@ import {
   traceabilityService,
   TraceabilityEvent,
   AssignmentTraceRecord,
-} from '../services/traceabilityService.ts';
+} from '../services/traceabilityService';
 
 const TraceabilityDashboard: React.FC = () => {
   const [events, setEvents] = useState<TraceabilityEvent[]>([]);

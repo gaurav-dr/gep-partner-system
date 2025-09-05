@@ -1,22 +1,29 @@
 import React, { useMemo, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext.tsx';
+import { useAuth } from '../contexts/AuthContext';
 
-const adminNavigation = [
+interface NavigationItem {
+  name: string;
+  href: string;
+  current: boolean;
+  tab?: string;
+}
+
+const partnerNavigation: NavigationItem[] = [
+  { name: 'Calendar', href: '#', current: false, tab: 'calendar' },
+  { name: 'Pending Requests', href: '#', current: false, tab: 'pending' },
+  { name: 'Change Requests', href: '#', current: false, tab: 'changes' },
+  { name: 'Reports', href: '#', current: false, tab: 'reports' },
+  { name: 'Profile', href: '#', current: false, tab: 'profile' },
+];
+
+const adminNavigation: NavigationItem[] = [
   { name: 'Dashboard', href: '/', current: false },
   { name: 'Customer Requests', href: '/requests', current: false },
   { name: 'Partners', href: '/partners', current: false },
   { name: 'Assignments', href: '/assignments', current: false },
   { name: 'Analytics', href: '/analytics', current: false },
   { name: 'Traceability', href: '/traceability', current: false },
-];
-
-const partnerNavigation = [
-  { name: 'Calendar', href: '#', current: false, tab: 'calendar' },
-  { name: 'Pending Requests', href: '#', current: false, tab: 'pending' },
-  { name: 'Change Requests', href: '#', current: false, tab: 'changes' },
-  { name: 'Reports', href: '#', current: false, tab: 'reports' },
-  { name: 'Profile', href: '#', current: false, tab: 'profile' },
 ];
 
 interface LayoutProps {
@@ -93,8 +100,8 @@ const Layout = memo<LayoutProps>(({ children, onTabChange, activeTab }) => {
                   )
                 ))}
               </div>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
+              </div>
+              <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-4">
               <div className="text-sm text-gray-700">
                 Welcome, <span className="font-medium">{user?.name}</span>
                 <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -108,9 +115,9 @@ const Layout = memo<LayoutProps>(({ children, onTabChange, activeTab }) => {
                 Logout
               </button>
             </div>
+            </div>
           </div>
-        </div>
-      </nav>
+        </nav>
 
       <div className="py-10">
         <main id="main-content" role="main" tabIndex={-1}>
@@ -120,6 +127,7 @@ const Layout = memo<LayoutProps>(({ children, onTabChange, activeTab }) => {
         </main>
       </div>
     </div>
+    </>
   );
 });
 

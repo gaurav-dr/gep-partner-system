@@ -102,7 +102,7 @@ export function useForm<T extends Record<string, any>>(
   const validateField = useCallback(
     <K extends keyof T>(field: K): string | undefined => {
       const value = values[field];
-      const rules = validationRules[field];
+      const rules = (validationRules as any)[field] as ValidationRule<T[K]> | undefined;
 
       if (!rules) return undefined;
 
@@ -225,7 +225,7 @@ export function useForm<T extends Record<string, any>>(
   const getFieldProps = useCallback(
     <K extends keyof T>(field: K) => {
       return {
-        value: values[field] || '',
+        value: values[field] as T[K],
         name: String(field),
         onChange: (
           e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>

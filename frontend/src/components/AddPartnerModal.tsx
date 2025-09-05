@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { partnersApi } from '../services/supabaseApi.ts';
+import { partnersApi } from '../services/supabaseApi';
 
 interface AddPartnerModalProps {
   isOpen: boolean;

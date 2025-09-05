@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { requestsApi } from '../services/supabaseApi.ts';
+import { requestsApi } from '../services/supabaseApi';
 import { Link } from 'react-router-dom';
-import AISchedulingModal from '../components/AISchedulingModal.tsx';
+import AISchedulingModal from '../components/AISchedulingModal';
 import { CustomerRequest as AICustomerRequest } from '../services/aiScheduler';
 
 interface CustomerRequest {

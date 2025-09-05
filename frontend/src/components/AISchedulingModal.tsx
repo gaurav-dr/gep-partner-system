@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { aiScheduler, AIRecommendation, CustomerRequest } from '../services/aiScheduler.ts';
-import { traceabilityService } from '../services/traceabilityService.ts';
+import { aiScheduler, AIRecommendation, CustomerRequest } from '../services/aiScheduler';
+import { traceabilityService } from '../services/traceabilityService';
 
 interface AISchedulingModalProps {
   isOpen: boolean;

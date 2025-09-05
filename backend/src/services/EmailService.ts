@@ -1,4 +1,4 @@
-const sgMail = require('@sendgrid/mail');
+import sgMail from '@sendgrid/mail';
 import { Logger, Partner, CustomerRequest } from '../types';
 
 const logger: Logger = require('../utils/logger');

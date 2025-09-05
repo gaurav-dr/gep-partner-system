@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { traceabilityService } from '../services/traceabilityService.ts';
+import { traceabilityService } from '../services/traceabilityService';
 
 interface PartnerUser {
   id: string;

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from 'react-query';
-import { useAuth } from '../contexts/AuthContext.tsx';
-import PartnerCalendar from '../components/PartnerCalendar.tsx';
-import PartnerPendingRequests from '../components/PartnerPendingRequests.tsx';
-import PartnerChangeRequests from '../components/PartnerChangeRequests.tsx';
-import PartnerReports from '../components/PartnerReports.tsx';
-import PartnerProfile from '../components/PartnerProfile.tsx';
+import { useAuth } from '../contexts/AuthContext';
+import PartnerCalendar from '../components/PartnerCalendar';
+import PartnerPendingRequests from '../components/PartnerPendingRequests';
+import PartnerChangeRequests from '../components/PartnerChangeRequests';
+import PartnerReports from '../components/PartnerReports';
+import PartnerProfile from '../components/PartnerProfile';
 
 interface PartnerUser {
   id: string;

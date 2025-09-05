@@ -2,22 +2,22 @@ import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
-import Layout from './components/Layout.tsx';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { LoadingState } from './components/ui';
 
 // Lazy load pages for code splitting
-const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
-const CustomerRequests = lazy(() => import('./pages/CustomerRequests.tsx'));
-const Partners = lazy(() => import('./pages/Partners.tsx'));
-const NewRequest = lazy(() => import('./pages/NewRequest.tsx'));
-const Assignments = lazy(() => import('./pages/Assignments.tsx'));
-const Analytics = lazy(() => import('./pages/Analytics.tsx'));
-const TestConnection = lazy(() => import('./pages/TestConnection.tsx'));
-const TraceabilityDashboard = lazy(() => import('./pages/TraceabilityDashboard.tsx'));
-const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard.tsx'));
-const Login = lazy(() => import('./pages/Login.tsx'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CustomerRequests = lazy(() => import('./pages/CustomerRequests'));
+const Partners = lazy(() => import('./pages/Partners'));
+const NewRequest = lazy(() => import('./pages/NewRequest'));
+const Assignments = lazy(() => import('./pages/Assignments'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const TestConnection = lazy(() => import('./pages/TestConnection'));
+const TraceabilityDashboard = lazy(() => import('./pages/TraceabilityDashboard'));
+const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard'));
+const Login = lazy(() => import('./pages/Login'));
 
 const queryClient = new QueryClient({
   defaultOptions: {

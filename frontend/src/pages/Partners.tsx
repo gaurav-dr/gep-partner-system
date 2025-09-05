@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
-import { partnersApi } from '../services/supabaseApi.ts';
-import PartnerDetailModal from '../components/PartnerDetailModal.tsx';
-import AddPartnerModal from '../components/AddPartnerModal.tsx';
+import { partnersApi } from '../services/supabaseApi';
+import PartnerDetailModal from '../components/PartnerDetailModal';
+import AddPartnerModal from '../components/AddPartnerModal';
 
 interface Partner {
   id: string;

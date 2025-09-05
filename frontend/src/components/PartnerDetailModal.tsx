@@ -7,7 +7,7 @@ import {
   installationsApi,
   clientsApi,
   contractsApi,
-} from '../services/supabaseApi.ts';
+} from '../services/supabaseApi';
 
 interface Partner {
   id: string;
@@ -48,10 +48,27 @@ interface Assignment {
   customer_request_id: number;
   status: string;
   assigned_date: string;
-  estimated_completion: string;
-  priority: string;
-  service_type: string;
+}
+
+interface Installation {
+  installation_code: string;
+  company_code: string;
+  address: string;
+  employees_count: number;
+  category: string;
+  description: string;
+}
+
+interface Recommendation {
+  type: string;
+  score: number;
+  project: string;
   location: string;
+  reason: string;
+  expectedHours: number;
+  estimatedCost: number;
+  priority: string;
+  action: string;
 }
 
 const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen, onClose }) => {
@@ -67,7 +84,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
       console.log('🔍 Generating visit data for partner:', partner.id, partner.name);
 
       try {
-        let installations = [];
+        let installations: Installation[] = [];
 
         try {
           installations = await installationsApi.getAll();
@@ -204,7 +221,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
       console.log('🤖 Generating AI recommendations for partner:', partner.id);
 
       try {
-        let installations = [];
+        let installations: Installation[] = [];
 
         try {
           installations = await installationsApi.getAll();
@@ -256,7 +273,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
           ];
         }
 
-        const recommendations = [];
+        const recommendations: Recommendation[] = [];
 
         // Calculate partner performance metrics (use simulated data for now)
         const estimatedCompletedVisits = installations ? installations.length * 3 : 15; // Estimate based on installations

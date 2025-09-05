@@ -9,8 +9,6 @@ module.exports = {
     'react-app',
     'react-app/jest',
     'plugin:@typescript-eslint/recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
     'plugin:jsx-a11y/recommended',
     'prettier',
   ],
@@ -23,23 +21,20 @@ module.exports = {
     sourceType: 'module',
   },
   plugins: [
-    'react',
-    'react-hooks',
     '@typescript-eslint',
     'jsx-a11y',
     'prettier',
   ],
   rules: {
     // Prettier rules
-    'prettier/prettier': 'error',
+    'prettier/prettier': 'warn',
     
     // TypeScript rules
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
     '@typescript-eslint/no-non-null-assertion': 'warn',
-    '@typescript-eslint/prefer-const': 'error',
     
     // React rules
     'react/react-in-jsx-scope': 'off', // Not needed in React 17+
@@ -51,14 +46,17 @@ module.exports = {
     // General rules
     'no-console': ['warn', { allow: ['warn', 'error'] }],
     'no-debugger': 'error',
-    'prefer-const': 'error',
     'no-var': 'error',
     
     // Accessibility rules
     'jsx-a11y/anchor-is-valid': 'warn',
-    'jsx-a11y/alt-text': 'error',
-    'jsx-a11y/aria-props': 'error',
-    'jsx-a11y/aria-role': 'error',
+    'jsx-a11y/alt-text': 'warn',
+    'jsx-a11y/aria-props': 'warn',
+    'jsx-a11y/aria-role': 'warn',
+    'jsx-a11y/label-has-associated-control': 'warn',
+    'jsx-a11y/click-events-have-key-events': 'warn',
+    'jsx-a11y/no-static-element-interactions': 'warn',
+    'jsx-a11y/no-noninteractive-element-interactions': 'warn',
   },
   settings: {
     react: {

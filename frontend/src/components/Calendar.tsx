@@ -1,9 +1,28 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { schedulesApi } from '../services/supabaseApi.ts';
+import { schedulesApi } from '../services/supabaseApi';
 
 interface CalendarProps {
   view?: 'month' | 'week' | 'day';
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  type: 'inspection' | 'consultation';
+  partner: string;
+  client: string;
+  location: string;
+  status: string;
+}
+
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  events: CalendarEvent[];
 }
 
 const Calendar: React.FC<CalendarProps> = ({ view = 'month' }) => {
@@ -23,7 +42,7 @@ const Calendar: React.FC<CalendarProps> = ({ view = 'month' }) => {
   const { start, end } = getDateRange();
 
   // Fetch scheduled visits/events
-  const { data: events = [], isLoading } = useQuery<any[]>(
+  const { data: events = [], isLoading } = useQuery<CalendarEvent[]>(
     ['calendar-events', start, end],
     () => schedulesApi.getByDateRange(start, end),
     {
@@ -45,14 +64,14 @@ const Calendar: React.FC<CalendarProps> = ({ view = 'month' }) => {
   );
 
   // Generate calendar days
-  const generateCalendarDays = () => {
+  const generateCalendarDays = (): CalendarDay[] => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    const days = [];
+    const days: CalendarDay[] = [];
     const currentDateForComparison = new Date();
 
     for (let i = 0; i < 42; i++) {

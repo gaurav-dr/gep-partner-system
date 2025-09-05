@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../config/supabase.ts';
+import { supabase } from '../config/supabase';
 
 const TestConnection: React.FC = () => {
   const [connectionTest, setConnectionTest] = useState<any>(null);
@@ -13,7 +13,7 @@ const TestConnection: React.FC = () => {
 
       try {
         // Test 0: Check what client we're using
-        const decodeJWT = token => {
+        const decodeJWT = (token: string) => {
           try {
             return JSON.parse(atob(token.split('.')[1]));
           } catch {
@@ -21,9 +21,9 @@ const TestConnection: React.FC = () => {
           }
         };
 
-        const keyPayload = decodeJWT(supabase.supabaseKey || '');
+        const keyPayload = decodeJWT((supabase as any).supabaseKey || '');
         console.log('🔑 Supabase client config:', {
-          url: supabase.supabaseUrl,
+          url: (supabase as any).supabaseUrl,
           keyRole: keyPayload?.role,
           isServiceRole: keyPayload?.role === 'service_role',
         });

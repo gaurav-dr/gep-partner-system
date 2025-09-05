@@ -1,5 +1,5 @@
-import { partnersApi, installationsApi, contractsApi } from './supabaseApi.ts';
-import { traceabilityService } from './traceabilityService.ts';
+import { partnersApi, installationsApi, contractsApi } from './supabaseApi';
+import { traceabilityService } from './traceabilityService';
 
 interface CustomerRequest {
   id: number;

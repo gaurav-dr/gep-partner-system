@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { assignmentsApi } from '../services/supabaseApi.ts';
-import Calendar from '../components/Calendar.tsx';
+import { assignmentsApi } from '../services/supabaseApi';
+import Calendar from '../components/Calendar';
 
 interface Assignment {
   id: number;

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { requestsApi } from '../services/supabaseApi.ts';
-import { traceabilityService } from '../services/traceabilityService.ts';
+import { requestsApi } from '../services/supabaseApi';
+import { traceabilityService } from '../services/traceabilityService';
 
 interface CustomerRequestForm {
   name: string;

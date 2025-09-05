@@ -10,7 +10,7 @@ const Dashboard: React.FC = memo(() => {
       <div className="px-4 sm:px-0">
         <div className="rounded-md bg-red-50 p-4">
           <div className="text-sm text-red-700">
-            <p>Failed to load dashboard data: {error?.message}</p>
+            <p>Failed to load dashboard data: {(error as any)?.message || 'Unknown error'}</p>
             <button
               onClick={() => window.location.reload()}
               className="mt-2 text-red-800 underline"

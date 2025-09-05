@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../config/supabase.ts';
+import { supabase } from '../config/supabase';
 
 interface User {
   email: string;
@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const parsedUser = JSON.parse(demoUser);
         setUser(parsedUser);
         setLoading(false);
-        return;
+        return undefined;
       } catch (error) {
         console.warn('Invalid demo user data in localStorage');
         localStorage.removeItem('gep_demo_user');
