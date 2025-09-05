@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { Logger, Partner, CreatePartnerRequest, UpdatePartnerRequest } from '../types';
 
-const { supabase } = require('../config/supabase');
+import { supabaseAdmin } from '../config/supabase';
 const logger: Logger = require('../utils/logger');
 const { validateRequest } = require('../middleware/validation');
 
@@ -34,9 +34,10 @@ interface PartnersQuery {
 // GET /api/partners - Get all partners
 router.get('/', async (req: Request<{}, any, {}, PartnersQuery>, res: Response, next: NextFunction) => {
   try {
+
     const { is_active, specialty, city, page = '1', limit = '20' } = req.query;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('partners')
       .select('*');
 
@@ -73,7 +74,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response, next: Nex
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('partners')
       .select(`
         *,
@@ -98,7 +99,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response, next: Nex
 // POST /api/partners - Create new partner
 router.post('/', validateRequest(createPartnerSchema), async (req: Request<{}, Partner, CreatePartnerRequest>, res: Response, next: NextFunction) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('partners')
       .insert([req.body])
       .select()
@@ -118,7 +119,7 @@ router.put('/:id', validateRequest(updatePartnerSchema), async (req: Request<{ i
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('partners')
       .update(req.body)
       .eq('id', id)
@@ -144,7 +145,7 @@ router.delete('/:id', async (req: Request<{ id: string }>, res: Response, next: 
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('partners')
       .delete()
       .eq('id', id);

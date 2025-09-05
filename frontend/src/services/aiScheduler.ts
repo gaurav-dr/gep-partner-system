@@ -115,8 +115,30 @@ class AIScheduler {
 
   private async loadPartners(): Promise<Partner[]> {
     try {
-      const partners = await partnersApi.getAll();
-      return partners || [];
+      const partnersData = await partnersApi.getAll();
+      if (!partnersData || !Array.isArray(partnersData)) {
+        console.warn('⚠️ No partners data received, using fallback data');
+        return this.getFallbackPartners();
+      }
+
+      // Map the API data to the expected Partner structure
+      const partners = partnersData.map((apiPartner: any) => ({
+        id: apiPartner.id,
+        name: apiPartner.name,
+        specialty: apiPartner.specialty,
+        city: apiPartner.city,
+        working_hours: '09:00-17:00', // Default working hours
+        blocked_days: ['Sunday'], // Default blocked days
+        hourly_rate: apiPartner.hourly_rate,
+        max_hours_per_week: apiPartner.max_hours_per_week,
+        experience_years: Math.floor(Math.random() * 10) + 5, // Random experience 5-15 years
+        availability_status: apiPartner.is_active ? 'Available' : 'Unavailable',
+        is_active: apiPartner.is_active,
+        rating: 4.0 + Math.random() * 1.0, // Random rating 4.0-5.0
+      }));
+
+      console.log('✅ Mapped partners data:', partners.length);
+      return partners;
     } catch (error) {
       console.warn('⚠️ Failed to load partners, using fallback data');
       return this.getFallbackPartners();
@@ -193,11 +215,11 @@ class AIScheduler {
         'emergency_response_assessment',
       ].includes(request.work_type);
 
-      if (requiresMedical && !partner.specialty.toLowerCase().includes('παθολόγος')) {
+      if (requiresMedical && !partner.specialty.toLowerCase().includes('occupational doctor')) {
         return false;
       }
 
-      if (requiresSafety && !partner.specialty.toLowerCase().includes('μηχανικός')) {
+      if (requiresSafety && !partner.specialty.toLowerCase().includes('safety engineer')) {
         return false;
       }
 
@@ -318,7 +340,7 @@ class AIScheduler {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() + 7); // Start next week
 
-    let currentDate = new Date(startDate);
+    const currentDate = new Date(startDate);
     let visitId = 1000;
 
     for (const assignment of assignments) {
@@ -418,9 +440,9 @@ class AIScheduler {
     const workType = request.work_type.toLowerCase();
     const specialty = partner.specialty.toLowerCase();
 
-    if (workType.includes('health') && specialty.includes('παθολόγος')) return 95;
-    if (workType.includes('safety') && specialty.includes('μηχανικός')) return 95;
-    if (workType.includes('occupational') && specialty.includes('παθολόγος')) return 90;
+    if (workType.includes('health') && specialty.includes('occupational doctor')) return 95;
+    if (workType.includes('safety') && specialty.includes('safety engineer')) return 95;
+    if (workType.includes('occupational') && specialty.includes('occupational doctor')) return 90;
 
     return 70; // General match
   }

@@ -1,18 +1,21 @@
-# GEP Partner System - Development Guide
+# GEP Partner System - Development Guide (TypeScript)
 
-## Local Development Setup
+## Local Development Setup - TypeScript Migration Complete
 
 ### Prerequisites
 
 Before setting up the development environment, ensure you have:
 
-#### Required (Docker-Only Setup)
-- **Docker** and **Docker Compose** installed
+#### Required for TypeScript Development
+- **Node.js 18+** and **npm** (required for TypeScript compilation)
 - **Git** for version control
+- **TypeScript** globally installed (`npm install -g typescript`)
+- **IDE with TypeScript support** (VS Code recommended)
 
 #### Optional Tools  
 - **Supabase CLI** (for advanced database management)
-- **Node.js 18+** and **npm** (ONLY for IDE support - application runs in Docker)
+- **Docker** and **Docker Compose** (for containerized development)
+- **ESLint and Prettier extensions** for your IDE
 
 ### 🐳 Docker-First Development (MANDATORY)
 
@@ -32,55 +35,69 @@ docker-compose up -d
 # - Supabase Studio: http://localhost:8000
 ```
 
-### Manual Setup (Native Development)
+### TypeScript Development Setup (Recommended)
 
-If you prefer to run services natively for development:
+Native development with full TypeScript support:
 
-#### 1. Supabase Setup
-
-```bash
-cd supabase
-supabase start
-# Note the API URL and anon key for environment setup
-```
-
-#### 2. Backend Setup
+#### 1. Backend Setup (TypeScript)
 
 ```bash
 cd backend
 npm install
 
 # Copy and configure environment
-cp .env.example .env
+cp .env.development.example .env
 # Edit .env with your Supabase credentials
 
-# Start development server
+# TypeScript development with hot reload
 npm run dev
-# Backend runs on http://localhost:3001
+# Backend runs on http://localhost:3001 with ts-node
+
+# Type checking
+npm run type-check
+
+# Build TypeScript to JavaScript
+npm run build
 ```
 
-#### 3. Frontend Setup
+#### 2. Frontend Setup (React + TypeScript)
 
 ```bash
 cd frontend
 npm install
 
 # Copy and configure environment
-cp .env.example .env
+cp .env.development.example .env
 # Edit .env with your backend API URL
 
-# Start development server
-npm start
-# Frontend runs on http://localhost:3000
+# Start development server with TypeScript
+PORT=3002 ESLINT_NO_DEV_ERRORS=true npm start
+# Frontend runs on http://localhost:3002
+
+# Type checking (separate terminal)
+npx tsc --noEmit --watch
+```
+
+#### 3. Development Workflow
+
+```bash
+# Terminal 1: Backend TypeScript
+cd backend && npm run dev
+
+# Terminal 2: Frontend React + TypeScript
+cd frontend && PORT=3002 ESLINT_NO_DEV_ERRORS=true npm start
+
+# Terminal 3: Type checking (optional)
+cd frontend && npx tsc --noEmit --watch
 ```
 
 ## Environment Configuration
 
-### Backend Environment (`.env`)
+### Backend Environment (`.env`) - TypeScript
 
 ```bash
 # Database Configuration
-SUPABASE_URL=http://localhost:8000
+SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
@@ -90,14 +107,14 @@ JWT_EXPIRES_IN=7d
 
 # API Configuration
 PORT=3001
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3002
 NODE_ENV=development
 
-# Email Service (SendGrid)
+# Email Service (SendGrid) - Optional
 SENDGRID_API_KEY=your_sendgrid_api_key
 FROM_EMAIL=noreply@yourdomain.com
 
-# AI Integration
+# AI Integration - Optional
 ANTHROPIC_API_KEY=your_anthropic_api_key
 
 # Rate Limiting
@@ -106,9 +123,13 @@ RATE_LIMIT_WINDOW_MS=900000
 
 # Logging
 LOG_LEVEL=debug
+
+# TypeScript Development
+TS_NODE_PROJECT=tsconfig.json
+TS_NODE_TRANSPILE_ONLY=true
 ```
 
-### Frontend Environment (`.env`)
+### Frontend Environment (`.env`) - React TypeScript
 
 ```bash
 # API Configuration
@@ -116,8 +137,17 @@ REACT_APP_API_URL=http://localhost:3001
 REACT_APP_ENVIRONMENT=development
 
 # Supabase Configuration
-REACT_APP_SUPABASE_URL=http://localhost:8000
+REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Development Configuration
+PORT=3002
+ESLINT_NO_DEV_ERRORS=true
+TSC_COMPILE_ON_ERROR=true
+GENERATE_SOURCEMAP=true
+
+# TypeScript Development
+REACT_APP_ENV=development
 ```
 
 ## Development Workflow
@@ -126,65 +156,84 @@ REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ```
 gep-partner-system/
-├── backend/                 # Node.js API server
-│   ├── src/
-│   │   ├── routes/         # API endpoints
-│   │   ├── services/       # Business logic
-│   │   ├── middleware/     # Express middleware
-│   │   └── utils/          # Utility functions
+├── backend/                 # Node.js API server (TypeScript)
+│   ├── src/                 # TypeScript source files
+│   │   ├── types/           # TypeScript type definitions
+│   │   ├── routes/          # API endpoints (*.ts)
+│   │   ├── services/        # Business logic (*.ts)
+│   │   ├── middleware/      # Express middleware (*.ts)
+│   │   ├── utils/           # Utility functions (*.ts)
+│   │   └── config/          # Configuration (*.ts)
+│   ├── dist/                # Compiled JavaScript output
 │   ├── package.json
-│   └── Dockerfile
-├── frontend/               # React application
+│   ├── tsconfig.json       # TypeScript configuration
+│   └── nodemon.json        # Development configuration
+├── frontend/               # React application (TypeScript)
 │   ├── src/
-│   │   ├── components/     # Reusable UI components
-│   │   ├── pages/          # Route components
-│   │   ├── contexts/       # React contexts
-│   │   └── services/       # API clients
+│   │   ├── components/      # UI components (*.tsx)
+│   │   ├── pages/           # Route components (*.tsx)
+│   │   ├── contexts/        # React contexts (*.tsx)
+│   │   ├── services/        # API clients (*.ts)
+│   │   ├── types/           # TypeScript interfaces (*.ts)
+│   │   ├── hooks/           # Custom React hooks (*.ts)
+│   │   └── utils/           # Utility functions (*.ts)
 │   ├── package.json
-│   └── Dockerfile
+│   ├── tsconfig.json       # TypeScript configuration
+│   ├── .eslintrc.js        # ESLint configuration
+│   └── .prettierrc         # Prettier configuration
 ├── supabase/              # Database schema and functions
 │   ├── migrations/        # Database migrations
 │   ├── config.toml        # Supabase configuration
 │   └── seed.sql           # Initial data
-├── tests/                 # E2E tests
+├── tests/                 # E2E tests (Playwright + TypeScript)
 ├── docs/                  # Documentation
 └── docker-compose.yml     # Local development setup
 ```
 
 ### Development Scripts
 
-#### Backend Scripts
+#### Backend Scripts (TypeScript)
 
 ```bash
-# Development with hot reload
+# Development with hot reload (ts-node)
 npm run dev
+
+# TypeScript compilation
+npm run build
 
 # Start production build
 npm start
 
-# Run tests
+# Type checking only
+npm run type-check
+
+# Run tests (Jest with TypeScript)
 npm test
 npm run test:watch
-
-# Linting and formatting
-npm run lint
-npm run lint:fix
 ```
 
-#### Frontend Scripts
+#### Frontend Scripts (React + TypeScript)
 
 ```bash
-# Development server with hot reload
-npm start
+# Development server with TypeScript (port 3002)
+PORT=3002 ESLINT_NO_DEV_ERRORS=true npm start
 
-# Production build
+# Production build with TypeScript
 npm run build
 
-# Run tests
+# Run tests (Jest + Testing Library + TypeScript)
 npm test
 npm run test:coverage
 
-# Type checking
+# ESLint with TypeScript rules
+npm run lint
+npm run lint:fix
+
+# Prettier formatting
+npm run format
+npm run format:check
+
+# Type checking only
 npx tsc --noEmit
 ```
 
@@ -291,15 +340,46 @@ use: {
 
 ### TypeScript Configuration
 
-Both frontend and backend use TypeScript with strict settings:
+#### Backend TypeScript Configuration (tsconfig.json)
 
 ```json
 {
   "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
     "strict": true,
     "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@types/*": ["types/*"]
+    },
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  }
+}
+```
+
+#### Frontend TypeScript Configuration (tsconfig.json)
+
+```json
+{
+  "compilerOptions": {
+    "target": "es2015",
+    "strict": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "jsx": "react-jsx",
+    "baseUrl": "src",
+    "paths": {
+      "@/*": ["*"],
+      "@/components/*": ["components/*"],
+      "@/types/*": ["types/*"]
+    }
   }
 }
 ```
@@ -328,17 +408,23 @@ git push origin feature/your-feature-name
 
 ## Debugging & Troubleshooting
 
-### Backend Debugging
+### Backend Debugging (TypeScript)
 
 ```bash
-# Enable debug logging
+# Enable debug logging with TypeScript
 LOG_LEVEL=debug npm run dev
 
-# View logs in real-time
-tail -f logs/backend.log
+# Type checking during development
+npm run type-check
 
-# Database connection test
-node -e "const { supabase } = require('./src/config/database'); supabase.from('customers').select('count').then(console.log)"
+# View TypeScript compilation errors
+npx tsc --noEmit
+
+# Test TypeScript database connection
+ts-node -e "import { supabase } from './src/config/database'; supabase.from('customers').select('count').then(console.log)"
+
+# Debug with VS Code TypeScript support
+# Use "Debug: Start Debugging" with Node.js + TypeScript configuration
 ```
 
 ### Frontend Debugging
@@ -356,13 +442,17 @@ node -e "const { supabase } = require('./src/config/database'); supabase.from('c
 
 ### Common Issues & Solutions
 
-#### Port Already in Use
+#### Port Already in Use (Updated ports)
 ```bash
-# Kill process on port 3001
+# Kill process on backend port 3001
 lsof -ti:3001 | xargs kill -9
 
-# Kill process on port 3000
-lsof -ti:3000 | xargs kill -9
+# Kill process on frontend port 3002
+lsof -ti:3002 | xargs kill -9
+
+# Alternative: Use different ports
+PORT=3011 npm run dev  # Backend
+PORT=3012 npm start    # Frontend
 ```
 
 #### Database Connection Issues
@@ -408,26 +498,33 @@ docker-compose logs frontend
 - **Authentication**: Proper JWT handling and refresh
 - **CORS Configuration**: Restrict origins appropriately
 
-## Useful Development Commands
+## Useful Development Commands (TypeScript)
 
 ```bash
-# Quick development setup
-docker-compose up -d && echo "Services started on:"
-echo "Frontend: http://localhost:3000"
+# Quick TypeScript development setup
+echo "Starting TypeScript development environment:"
 echo "Backend: http://localhost:3001"
-echo "Supabase: http://localhost:8000"
+echo "Frontend: http://localhost:3002"
 
-# Full system restart
-docker-compose down && docker-compose up -d
+# Terminal 1 - Backend with TypeScript
+cd backend && npm run dev
 
-# View all logs
-docker-compose logs -f
+# Terminal 2 - Frontend with TypeScript
+cd frontend && PORT=3002 ESLINT_NO_DEV_ERRORS=true npm start
 
-# Reset development database
-supabase db reset && supabase db push
+# Type checking across the project
+cd backend && npm run type-check
+cd frontend && npx tsc --noEmit
 
-# Run full test suite
+# Build TypeScript projects
+cd backend && npm run build
+cd frontend && npm run build
+
+# Run full test suite with TypeScript
 cd backend && npm test && cd ../frontend && npm test && cd .. && npx playwright test
+
+# ESLint and Prettier formatting
+cd frontend && npm run lint:fix && npm run format
 ```
 
 ## Contributing Guidelines

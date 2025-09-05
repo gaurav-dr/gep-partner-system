@@ -385,7 +385,7 @@ CREATE TABLE notifications (
     notification_type notification_type DEFAULT 'info',
     
     -- Delivery
-    delivery_methods delivery_method[] DEFAULT ARRAY['dashboard'],
+    delivery_methods delivery_method[] DEFAULT ARRAY['dashboard'::delivery_method],
     delivered_at JSONB DEFAULT '{}', -- {method: timestamp}
     
     -- Related entities

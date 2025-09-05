@@ -58,7 +58,7 @@ const Dashboard: React.FC = memo(() => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Total Requests</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">
+              <p data-testid="total-requests" className="text-2xl font-semibold text-gray-900">
                 {isLoading ? '...' : stats.totalRequests}
               </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+12%</p>
@@ -85,7 +85,7 @@ const Dashboard: React.FC = memo(() => {
               <p className="ml-16 truncate text-sm font-medium text-gray-500">Active Partners</p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">
+              <p data-testid="active-partners" className="text-2xl font-semibold text-gray-900">
                 {isLoading ? '...' : stats.activePartners}
               </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+3</p>
@@ -114,7 +114,7 @@ const Dashboard: React.FC = memo(() => {
               </p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">
+              <p data-testid="pending-assignments" className="text-2xl font-semibold text-gray-900">
                 {isLoading ? '...' : stats.pendingAssignments}
               </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-red-600">-2</p>
@@ -143,7 +143,7 @@ const Dashboard: React.FC = memo(() => {
               </p>
             </dt>
             <dd className="ml-16 flex items-baseline pb-6 sm:pb-7">
-              <p className="text-2xl font-semibold text-gray-900">
+              <p data-testid="completed-this-month" className="text-2xl font-semibold text-gray-900">
                 {isLoading ? '...' : stats.completedThisMonth}
               </p>
               <p className="ml-2 flex items-baseline text-sm font-semibold text-green-600">+8%</p>

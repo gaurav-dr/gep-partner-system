@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { requestsApi } from '../services/supabaseApi';
+import { customerRequestsApi } from '../services/api';
 import { Link } from 'react-router-dom';
 import AISchedulingModal from '../components/AISchedulingModal';
 import { CustomerRequest as AICustomerRequest } from '../services/aiScheduler';
@@ -51,14 +51,16 @@ const CustomerRequests: React.FC = () => {
     data: requests = [],
     isLoading,
     error,
-  } = useQuery<CustomerRequest[]>('customer-requests', async () => {
+  } = useQuery<CustomerRequest[]>('customer-requests-v3', async () => {
     try {
-      const apiRequests = await requestsApi.getAll();
-      if (apiRequests && apiRequests.length > 0) {
+      const response = await customerRequestsApi.getAll({ limit: 1000 });
+      const apiRequests = response.data.data; // Backend API returns { data: [...], pagination: {...} }
+      
+      if (apiRequests && Array.isArray(apiRequests)) {
         return apiRequests;
       }
     } catch (error) {
-      console.warn('⚠️ Failed to fetch requests from API, checking localStorage');
+      console.warn('⚠️ Failed to fetch requests from API, checking localStorage', error);
     }
 
     // Fallback to localStorage requests
@@ -80,6 +82,9 @@ const CustomerRequests: React.FC = () => {
       created_at: req.created_at || new Date().toISOString(),
       updated_at: req.updated_at || new Date().toISOString(),
     }));
+  }, {
+    staleTime: 0,
+    cacheTime: 0,
   });
 
   const handleAIScheduling = (request: CustomerRequest) => {
@@ -118,7 +123,7 @@ const CustomerRequests: React.FC = () => {
   };
 
   // Filter requests
-  const filteredRequests = requests.filter(request => {
+  const filteredRequests = (requests || []).filter(request => {
     const matchesSearch =
       request.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.installation_address.toLowerCase().includes(searchTerm.toLowerCase());
@@ -191,7 +196,7 @@ const CustomerRequests: React.FC = () => {
     <div className="px-4 sm:px-0">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Customer Requests</h1>
+          <h1 data-testid="page-title" className="text-2xl font-semibold text-gray-900">Customer Requests</h1>
           <p className="mt-2 text-sm text-gray-700">
             Manage and track all customer requests for health inspections
           </p>
@@ -210,6 +215,7 @@ const CustomerRequests: React.FC = () => {
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <input
+            data-testid="search-input"
             type="text"
             placeholder="Search requests..."
             value={searchTerm}
@@ -219,6 +225,7 @@ const CustomerRequests: React.FC = () => {
         </div>
         <div>
           <select
+            data-testid="status-filter"
             value={filterStatus || ''}
             onChange={e => setFilterStatus(e.target.value || null)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -244,11 +251,11 @@ const CustomerRequests: React.FC = () => {
       </div>
 
       {/* Results Summary */}
-      <div className="mt-4 text-sm text-gray-600">
+      <div data-testid="requests-count" className="mt-4 text-sm text-gray-600">
         Showing {filteredRequests.length} of {requests.length} requests
       </div>
 
-      <div className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
+      <div data-testid="requests-list" className="mt-6 bg-white shadow overflow-hidden sm:rounded-md">
         {filteredRequests.length === 0 ? (
           <div className="px-6 py-12 text-center">
             <div className="text-gray-500">No requests found matching your criteria.</div>
@@ -417,24 +424,24 @@ const CustomerRequests: React.FC = () => {
           <h3 className="text-lg font-medium text-gray-900 mb-4">Request Statistics</h3>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-600">{requests.length}</div>
+              <div className="text-2xl font-bold text-gray-600">{(requests || []).length}</div>
               <div className="text-sm text-gray-500">Total Requests</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-yellow-600">
-                {requests.filter(r => r.status === 'pending').length}
+                {(requests || []).filter(r => r.status === 'pending').length}
               </div>
               <div className="text-sm text-gray-500">Pending</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">
-                {requests.filter(r => r.status === 'assigned').length}
+                {(requests || []).filter(r => r.status === 'assigned').length}
               </div>
               <div className="text-sm text-gray-500">Assigned</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-green-600">
-                {requests.filter(r => r.status === 'completed').length}
+                {(requests || []).filter(r => r.status === 'completed').length}
               </div>
               <div className="text-sm text-gray-500">Completed</div>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from 'react-query';
-import { partnersApi } from '../services/supabaseApi';
+import { partnersApi } from '../services/api';
 import PartnerDetailModal from '../components/PartnerDetailModal';
 import AddPartnerModal from '../components/AddPartnerModal';
 
@@ -26,12 +26,15 @@ const Partners: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch partners from Supabase
+  // Fetch partners from backend API
   const {
     data: partners = [],
     isLoading,
     error,
-  } = useQuery<Partner[]>('partners', partnersApi.getAll);
+  } = useQuery<Partner[]>('partners', async () => {
+    const response = await partnersApi.getAll();
+    return response.data?.data || [];
+  });
 
   // Debug: Log the partners data
   console.log('🔍 Partners component - Raw data:', partners);

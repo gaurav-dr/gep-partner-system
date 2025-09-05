@@ -26,7 +26,8 @@ jest.mock('../../contexts/AuthContext', () => ({
 // Mock environment variables
 const mockEnv = {
   REACT_APP_SUPABASE_URL: 'http://localhost:8000',
-  REACT_APP_SUPABASE_ANON_KEY: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE',
+  REACT_APP_SUPABASE_ANON_KEY:
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE',
   REACT_APP_API_URL: 'http://localhost:3001',
 };
 
@@ -41,7 +42,7 @@ jest.mock('../../config/supabase', () => ({
       getUser: jest.fn(),
       getSession: jest.fn(),
       onAuthStateChange: jest.fn(() => ({
-        data: { subscription: { unsubscribe: jest.fn() } }
+        data: { subscription: { unsubscribe: jest.fn() } },
       })),
     },
     from: jest.fn(() => ({
@@ -104,7 +105,7 @@ describe('Routing Health Checks', () => {
 
   test('Router provides navigation context', () => {
     const { container } = renderAppWithRouter('/');
-    
+
     // Check that the app is wrapped with routing context
     expect(container).toBeInTheDocument();
     expect(container.firstChild).toBeDefined();
@@ -130,7 +131,7 @@ describe('Routing Health Checks', () => {
 
     test(`Route ${path} creates valid DOM structure`, () => {
       const { container } = renderAppWithRouter(path);
-      
+
       // Should have basic HTML structure
       expect(container.firstChild).toBeTruthy();
       expect(container.querySelector('div')).toBeInTheDocument();
@@ -202,7 +203,7 @@ describe('Routing Health Checks', () => {
 
     // Test route transitions
     const routesToTest = ['/', '/requests', '/partners', '/analytics'];
-    
+
     routesToTest.forEach(route => {
       expect(() => {
         rerender(
@@ -220,7 +221,7 @@ describe('Routing Health Checks', () => {
     // This tests that our routing setup works with memory router
     const { container } = renderAppWithRouter('/');
     expect(container).toBeInTheDocument();
-    
+
     // Should not have any router errors
     const routerError = screen.queryByText(/router/i);
     expect(routerError).not.toBeInTheDocument();

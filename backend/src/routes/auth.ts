@@ -156,10 +156,54 @@ router.post('/login', authLimiter, validateLogin, async (req: Request, res: Resp
                 error: supabaseError instanceof Error ? supabaseError.message : String(supabaseError) 
             });
             
-            // Fallback to direct database authentication
-            const directAuthService = new DirectAuthService();
-            result = await directAuthService.login(email, password, ipAddress || '', userAgent || '');
-            logger.info('Login successful via DirectAuthService');
+            try {
+                // Fallback to direct database authentication
+                const directAuthService = new DirectAuthService();
+                result = await directAuthService.login(email, password, ipAddress || '', userAgent || '');
+                logger.info('Login successful via DirectAuthService');
+            } catch (dbError) {
+                logger.warn('Database auth failed, trying demo mode', {
+                    error: dbError instanceof Error ? dbError.message : String(dbError)
+                });
+                
+                // Final fallback to demo mode
+                if (process.env.DEMO_MODE === 'true' && process.env.DEMO_CREDENTIALS) {
+                    const demoCredentials = JSON.parse(process.env.DEMO_CREDENTIALS);
+                    const demoUser = demoCredentials.find((user: any) => 
+                        user.email === email && user.password === password
+                    );
+                    
+                    if (demoUser) {
+                        const jwt = require('jsonwebtoken');
+                        const token = jwt.sign(
+                            { 
+                                id: `demo-${demoUser.email}`,
+                                email: demoUser.email,
+                                role: demoUser.role 
+                            },
+                            process.env.JWT_SECRET || 'demo-secret',
+                            { expiresIn: '24h' }
+                        );
+                        
+                        result = {
+                            success: true,
+                            token,
+                            user: {
+                                id: `demo-${demoUser.email}`,
+                                email: demoUser.email,
+                                name: demoUser.name,
+                                role: demoUser.role
+                            },
+                            expiresIn: '24h'
+                        };
+                        logger.info('Login successful via Demo Mode');
+                    } else {
+                        throw new Error('Demo user not found');
+                    }
+                } else {
+                    throw dbError;
+                }
+            }
         }
 
         res.json({

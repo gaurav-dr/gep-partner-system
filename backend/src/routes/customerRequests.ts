@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
 import { Logger, CustomerRequest, CreateCustomerRequestRequest } from '../types';
 
-const { supabase } = require('../config/supabase');
+import { supabaseAdmin } from '../config/supabase';
 const logger: Logger = require('../utils/logger');
 const { validateRequest } = require('../middleware/validation');
 const AnthropicIntegration = require('../services/AnthropicIntegration');
@@ -53,9 +53,10 @@ interface PaginationInfo {
 // GET /api/customer-requests - Get all customer requests with filtering
 router.get('/', async (req: Request<{}, any, {}, CustomerRequestsQuery>, res: Response, next: NextFunction) => {
   try {
+
     const { status, service_type, page = '1', limit = '10', sort = 'created_at', order = 'desc' } = req.query;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('customer_requests')
       .select(`
         *,
@@ -94,7 +95,7 @@ router.get('/', async (req: Request<{}, any, {}, CustomerRequestsQuery>, res: Re
     if (error) throw error;
 
     // Get total count for pagination
-    const { count: totalCount } = await supabase
+    const { count: totalCount } = await supabaseAdmin
       .from('customer_requests')
       .select('*', { count: 'exact', head: true });
 
@@ -119,7 +120,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response, next: Nex
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('customer_requests')
       .select(`
         *,
@@ -159,7 +160,7 @@ router.post('/', validateRequest(createRequestSchema), async (req: Request<{}, C
   try {
     const requestData = { ...req.body, status: 'pending' as const };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('customer_requests')
       .insert([requestData])
       .select()
@@ -185,7 +186,7 @@ router.put('/:id', validateRequest(updateRequestSchema), async (req: Request<{ i
     const { id } = req.params;
     const updateData = { ...req.body, updated_at: new Date().toISOString() };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('customer_requests')
       .update(updateData)
       .eq('id', id)
@@ -215,7 +216,7 @@ router.delete('/:id', async (req: Request<{ id: string }>, res: Response, next: 
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('customer_requests')
       .delete()
       .eq('id', id);
@@ -237,7 +238,7 @@ router.post('/:id/assign', async (req: Request<{ id: string }, any, AssignmentRe
     const { force_reassign = false } = req.body;
 
     // Check if request exists and is pending
-    const { data: request, error: requestError } = await supabase
+    const { data: request, error: requestError } = await supabaseAdmin
       .from('customer_requests')
       .select('*')
       .eq('id', id)

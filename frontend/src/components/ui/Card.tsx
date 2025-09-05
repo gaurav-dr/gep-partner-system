@@ -48,11 +48,7 @@ export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
   ({ className, children, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={clsx('flex flex-col space-y-1.5', className)}
-      {...props}
-    >
+    <div ref={ref} className={clsx('flex flex-col space-y-1.5', className)} {...props}>
       {children}
     </div>
   )
@@ -69,10 +65,7 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
   ({ className, children, as: Component = 'h3', ...props }, ref) => (
     <Component
       ref={ref as any}
-      className={clsx(
-        'text-lg font-semibold leading-none tracking-tight text-gray-900',
-        className
-      )}
+      className={clsx('text-lg font-semibold leading-none tracking-tight text-gray-900', className)}
       {...props}
     >
       {children}
@@ -88,11 +81,7 @@ export interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraph
 
 const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
   ({ className, children, ...props }, ref) => (
-    <p
-      ref={ref}
-      className={clsx('text-sm text-gray-600', className)}
-      {...props}
-    >
+    <p ref={ref} className={clsx('text-sm text-gray-600', className)} {...props}>
       {children}
     </p>
   )
@@ -120,11 +109,7 @@ export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className, children, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={clsx('flex items-center pt-0', className)}
-      {...props}
-    >
+    <div ref={ref} className={clsx('flex items-center pt-0', className)} {...props}>
       {children}
     </div>
   )

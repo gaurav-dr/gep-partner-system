@@ -38,10 +38,24 @@ const ErrorState: React.FC<ErrorStateProps> = ({
   };
 
   return (
-    <div className={clsx('flex flex-col items-center justify-center text-center', sizeClasses[size], className)}>
-      <div className={clsx('mx-auto flex items-center justify-center rounded-full bg-red-100', iconSizeClasses[size])}>
+    <div
+      className={clsx(
+        'flex flex-col items-center justify-center text-center',
+        sizeClasses[size],
+        className
+      )}
+    >
+      <div
+        className={clsx(
+          'mx-auto flex items-center justify-center rounded-full bg-red-100',
+          iconSizeClasses[size]
+        )}
+      >
         <svg
-          className={clsx('text-red-600', size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-6 w-6' : 'h-8 w-8')}
+          className={clsx(
+            'text-red-600',
+            size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-6 w-6' : 'h-8 w-8'
+          )}
           fill="none"
           viewBox="0 0 24 24"
           strokeWidth="2"
@@ -55,15 +69,11 @@ const ErrorState: React.FC<ErrorStateProps> = ({
           />
         </svg>
       </div>
-      
-      <h3 className={clsx('mt-4 font-semibold text-gray-900', titleSizeClasses[size])}>
-        {title}
-      </h3>
-      
-      <p className="mt-2 text-sm text-gray-600 max-w-sm">
-        {message}
-      </p>
-      
+
+      <h3 className={clsx('mt-4 font-semibold text-gray-900', titleSizeClasses[size])}>{title}</h3>
+
+      <p className="mt-2 text-sm text-gray-600 max-w-sm">{message}</p>
+
       {onRetry && (
         <Button
           onClick={onRetry}
@@ -118,7 +128,10 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
   const defaultIcon = (
     <svg
-      className={clsx('text-gray-400', size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-6 w-6' : 'h-8 w-8')}
+      className={clsx(
+        'text-gray-400',
+        size === 'sm' ? 'h-4 w-4' : size === 'md' ? 'h-6 w-6' : 'h-8 w-8'
+      )}
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth="2"
@@ -134,19 +147,26 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   );
 
   return (
-    <div className={clsx('flex flex-col items-center justify-center text-center', sizeClasses[size], className)}>
-      <div className={clsx('mx-auto flex items-center justify-center rounded-full bg-gray-100', iconSizeClasses[size])}>
+    <div
+      className={clsx(
+        'flex flex-col items-center justify-center text-center',
+        sizeClasses[size],
+        className
+      )}
+    >
+      <div
+        className={clsx(
+          'mx-auto flex items-center justify-center rounded-full bg-gray-100',
+          iconSizeClasses[size]
+        )}
+      >
         {icon || defaultIcon}
       </div>
-      
-      <h3 className={clsx('mt-4 font-semibold text-gray-900', titleSizeClasses[size])}>
-        {title}
-      </h3>
-      
-      <p className="mt-2 text-sm text-gray-600 max-w-sm">
-        {message}
-      </p>
-      
+
+      <h3 className={clsx('mt-4 font-semibold text-gray-900', titleSizeClasses[size])}>{title}</h3>
+
+      <p className="mt-2 text-sm text-gray-600 max-w-sm">{message}</p>
+
       {action && (
         <Button
           onClick={action.onClick}

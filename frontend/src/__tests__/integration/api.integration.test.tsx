@@ -37,10 +37,12 @@ describe('API Integration Health Checks', () => {
       } catch (error: any) {
         // If backend isn't running, we should at least verify the URL format
         expect(API_BASE_URL).toMatch(/^https?:\/\/.+/);
-        
+
         // Log the error for debugging but don't fail the test if backend is down
         if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-          console.warn(`Backend not available at ${API_BASE_URL} - this may be expected in test environment`);
+          console.warn(
+            `Backend not available at ${API_BASE_URL} - this may be expected in test environment`
+          );
         } else {
           throw error;
         }
@@ -52,7 +54,7 @@ describe('API Integration Health Checks', () => {
         const response = await axios.options(`${API_BASE_URL}/health`, {
           timeout: 5000,
           headers: {
-            'Origin': 'http://localhost:3000',
+            Origin: 'http://localhost:3000',
             'Access-Control-Request-Method': 'GET',
           },
         });
@@ -86,7 +88,7 @@ describe('API Integration Health Checks', () => {
       test(`${description} endpoint (${method} ${path}) structure is valid`, async () => {
         const fullUrl = `${API_BASE_URL}${path}`;
         expect(fullUrl).toMatch(/^https?:\/\/.+/);
-        
+
         try {
           const response = await axios.request({
             method: method.toLowerCase() as any,
@@ -130,11 +132,13 @@ describe('API Integration Health Checks', () => {
         expect(response.status).toBe(200);
       } catch (error: any) {
         if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-          console.warn(`Supabase not available at ${SUPABASE_URL} - this may be expected in test environment`);
+          console.warn(
+            `Supabase not available at ${SUPABASE_URL} - this may be expected in test environment`
+          );
         } else if (error.response?.status === 404) {
           // Some Supabase instances may not have /health endpoint
           console.warn('Supabase health endpoint not found, trying root endpoint');
-          
+
           try {
             const rootResponse = await axios.get(`${SUPABASE_URL}/`, {
               timeout: 5000,
@@ -155,7 +159,7 @@ describe('API Integration Health Checks', () => {
         const response = await axios.get(`${SUPABASE_URL}/rest/v1/`, {
           timeout: 5000,
           headers: {
-            'apikey': process.env.REACT_APP_SUPABASE_ANON_KEY,
+            apikey: process.env.REACT_APP_SUPABASE_ANON_KEY,
             'Content-Type': 'application/json',
           },
           validateStatus: () => true, // Don't throw on HTTP errors
@@ -208,13 +212,11 @@ describe('API Integration Health Checks', () => {
     });
 
     test('Request interceptors work', () => {
-      const requestInterceptorId = axios.interceptors.request.use(
-        (config) => {
-          config.headers = config.headers || {};
-          config.headers['X-Test-Header'] = 'test';
-          return config;
-        }
-      );
+      const requestInterceptorId = axios.interceptors.request.use(config => {
+        config.headers = config.headers || {};
+        config.headers['X-Test-Header'] = 'test';
+        return config;
+      });
 
       expect(requestInterceptorId).toBeDefined();
       expect(typeof requestInterceptorId).toBe('number');
@@ -225,8 +227,8 @@ describe('API Integration Health Checks', () => {
 
     test('Response interceptors work', () => {
       const responseInterceptorId = axios.interceptors.response.use(
-        (response) => response,
-        (error) => Promise.reject(error)
+        response => response,
+        error => Promise.reject(error)
       );
 
       expect(responseInterceptorId).toBeDefined();
@@ -251,7 +253,7 @@ describe('API Integration Health Checks', () => {
       const config = {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer test-token',
+          Authorization: 'Bearer test-token',
         },
       };
 

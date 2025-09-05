@@ -35,9 +35,10 @@ const Modal: React.FC<ModalProps> = ({
     if (isOpen) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
-      
+
       // Focus management for accessibility
-      const focusableElements = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+      const focusableElements =
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
       const modal = document.querySelector('[role="dialog"]');
       if (modal) {
         const firstFocusableElement = modal.querySelector(focusableElements) as HTMLElement;
@@ -76,13 +77,10 @@ const Modal: React.FC<ModalProps> = ({
     >
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" />
-      
+
       {/* Modal */}
       <div
-        className={clsx(
-          'relative w-full mx-auto bg-white rounded-lg shadow-xl',
-          sizeClasses[size]
-        )}
+        className={clsx('relative w-full mx-auto bg-white rounded-lg shadow-xl', sizeClasses[size])}
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}

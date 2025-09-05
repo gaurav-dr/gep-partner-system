@@ -439,7 +439,7 @@ class TraceabilityService {
   }
 
   // Clear old events (cleanup)
-  cleanupOldEvents(daysToKeep: number = 90): void {
+  cleanupOldEvents(daysToKeep = 90): void {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 

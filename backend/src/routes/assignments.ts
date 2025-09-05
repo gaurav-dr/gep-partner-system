@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import Joi from 'joi';
-import { supabase } from '../config/supabase';
+import { supabaseAdmin } from '../config/supabase';
 import { Logger, Assignment } from '../types';
 
 const logger: Logger = require('../utils/logger');
@@ -35,9 +35,10 @@ const updateAssignmentSchema = Joi.object({
 // GET /api/assignments - Get all assignments
 router.get('/', async (req: Request<{}, any, any, AssignmentsQuery>, res: Response, next: NextFunction) => {
   try {
+
     const { status, partner_id, page = '1', limit = '20' } = req.query;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('assignments')
       .select(`
         *,
@@ -76,7 +77,7 @@ router.get('/', async (req: Request<{}, any, any, AssignmentsQuery>, res: Respon
     if (error) throw error;
 
     // Get total count for pagination
-    const { count: totalCount } = await supabase
+    const { count: totalCount } = await supabaseAdmin
       .from('assignments')
       .select('*', { count: 'exact', head: true });
 
@@ -99,7 +100,7 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response, next: Nex
   try {
     const { id } = req.params;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('assignments')
       .select(`
         *,
@@ -156,7 +157,7 @@ router.put('/:id', validateRequest(updateAssignmentSchema), async (req: Request<
       updated_at: new Date().toISOString() 
     };
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('assignments')
       .update(updateData)
       .eq('id', id)
@@ -201,7 +202,7 @@ router.delete('/:id', async (req: Request<{ id: string }>, res: Response, next: 
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('assignments')
       .delete()
       .eq('id', id);

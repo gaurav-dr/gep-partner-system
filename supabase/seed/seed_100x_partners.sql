@@ -193,8 +193,8 @@ INSERT INTO clients (company_code, group_name, company_name, company_type, afm, 
 ('C055', 'THANATOS INDUSTRIES', 'Thanatos Funeral Services SA', 'Funeral Services', 579468357, 'Emmanouil Papadakis');
 
 -- Insert 220 Installations spread across Greece
-INSERT INTO installations (installation_code, company_code, description, address, post_code, category, employees_count, work_hours, latitude, longitude) VALUES
 -- Athens installations (40)
+INSERT INTO installations (installation_code, company_code, description, address, post_code, category, employees_count, work_hours, latitude, longitude) VALUES
 ('I001', 'C001', 'Main Manufacturing Plant', '123 Industrial Ave, Athens', '11253', 'A', 150, '08:00-17:00', 37.9755, 23.7348),
 ('I002', 'C001', 'Warehouse Facility', '456 Storage St, Piraeus', '18540', 'B', 45, '06:00-15:00', 37.9538, 23.6291),
 ('I003', 'C005', 'Tech Hub', '987 Innovation Dr, Athens', '15125', 'B', 75, '09:00-18:00', 37.9838, 23.7275),
@@ -236,7 +236,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I039', 'C050', 'Testing Laboratory', '999 Test Ave, Athens', '11289', 'B', 35, '09:00-18:00', 37.7050, 24.0050),
 ('I040', 'C055', 'Administrative Center', '000 Center St, Athens', '11290', 'C', 15, '08:00-17:00', 37.6950, 24.0150),
 
--- Thessaloniki installations (30)
 ('I041', 'C002', 'Distribution Center', '789 Logistics Blvd, Thessaloniki', '54636', 'A', 85, '24/7 Shifts', 40.6401, 22.9444),
 ('I042', 'C003', 'Northern Construction Office', '321 Build Ave, Thessaloniki', '54637', 'C', 45, '07:00-16:00', 40.6301, 22.9344),
 ('I043', 'C011', 'Port Operations', '654 Port St, Thessaloniki', '54638', 'A', 120, '24/7 Operations', 40.6201, 22.9244),
@@ -268,7 +267,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I069', 'C025', 'Dispatch Center', '024 Dispatch Rd, Thessaloniki', '54664', 'B', 35, '24/7 Operations', 40.3601, 22.6644),
 ('I070', 'C036', 'Testing Facility', '135 Test Blvd, Thessaloniki', '54665', 'A', 70, '08:00-17:00', 40.3501, 22.6544),
 
--- Patras installations (15)
 ('I071', 'C003', 'Construction Site Office', '321 Building Ave, Patras', '26442', 'C', 25, '07:00-16:00', 38.2466, 21.7346),
 ('I072', 'C014', 'Financial Services Branch', '456 Finance St, Patras', '26443', 'C', 35, '08:00-17:00', 38.2366, 21.7246),
 ('I073', 'C017', 'Tourism Information Center', '789 Tourism Rd, Patras', '26444', 'C', 15, '09:00-18:00', 38.2266, 21.7146),
@@ -285,7 +283,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I084', 'C031', 'Fabrication Shop', '680 Fab St, Patras', '26455', 'B', 35, '07:00-16:00', 38.1166, 21.6046),
 ('I085', 'C035', 'Conference Center', '791 Conference Rd, Patras', '26456', 'C', 25, '08:00-22:00', 38.1066, 21.5946),
 
--- Heraklion installations (12)
 ('I086', 'C004', 'Medical Center', '654 Health St, Heraklion', '71202', 'A', 120, '24/7 Operations', 35.3387, 25.1442),
 ('I087', 'C017', 'Resort Operations', '987 Resort Ave, Heraklion', '71203', 'B', 150, '24/7 Operations', 35.3287, 25.1342),
 ('I088', 'C021', 'Mining Operations Office', '321 Mining Rd, Heraklion', '71204', 'B', 65, '07:00-16:00', 35.3187, 25.1242),
@@ -299,8 +296,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I096', 'C029', 'Tasting Room', '963 Tasting Rd, Heraklion', '71212', 'C', 20, '10:00-18:00', 35.2387, 25.0442),
 ('I097', 'C035', 'Event Management', '159 Event Blvd, Heraklion', '71213', 'C', 40, '08:00-20:00', 35.2287, 25.0342),
 
--- Other major cities (remaining installations distributed across Greece)
--- Volos (8)
 ('I098', 'C007', 'Northern Food Plant', '111 Food Ave, Volos', '38333', 'A', 95, '05:00-14:00', 39.3618, 22.9424),
 ('I099', 'C012', 'Energy Substation', '222 Power St, Volos', '38334', 'B', 30, '24/7 Operations', 39.3518, 22.9324),
 ('I100', 'C016', 'Agricultural Hub', '333 Farm Rd, Volos', '38335', 'B', 70, '06:00-15:00', 39.3418, 22.9224),
@@ -310,7 +305,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I104', 'C012', 'Maintenance Depot', '777 Maintenance Rd, Volos', '38339', 'B', 35, '07:00-16:00', 39.3018, 22.8824),
 ('I105', 'C016', 'Processing Center', '888 Process Blvd, Volos', '38340', 'A', 60, '06:00-15:00', 39.2918, 22.8724),
 
--- Larissa (6)
 ('I106', 'C008', 'Pharma Distribution', '111 Pharma Ave, Larissa', '41222', 'A', 70, '08:00-17:00', 39.6390, 22.4194),
 ('I107', 'C013', 'Regional Telecom', '222 Telecom St, Larissa', '41223', 'B', 40, '24/7 Operations', 39.6290, 22.4094),
 ('I108', 'C020', 'Property Management', '333 Property Rd, Larissa', '41224', 'C', 25, '08:00-17:00', 39.6190, 22.3994),
@@ -318,111 +312,83 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I110', 'C008', 'Research Lab', '555 Lab Ave, Larissa', '41226', 'A', 50, '08:00-17:00', 39.5990, 22.3794),
 ('I111', 'C020', 'Sales Office', '666 Sales St, Larissa', '41227', 'C', 15, '08:00-17:00', 39.5890, 22.3694),
 
--- Kavala (4)
 ('I112', 'C009', 'Textile Production', '111 Textile Ave, Kavala', '65403', 'A', 80, '07:00-16:00', 40.9396, 24.4019),
 ('I113', 'C021', 'Mining Support', '222 Mining St, Kavala', '65404', 'B', 55, '24/7 Operations', 40.9296, 24.3919),
 ('I114', 'C033', 'Port Services', '333 Port Rd, Kavala', '65405', 'B', 65, '24/7 Operations', 40.9196, 24.3819),
 ('I115', 'C009', 'Quality Control', '444 Quality Blvd, Kavala', '65406', 'B', 20, '08:00-17:00', 40.9096, 24.3719),
 
--- Rhodes (5)
 ('I116', 'C017', 'Island Resort', '111 Island Ave, Rhodes', '85100', 'B', 200, '24/7 Operations', 36.4341, 28.2176),
 ('I117', 'C035', 'Hotel Complex', '222 Hotel St, Rhodes', '85101', 'B', 180, '24/7 Operations', 36.4241, 28.2076),
 ('I118', 'C049', 'Sports Complex', '333 Sports Rd, Rhodes', '85102', 'C', 50, '06:00-23:00', 36.4141, 28.1976),
 ('I119', 'C017', 'Marina Services', '444 Marina Blvd, Rhodes', '85103', 'C', 30, '08:00-20:00', 36.4041, 28.1876),
 ('I120', 'C035', 'Conference Facility', '555 Conference Ave, Rhodes', '85104', 'C', 40, '08:00-22:00', 36.3941, 28.1776),
 
--- Ioannina (4)
 ('I121', 'C019', 'Educational Campus', '111 Education Ave, Ioannina', '45444', 'C', 60, '08:00-17:00', 39.6650, 20.8537),
 ('I122', 'C023', 'Environmental Center', '222 Environment St, Ioannina', '45445', 'B', 45, '08:00-17:00', 39.6550, 20.8437),
 ('I123', 'C040', 'Consulting Office', '333 Consult Rd, Ioannina', '45446', 'C', 25, '08:00-17:00', 39.6450, 20.8337),
 ('I124', 'C019', 'Research Center', '444 Research Blvd, Ioannina', '45447', 'A', 40, '08:00-17:00', 39.6350, 20.8237),
 
--- Chania (4)
 ('I125', 'C017', 'Beach Resort', '111 Beach Ave, Chania', '73100', 'B', 160, '24/7 Operations', 35.5138, 24.0180),
 ('I126', 'C023', 'Marine Research', '222 Marine St, Chania', '73101', 'A', 35, '08:00-17:00', 35.5038, 24.0080),
 ('I127', 'C029', 'Winery Branch', '333 Wine Rd, Chania', '73102', 'B', 40, '08:00-17:00', 35.4938, 23.9980),
 ('I128', 'C035', 'Tourism Center', '444 Tourism Blvd, Chania', '73103', 'C', 45, '08:00-20:00', 35.4838, 23.9880),
 
--- Kalamata (3)
 ('I129', 'C016', 'Olive Processing', '111 Olive Ave, Kalamata', '24100', 'A', 90, '06:00-15:00', 37.0421, 22.1151),
 ('I130', 'C028', 'Organic Certification', '222 Organic St, Kalamata', '24101', 'B', 25, '08:00-17:00', 37.0321, 22.1051),
 ('I131', 'C030', 'Waste Management', '333 Waste Rd, Kalamata', '24102', 'A', 50, '24/7 Operations', 37.0221, 22.0951),
 
--- Agrinio (2)
 ('I132', 'C016', 'Agricultural Station', '111 Station Ave, Agrinio', '30100', 'B', 35, '07:00-16:00', 38.6212, 21.4084),
 ('I133', 'C053', 'Field Services', '222 Field St, Agrinio', '30101', 'B', 40, '06:00-15:00', 38.6112, 21.3984),
 
--- Serres (2)
 ('I134', 'C016', 'Farm Equipment', '111 Equipment Ave, Serres', '62124', 'B', 45, '07:00-16:00', 41.0857, 23.5492),
 ('I135', 'C025', 'Transport Depot', '222 Transport St, Serres', '62125', 'B', 60, '24/7 Operations', 41.0757, 23.5392),
 
--- Kozani (2)
 ('I136', 'C012', 'Energy Plant', '111 Energy Ave, Kozani', '50100', 'A', 100, '24/7 Operations', 40.3017, 21.7890),
 ('I137', 'C034', 'Power Substation', '222 Power St, Kozani', '50101', 'A', 45, '24/7 Operations', 40.2917, 21.7790),
 
--- Trikala (2)
 ('I138', 'C016', 'Processing Plant', '111 Process Ave, Trikala', '42100', 'A', 70, '06:00-15:00', 39.5559, 21.7664),
 ('I139', 'C025', 'Logistics Center', '222 Logistics St, Trikala', '42101', 'B', 55, '24/7 Operations', 39.5459, 21.7564),
 
--- Xanthi (2)
 ('I140', 'C009', 'Textile Mill', '111 Textile Ave, Xanthi', '67100', 'A', 85, '07:00-16:00', 41.1355, 24.8882),
 ('I141', 'C033', 'Maritime Training', '222 Maritime St, Xanthi', '67101', 'C', 30, '08:00-17:00', 41.1255, 24.8782),
 
--- Mytilene (2)
 ('I142', 'C017', 'Island Operations', '111 Island Ave, Mytilene', '81100', 'B', 75, '24/7 Operations', 39.1036, 26.5586),
 ('I143', 'C033', 'Port Authority', '222 Port St, Mytilene', '81101', 'B', 40, '24/7 Operations', 39.0936, 26.5486),
 
--- Corfu (2)
 ('I144', 'C017', 'Resort Management', '111 Resort Ave, Corfu', '49100', 'B', 120, '24/7 Operations', 39.6243, 19.9217),
 ('I145', 'C035', 'Event Venue', '222 Event St, Corfu', '49101', 'C', 60, '08:00-24:00', 39.6143, 19.9117),
 
--- Drama (1)
 ('I146', 'C021', 'Regional Mining', '111 Mining Ave, Drama', '66100', 'A', 95, '24/7 Operations', 41.1533, 24.1472),
 
--- Karditsa (1)
 ('I147', 'C016', 'Agricultural Center', '111 Agri Ave, Karditsa', '43100', 'B', 65, '06:00-15:00', 39.3656, 21.9211),
 
--- Chios (1)
 ('I148', 'C033', 'Shipping Services', '111 Ship Ave, Chios', '82100', 'B', 50, '24/7 Operations', 38.3682, 26.1361),
 
--- Kilkis (1)
 ('I149', 'C025', 'Border Transport', '111 Border Ave, Kilkis', '61100', 'B', 40, '24/7 Operations', 40.9939, 22.8750),
 
--- Preveza (1)
 ('I150', 'C017', 'Coastal Resort', '111 Coast Ave, Preveza', '48100', 'B', 90, '24/7 Operations', 38.9564, 20.7506),
 
--- Florina (1)
 ('I151', 'C025', 'Cross-Border Hub', '111 Hub Ave, Florina', '53100', 'B', 55, '24/7 Operations', 40.7819, 21.4086),
 
--- Syros (1)
 ('I152', 'C033', 'Cyclades Center', '111 Cyclades Ave, Syros', '84100', 'B', 45, '24/7 Operations', 37.4467, 24.9436),
 
--- Grevena (1)
 ('I153', 'C016', 'Mountain Agriculture', '111 Mountain Ave, Grevena', '51100', 'B', 35, '07:00-16:00', 40.0869, 21.4269),
 
--- Kastoria (1)
 ('I154', 'C009', 'Fur Processing', '111 Fur Ave, Kastoria', '52100', 'B', 60, '07:00-16:00', 40.5189, 21.2678),
 
--- Lamia (1)
 ('I155', 'C025', 'Central Hub', '111 Central Ave, Lamia', '35100', 'A', 80, '24/7 Operations', 38.8998, 22.4339),
 
--- Edessa (1)
 ('I156', 'C016', 'Mountain Processing', '111 Process Ave, Edessa', '58200', 'B', 50, '07:00-16:00', 40.8018, 22.0486),
 
--- Naxos (1)
 ('I157', 'C017', 'Island Tourism', '111 Tourism Ave, Naxos', '84300', 'C', 40, '08:00-20:00', 37.1056, 25.3769),
 
--- Veria (1)
 ('I158', 'C016', 'Fruit Processing', '111 Fruit Ave, Veria', '59132', 'A', 75, '05:00-14:00', 40.5247, 22.2019),
 
--- Alexandroupoli (1)
 ('I159', 'C025', 'Eastern Border Hub', '111 Eastern Ave, Alexandroupoli', '68100', 'B', 70, '24/7 Operations', 40.8448, 25.8744),
 
--- Rethymno (1)
 ('I160', 'C017', 'Heritage Site', '111 Heritage Ave, Rethymno', '74100', 'C', 55, '08:00-20:00', 35.3714, 24.4736),
 
 -- Additional installations to reach 220
--- Athens area (continued)
 ('I161', 'C001', 'Export Division', '1001 Export Ave, Athens', '11291', 'B', 40, '08:00-17:00', 37.9755, 23.7348),
 ('I162', 'C005', 'Innovation Lab', '1002 Innovation St, Athens', '11292', 'A', 50, '09:00-18:00', 37.9838, 23.7275),
 ('I163', 'C006', 'Service Center', '1003 Service Rd, Athens', '11293', 'B', 30, '08:00-17:00', 37.9642, 23.7166),
@@ -434,7 +400,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I169', 'C018', 'Broadcasting Center', '1009 Broadcast Ave, Athens', '11299', 'B', 40, '24/7 Operations', 37.9750, 23.7250),
 ('I170', 'C019', 'Training Institute', '1010 Training St, Athens', '11300', 'C', 35, '08:00-20:00', 37.9850, 23.7350),
 
--- Thessaloniki area (continued)
 ('I171', 'C002', 'Cold Chain Hub', '1001 Cold Ave, Thessaloniki', '54666', 'A', 60, '24/7 Operations', 40.6401, 22.9444),
 ('I172', 'C003', 'Equipment Yard', '1002 Equipment St, Thessaloniki', '54667', 'B', 35, '07:00-16:00', 40.6301, 22.9344),
 ('I173', 'C011', 'Container Terminal', '1003 Container Rd, Thessaloniki', '54668', 'A', 90, '24/7 Operations', 40.6201, 22.9244),
@@ -446,7 +411,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I179', 'C029', 'Bottling Plant', '1009 Bottling Ave, Thessaloniki', '54674', 'A', 65, '06:00-15:00', 40.5601, 22.8644),
 ('I180', 'C033', 'Crew Training', '1010 Crew St, Thessaloniki', '54675', 'C', 25, '08:00-17:00', 40.5501, 22.8544),
 
--- Patras area (continued)
 ('I181', 'C003', 'Regional Office', '1001 Regional Ave, Patras', '26457', 'C', 20, '08:00-17:00', 38.2466, 21.7346),
 ('I182', 'C014', 'Investment Services', '1002 Investment St, Patras', '26458', 'C', 15, '08:00-17:00', 38.2366, 21.7246),
 ('I183', 'C017', 'Guest Services', '1003 Guest Rd, Patras', '26459', 'C', 30, '24/7 Operations', 38.2266, 21.7146),
@@ -458,7 +422,6 @@ INSERT INTO installations (installation_code, company_code, description, address
 ('I189', 'C032', 'Sorting Center', '1009 Sort Ave, Patras', '26465', 'B', 55, '24/7 Operations', 38.1666, 21.6546),
 ('I190', 'C035', 'Catering Center', '1010 Catering St, Patras', '26466', 'B', 45, '24/7 Operations', 38.1566, 21.6446),
 
--- Heraklion area (continued)
 ('I191', 'C004', 'Emergency Services', '1001 Emergency Ave, Heraklion', '71214', 'A', 80, '24/7 Operations', 35.3387, 25.1442),
 ('I192', 'C017', 'Adventure Center', '1002 Adventure St, Heraklion', '71215', 'C', 35, '08:00-20:00', 35.3287, 25.1342),
 ('I193', 'C021', 'Sample Analysis', '1003 Sample Rd, Heraklion', '71216', 'A', 20, '08:00-17:00', 35.3187, 25.1242),

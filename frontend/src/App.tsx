@@ -54,10 +54,7 @@ const AppContent: React.FC = () => {
   // Partner users get their own dedicated dashboard
   if (user?.role === 'partner') {
     return (
-      <Layout 
-        activeTab={partnerActiveTab} 
-        onTabChange={setPartnerActiveTab}
-      >
+      <Layout activeTab={partnerActiveTab} onTabChange={setPartnerActiveTab}>
         <Suspense fallback={<LoadingState message="Loading dashboard..." />}>
           <Routes>
             <Route path="/*" element={<PartnerDashboard activeTab={partnerActiveTab} />} />

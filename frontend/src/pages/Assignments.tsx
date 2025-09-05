@@ -54,128 +54,14 @@ const Assignments: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
-  // Generate synthetic assignments since database relationships don't exist
+  // Fetch assignments from API
   const {
     data: assignments = [],
     isLoading,
     error,
-  } = useQuery<Assignment[]>('assignments', async () => {
-    try {
-      // Try to get real assignments first
-      const realAssignments = await assignmentsApi.getAll();
-      if (realAssignments && realAssignments.length > 0) {
-        return realAssignments;
-      }
-    } catch (apiError) {
-      console.warn('⚠️ Failed to fetch assignments, generating synthetic data:', apiError);
-    }
-
-    // Generate synthetic assignments for demonstration
-    const syntheticAssignments: Assignment[] = [
-      {
-        id: 1,
-        request_id: 1,
-        partner_id: 'R00050',
-        installation_code: 'INST00029',
-        service_type: 'occupational_doctor',
-        assigned_hours: 8,
-        hourly_rate: 75,
-        total_cost: 600,
-        status: 'completed',
-        optimization_score: 95,
-        travel_distance: 5.2,
-        created_at: '2024-01-15T10:00:00Z',
-        updated_at: '2024-01-15T10:00:00Z',
-        customer_requests: {
-          id: 1,
-          client_name: 'DEMO HELLAS A.E.E',
-          installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
-          service_type: 'Health Inspection',
-          start_date: '2024-01-15',
-          end_date: '2024-12-31',
-          status: 'active',
-        },
-        partners: {
-          id: 'R00050',
-          name: 'ΔΑΝΕΖΗΣ ΝΙΚΟΛΑΣ',
-          specialty: 'Παθολόγος',
-          city: 'ΓΕΡΑΚΑΣ',
-          hourly_rate: 75,
-          email: 'n.danezis@example.com',
-        },
-      },
-      {
-        id: 2,
-        request_id: 2,
-        partner_id: 'R00096',
-        installation_code: 'INST25442',
-        service_type: 'safety_engineer',
-        assigned_hours: 4,
-        hourly_rate: 65,
-        total_cost: 260,
-        status: 'accepted',
-        optimization_score: 88,
-        travel_distance: 12.8,
-        email_sent_at: '2024-01-20T09:00:00Z',
-        partner_responded_at: '2024-01-20T14:30:00Z',
-        response_deadline: '2024-01-21T09:00:00Z',
-        created_at: '2024-01-20T09:00:00Z',
-        updated_at: '2024-01-20T14:30:00Z',
-        customer_requests: {
-          id: 2,
-          client_name: 'DEMO HELLAS A.E.E',
-          installation_address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
-          service_type: 'Safety Assessment',
-          start_date: '2024-01-25',
-          end_date: '2024-12-31',
-          status: 'pending',
-        },
-        partners: {
-          id: 'R00096',
-          name: 'ΓΙΑΝΝΗΣ ΓΥΦΤΑΚΗΣ',
-          specialty: 'Μηχανικός Ασφάλειας',
-          city: 'ΑΘΗΝΑ',
-          hourly_rate: 65,
-          email: 'i.gyftakis@example.com',
-        },
-      },
-      {
-        id: 3,
-        request_id: 3,
-        partner_id: 'R00125',
-        installation_code: 'INST25445',
-        service_type: 'occupational_doctor',
-        assigned_hours: 6,
-        hourly_rate: 70,
-        total_cost: 420,
-        status: 'proposed',
-        optimization_score: 82,
-        travel_distance: 8.5,
-        email_sent_at: '2024-01-22T11:00:00Z',
-        response_deadline: '2024-01-23T11:00:00Z',
-        created_at: '2024-01-22T11:00:00Z',
-        updated_at: '2024-01-22T11:00:00Z',
-        customer_requests: {
-          id: 3,
-          client_name: 'DEMO HELLAS A.E.E',
-          installation_address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37',
-          service_type: 'Routine Health Check',
-          start_date: '2024-01-28',
-          end_date: '2024-12-31',
-          status: 'pending',
-        },
-        partners: {
-          id: 'R00125',
-          name: 'ΚΩΣΤΑΣ ΚΩΣΤΑΚΗΣ',
-          specialty: 'Παθολόγος',
-          city: 'ΠΕΙΡΑΙΑΣ',
-          hourly_rate: 70,
-          email: 'k.kostakis@example.com',
-        },
-      },
-    ];
-
-    return syntheticAssignments;
+  } = useQuery<Assignment[]>('assignments-page', async () => {
+    const realAssignments = await assignmentsApi.getAll();
+    return realAssignments || [];
   });
 
   // Filter assignments

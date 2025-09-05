@@ -51,13 +51,20 @@ sudo netstat -tlnp | grep -E ":(80|443|3000|4000|4001)"
 ssh user@your-server-ip "echo 'Connection successful'"
 ```
 
-## Port Configuration
+## Port Configuration (Updated - TypeScript Migration)
 
-The system uses configurable ports for different environments:
+The system uses the following port configuration for different environments:
 
-- **Development**: Frontend: 3000, Backend: 3001
-- **Production**: Frontend: 4000 (default), Backend: 4001 (default)
+- **Local Development (Current)**: 
+  - Frontend: **3002** (PORT=3002)
+  - Backend: **3001** (default Express port)
+  - Supabase Local: 54321 (if using local instance)
+- **Production**: 
+  - Frontend: 4000 (default), Backend: 4001 (default)
+  - Or custom ports as configured during deployment
 - **Custom**: Ports can be configured during deployment
+
+**Note**: The frontend now runs on port 3002 by default to avoid conflicts with other development services.
 
 **Production Port Configuration:**
 - Modify `config/nginx/nginx-production.conf` to change the frontend port
@@ -169,27 +176,29 @@ docker-compose -f docker-compose.prod.yml up -d
 ./scripts/setup-ssl.sh your-domain.com
 ```
 
-### 💻 Manual Development Setup
+### 💻 Manual Development Setup (TypeScript)
 
-**Use Case**: Local development without Docker
+**Use Case**: Local development with TypeScript support
 
 ```bash
-# 1. Install dependencies
+# 1. Install dependencies (TypeScript included)
 cd backend && npm install && cd ..
 cd frontend && npm install && cd ..
 
-# 2. Set up local environment
+# 2. Set up local environment files
 cp .env.development.example .env
 cp frontend/.env.development.example frontend/.env
 
-# 3. Start services separately
-# Terminal 1: Backend
+# 3. Start services separately with TypeScript
+# Terminal 1: Backend (TypeScript with ts-node)
 cd backend && npm run dev
 
-# Terminal 2: Frontend
-cd frontend && npm start
+# Terminal 2: Frontend (React with TypeScript)
+cd frontend && PORT=3002 ESLINT_NO_DEV_ERRORS=true npm start
 
-# Access: http://localhost:3000
+# Access: 
+# - Frontend: http://localhost:3002
+# - Backend API: http://localhost:3001
 ```
 
 ## Environment Configuration
@@ -234,18 +243,24 @@ ANTHROPIC_API_KEY=your_anthropic_api_key
 LOG_LEVEL=info
 ```
 
-**frontend/.env (React)**
+**frontend/.env (React + TypeScript)**
 
 ```bash
 # API Configuration
-REACT_APP_API_URL=https://your-domain.com/api
+REACT_APP_API_URL=http://localhost:3001/api
 
 # Database (same as backend)
 REACT_APP_SUPABASE_URL=https://your-project-id.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=your_anon_key_here
 
-# Environment
-REACT_APP_ENV=production
+# Development Configuration
+REACT_APP_ENV=development
+PORT=3002
+ESLINT_NO_DEV_ERRORS=true
+
+# Production overrides
+# REACT_APP_API_URL=https://your-domain.com/api
+# REACT_APP_ENV=production
 ```
 
 ### Security Considerations
@@ -327,40 +342,54 @@ curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
 # Expected: JSON response or authentication prompt
 ```
 
-### Common Verification Steps
+### Common Verification Steps (TypeScript Environment)
 
 ```bash
-# 1. Check all services are running
-pm2 status                    # PM2 processes
-sudo systemctl status nginx   # Nginx web server
-docker-compose ps             # Docker services (if using Docker)
+# 1. Check TypeScript compilation
+cd backend && npm run type-check     # Backend TypeScript check
+cd frontend && npx tsc --noEmit     # Frontend TypeScript check
 
-# 2. Test port accessibility
-netstat -tlnp | grep -E ":(3000|3001|4000|4001|80|443)"
+# 2. Check all services are running
+pm2 status                          # PM2 processes
+sudo systemctl status nginx         # Nginx web server
+docker-compose ps                   # Docker services (if using Docker)
 
-# 3. Check logs for errors
+# 3. Test port accessibility (updated ports)
+netstat -tlnp | grep -E ":(3001|3002|4000|4001|80|443)"
+
+# 4. Check logs for errors
 pm2 logs gep-backend
 tail -f /var/log/nginx/error.log
 
-# 4. Test API endpoints
-curl http://your-domain.com/api/health
-curl http://your-domain.com/api/customers
+# 5. Test API endpoints
+curl http://localhost:3001/api/health     # Local development
+curl http://your-domain.com/api/health    # Production
+curl http://localhost:3001/api/customers  # Test with auth
+
+# 6. Verify TypeScript build
+cd backend && npm run build              # Should compile without errors
+cd frontend && npm run build             # Should build successfully
 ```
 
 ## Troubleshooting
 
 ### Common Issues & Solutions
 
-#### 🔧 Port Conflicts
+#### 🔧 Port Conflicts (Updated for new ports)
 
 ```bash
-# Find process using port
+# Find process using backend port
 sudo lsof -i :3001
+
+# Find process using frontend port
+sudo lsof -i :3002
 
 # Kill process if needed
 sudo kill -9 [PID]
 
-# Change port in environment files if conflict persists
+# Alternative: Change ports in environment files
+# Backend: edit .env -> PORT=3011
+# Frontend: edit package.json scripts or use PORT=3012 npm start
 ```
 
 #### 🔧 PM2 Issues

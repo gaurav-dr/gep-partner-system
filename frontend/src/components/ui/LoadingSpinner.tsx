@@ -26,25 +26,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   return (
     <svg
-      className={clsx(
-        'animate-spin',
-        sizeClasses[size],
-        colorClasses[color],
-        className
-      )}
+      className={clsx('animate-spin', sizeClasses[size], colorClasses[color], className)}
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

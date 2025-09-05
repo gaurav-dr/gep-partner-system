@@ -8,7 +8,8 @@ import { createClient } from '@supabase/supabase-js';
 // Mock environment variables for testing
 const mockEnv = {
   REACT_APP_SUPABASE_URL: 'http://localhost:8000',
-  REACT_APP_SUPABASE_ANON_KEY: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE'
+  REACT_APP_SUPABASE_ANON_KEY:
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxvY2FsaG9zdCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQxNzY5MjAwLCJleHAiOjE5NTczNDEyMDB9.dc_X5iR_VP_qT0zsityj_I_OZ2T9FtRU2BBNWN8Bu4GE',
 };
 
 // Set up environment variables
@@ -71,7 +72,7 @@ describe('Supabase Health Checks', () => {
     expect(supabase.from).toBeDefined();
     expect(supabase.storage).toBeDefined();
     expect(supabase.realtime).toBeDefined();
-    
+
     // Check auth methods
     expect(typeof supabase.auth.signIn).toBe('function');
     expect(typeof supabase.auth.signOut).toBe('function');
@@ -86,14 +87,12 @@ describe('Supabase Health Checks', () => {
 
   test('Auth state change listener can be set up', () => {
     expect(() => {
-      const { data } = supabase.auth.onAuthStateChange(
-        (event: string, session: any) => {
-          // Mock callback
-        }
-      );
+      const { data } = supabase.auth.onAuthStateChange((event: string, session: any) => {
+        // Mock callback
+      });
       expect(data).toBeDefined();
       expect(typeof data.subscription?.unsubscribe).toBe('function');
-      
+
       // Clean up
       data.subscription?.unsubscribe();
     }).not.toThrow();
@@ -119,7 +118,7 @@ describe('Supabase Health Checks', () => {
       expect(channel).toBeDefined();
       expect(typeof channel.subscribe).toBe('function');
       expect(typeof channel.unsubscribe).toBe('function');
-      
+
       // Clean up
       channel.unsubscribe();
     }).not.toThrow();
@@ -127,9 +126,7 @@ describe('Supabase Health Checks', () => {
 
   test('Client handles network errors gracefully', async () => {
     // This test verifies that the client doesn't crash on network issues
-    const mockFetch = jest.spyOn(global, 'fetch').mockRejectedValue(
-      new Error('Network error')
-    );
+    const mockFetch = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
 
     try {
       await supabase.from('test').select('*').limit(1);
@@ -149,7 +146,7 @@ describe('Supabase Health Checks', () => {
       'signOut',
       'refreshSession',
       'getUser',
-      'getSession'
+      'getSession',
     ];
 
     authMethods.forEach(method => {
