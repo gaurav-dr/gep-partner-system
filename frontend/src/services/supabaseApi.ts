@@ -4,11 +4,8 @@ import { supabase } from '../config/supabase.ts';
 export const partnersApi = {
   async getAll() {
     console.log('🔍 Fetching partners from Supabase...');
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .order('name');
-    
+    const { data, error } = await supabase.from('partners').select('*').order('name');
+
     console.log('📊 Partners API response:', { data, error });
     if (error) {
       console.error('❌ Partners API error:', error);
@@ -19,23 +16,15 @@ export const partnersApi = {
   },
 
   async getById(id: string) {
-    const { data, error } = await supabase
-      .from('partners')
-      .select('*')
-      .eq('id', id)
-      .single();
-    
+    const { data, error } = await supabase.from('partners').select('*').eq('id', id).single();
+
     if (error) throw error;
     return data;
   },
 
   async create(partner: any) {
-    const { data, error } = await supabase
-      .from('partners')
-      .insert(partner)
-      .select()
-      .single();
-    
+    const { data, error } = await supabase.from('partners').insert(partner).select().single();
+
     if (error) throw error;
     return data;
   },
@@ -47,19 +36,16 @@ export const partnersApi = {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
 
   async delete(id: string) {
-    const { error } = await supabase
-      .from('partners')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.from('partners').delete().eq('id', id);
+
     if (error) throw error;
-  }
+  },
 };
 
 // Customer Requests API
@@ -70,7 +56,7 @@ export const requestsApi = {
       .from('customer_requests')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     console.log('📊 Customer Requests API response:', { data, error });
     if (error) {
       console.error('❌ Customer Requests API error:', error);
@@ -83,7 +69,8 @@ export const requestsApi = {
   async getById(id: number) {
     const { data, error } = await supabase
       .from('customer_requests')
-      .select(`
+      .select(
+        `
         *,
         partners(name, specialty),
         assignments(
@@ -94,10 +81,11 @@ export const requestsApi = {
           total_cost,
           partners(name, specialty)
         )
-      `)
+      `
+      )
       .eq('id', id)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
@@ -108,7 +96,7 @@ export const requestsApi = {
       .insert(request)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
@@ -120,19 +108,16 @@ export const requestsApi = {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
 
   async delete(id: number) {
-    const { error } = await supabase
-      .from('customer_requests')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.from('customer_requests').delete().eq('id', id);
+
     if (error) throw error;
-  }
+  },
 };
 
 // Assignments API
@@ -143,7 +128,7 @@ export const assignmentsApi = {
       .from('assignments')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     console.log('📊 Assignments API response:', { data, error });
     if (error) {
       console.error('❌ Assignments API error:', error);
@@ -156,7 +141,8 @@ export const assignmentsApi = {
   async getById(id: number) {
     const { data, error } = await supabase
       .from('assignments')
-      .select(`
+      .select(
+        `
         *,
         customer_requests(
           id,
@@ -179,21 +165,18 @@ export const assignmentsApi = {
           address,
           clients(company_name)
         )
-      `)
+      `
+      )
       .eq('id', id)
       .single();
-    
+
     if (error) throw error;
     return data;
   },
 
   async create(assignment: any) {
-    const { data, error } = await supabase
-      .from('assignments')
-      .insert(assignment)
-      .select()
-      .single();
-    
+    const { data, error } = await supabase.from('assignments').insert(assignment).select().single();
+
     if (error) throw error;
     return data;
   },
@@ -205,24 +188,22 @@ export const assignmentsApi = {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   },
 
   async delete(id: number) {
-    const { error } = await supabase
-      .from('assignments')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.from('assignments').delete().eq('id', id);
+
     if (error) throw error;
   },
 
   async getByPartnerId(partnerId: string) {
     const { data, error } = await supabase
       .from('assignments')
-      .select(`
+      .select(
+        `
         *,
         customer_requests(
           id,
@@ -239,39 +220,34 @@ export const assignmentsApi = {
           city,
           hourly_rate
         )
-      `)
+      `
+      )
       .eq('partner_id', partnerId)
       .order('created_at', { ascending: false });
-    
+
     if (error) throw error;
     return data;
-  }
+  },
 };
 
 // Clients API
 export const clientsApi = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('company_name');
-    
+    const { data, error } = await supabase.from('clients').select('*').order('company_name');
+
     if (error) throw error;
     return data;
-  }
+  },
 };
 
 // Installations API
 export const installationsApi = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('installations')
-      .select('*')
-      .order('description');
-    
+    const { data, error } = await supabase.from('installations').select('*').order('description');
+
     if (error) throw error;
     return data;
-  }
+  },
 };
 
 // Schedules API (for calendar view) - simplified without complex joins
@@ -289,7 +265,7 @@ export const schedulesApi = {
   async getByPartnerId(partnerId: string) {
     // Return empty array since we don't have actual schedule tables
     return [];
-  }
+  },
 };
 
 // Contracts API
@@ -299,8 +275,8 @@ export const contractsApi = {
       .from('contracts')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     if (error) throw error;
     return data;
-  }
+  },
 };

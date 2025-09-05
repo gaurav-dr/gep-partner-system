@@ -46,12 +46,13 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
     const loadPendingRequests = () => {
       const assignmentRequests = JSON.parse(localStorage.getItem('assignmentRequests') || '[]');
       const confirmationRequests = JSON.parse(localStorage.getItem('confirmationRequests') || '[]');
-      
+
       // Filter requests for this partner that are still pending
-      const partnerRequests = assignmentRequests.filter((req: any) => 
-        req.partner_id === partner.id && 
-        req.status === 'pending_confirmation' &&
-        new Date(req.confirmation_deadline) > new Date()
+      const partnerRequests = assignmentRequests.filter(
+        (req: any) =>
+          req.partner_id === partner.id &&
+          req.status === 'pending_confirmation' &&
+          new Date(req.confirmation_deadline) > new Date()
       );
 
       // Generate sample requests if none exist from AI system
@@ -72,14 +73,14 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                 visit_date: '2025-08-05',
                 visit_time: '10:00',
                 duration_hours: 2,
-                installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350'
+                installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
               },
               {
                 visit_date: '2025-09-05',
                 visit_time: '10:00',
                 duration_hours: 2,
-                installation_address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98'
-              }
+                installation_address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
+              },
             ],
             special_requirements: 'Requires experience with large office environments',
             deadline_response: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
@@ -88,9 +89,9 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
               'Perfect specialty match for occupational health requirements',
               'Excellent location proximity to both installations',
               'Schedule perfectly aligns with your availability',
-              'Cost-effective hourly rate within client budget'
+              'Cost-effective hourly rate within client budget',
             ],
-            created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+            created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
           },
           {
             id: 'req-002',
@@ -107,36 +108,40 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                 visit_date: '2025-08-12',
                 visit_time: '14:00',
                 duration_hours: 2,
-                installation_address: 'ΚΗΦΙΣΙΑΣ 230'
+                installation_address: 'ΚΗΦΙΣΙΑΣ 230',
               },
               {
                 visit_date: '2025-09-12',
                 visit_time: '14:00',
                 duration_hours: 2,
-                installation_address: 'ΚΗΦΙΣΙΑΣ 230'
-              }
+                installation_address: 'ΚΗΦΙΣΙΑΣ 230',
+              },
             ],
             deadline_response: new Date(Date.now() + 22 * 60 * 60 * 1000).toISOString(),
             match_score: 87,
             ai_reasoning: [
               'Strong specialty match for comprehensive health assessments',
               'Good availability alignment with proposed schedule',
-              'Moderate travel distance from your base location'
+              'Moderate travel distance from your base location',
             ],
-            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-          }
+            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          },
         ];
-        
+
         setPendingRequests(sampleRequests);
       } else {
         // Convert stored requests to component format
         const convertedRequests = partnerRequests.map((req: any) => ({
           id: req.id,
           customer_name: req.recommendation_data?.customer_name || 'Unknown Customer',
-          installation_addresses: req.recommendation_data?.installation_assignments?.map((ia: any) => ia.installation_address) || [],
+          installation_addresses:
+            req.recommendation_data?.installation_assignments?.map(
+              (ia: any) => ia.installation_address
+            ) || [],
           work_type: req.recommendation_data?.work_type || 'health_check',
           total_employees: req.recommendation_data?.total_employees || 50,
-          contract_completion_date: req.recommendation_data?.contract_completion_date || '2025-12-31',
+          contract_completion_date:
+            req.recommendation_data?.contract_completion_date || '2025-12-31',
           estimated_hours: req.estimated_hours,
           estimated_cost: req.estimated_cost,
           urgency: req.recommendation_data?.priority || 'medium',
@@ -145,9 +150,9 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
           deadline_response: req.confirmation_deadline,
           match_score: req.recommendation_data?.match_score || 85,
           ai_reasoning: req.recommendation_data?.reasoning || ['AI-generated recommendation'],
-          created_at: req.created_at
+          created_at: req.created_at,
         }));
-        
+
         setPendingRequests(convertedRequests);
       }
     };
@@ -157,12 +162,12 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
 
   const handleAcceptRequest = async (request: PendingRequest) => {
     setResponseMessage('Processing acceptance...');
-    
+
     // Simulate API call delay
     setTimeout(() => {
       // Remove from pending requests
       setPendingRequests(prev => prev.filter(r => r.id !== request.id));
-      
+
       // Add to confirmed assignments (this would normally sync with the admin system)
       const confirmedAssignment = {
         id: `confirmed-${request.id}`,
@@ -173,34 +178,31 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
         confirmed_at: new Date().toISOString(),
         estimated_hours: request.estimated_hours,
         estimated_cost: request.estimated_cost,
-        schedule: request.proposed_schedule
+        schedule: request.proposed_schedule,
       };
-      
+
       const existingConfirmed = JSON.parse(localStorage.getItem('confirmedAssignments') || '[]');
       existingConfirmed.push(confirmedAssignment);
       localStorage.setItem('confirmedAssignments', JSON.stringify(existingConfirmed));
 
       // Track partner acceptance in traceability system
-      traceabilityService.trackPartnerResponse(
-        request.id,
-        partner.id,
-        partner.name,
-        'accepted'
+      traceabilityService.trackPartnerResponse(request.id, partner.id, partner.name, 'accepted');
+
+      setResponseMessage(
+        '✅ Assignment accepted successfully! You will receive detailed instructions via email.'
       );
-      
-      setResponseMessage('✅ Assignment accepted successfully! You will receive detailed instructions via email.');
       setSelectedRequest(null);
-      
+
       setTimeout(() => setResponseMessage(''), 3000);
     }, 1500);
   };
 
   const handleDeclineRequest = async (request: PendingRequest, reason: string) => {
     setResponseMessage('Processing decline...');
-    
+
     setTimeout(() => {
       setPendingRequests(prev => prev.filter(r => r.id !== request.id));
-      
+
       // Store decline reason for admin visibility
       const declinedAssignment = {
         id: `declined-${request.id}`,
@@ -209,9 +211,9 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
         customer_name: request.customer_name,
         status: 'declined',
         declined_at: new Date().toISOString(),
-        decline_reason: reason
+        decline_reason: reason,
       };
-      
+
       const existingDeclined = JSON.parse(localStorage.getItem('declinedAssignments') || '[]');
       existingDeclined.push(declinedAssignment);
       localStorage.setItem('declinedAssignments', JSON.stringify(existingDeclined));
@@ -224,31 +226,41 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
         'declined',
         reason
       );
-      
+
       setResponseMessage('Request declined. The system will find an alternative partner.');
       setSelectedRequest(null);
-      
+
       setTimeout(() => setResponseMessage(''), 3000);
     }, 1000);
   };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'high':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'low':
+        return 'bg-green-100 text-green-800 border-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getWorkTypeLabel = (workType: string) => {
     switch (workType) {
-      case 'routine_health_check': return 'Routine Health Check';
-      case 'comprehensive_health_assessment': return 'Comprehensive Health Assessment';
-      case 'occupational_health_screening': return 'Occupational Health Screening';
-      case 'safety_inspection': return 'Safety Inspection';
-      case 'compliance_audit': return 'Compliance Audit';
-      default: return workType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      case 'routine_health_check':
+        return 'Routine Health Check';
+      case 'comprehensive_health_assessment':
+        return 'Comprehensive Health Assessment';
+      case 'occupational_health_screening':
+        return 'Occupational Health Screening';
+      case 'safety_inspection':
+        return 'Safety Inspection';
+      case 'compliance_audit':
+        return 'Compliance Audit';
+      default:
+        return workType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
   };
 
@@ -256,7 +268,7 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
     const now = new Date();
     const deadlineDate = new Date(deadline);
     const hoursRemaining = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60));
-    
+
     if (hoursRemaining <= 0) return 'Expired';
     if (hoursRemaining < 24) return `${hoursRemaining}h remaining`;
     const daysRemaining = Math.floor(hoursRemaining / 24);
@@ -273,16 +285,18 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
             New assignments requiring your confirmation within 24 hours
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          {pendingRequests.length} pending requests
-        </div>
+        <div className="text-sm text-gray-500">{pendingRequests.length} pending requests</div>
       </div>
 
       {/* Response Message */}
       {responseMessage && (
-        <div className={`p-4 rounded-md ${
-          responseMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
-        }`}>
+        <div
+          className={`p-4 rounded-md ${
+            responseMessage.includes('✅')
+              ? 'bg-green-50 text-green-700'
+              : 'bg-blue-50 text-blue-700'
+          }`}
+        >
           {responseMessage}
         </div>
       )}
@@ -292,19 +306,26 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
         <div className="text-center py-12 bg-white rounded-lg border">
           <div className="text-4xl mb-4">✨</div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Requests</h3>
-          <p className="text-gray-600">You're all caught up! New assignment requests will appear here.</p>
+          <p className="text-gray-600">
+            You're all caught up! New assignment requests will appear here.
+          </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {pendingRequests.map((request) => (
-            <div key={request.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          {pendingRequests.map(request => (
+            <div
+              key={request.id}
+              className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+            >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-medium text-gray-900">{request.customer_name}</h3>
                     <div className="flex items-center space-x-4 mt-1">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getUrgencyColor(request.urgency)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${getUrgencyColor(request.urgency)}`}
+                      >
                         {request.urgency.toUpperCase()} Priority
                       </span>
                       <span className="text-sm text-blue-600 font-medium">
@@ -316,7 +337,9 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-gray-900">€{request.estimated_cost.toLocaleString()}</div>
+                    <div className="text-lg font-bold text-gray-900">
+                      €{request.estimated_cost.toLocaleString()}
+                    </div>
                     <div className="text-sm text-gray-500">{request.estimated_hours}h total</div>
                   </div>
                 </div>
@@ -328,11 +351,14 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                     <div className="space-y-1 text-sm text-gray-600">
                       <div>📋 {getWorkTypeLabel(request.work_type)}</div>
                       <div>👥 {request.total_employees} employees</div>
-                      <div>📅 Contract until {new Date(request.contract_completion_date).toLocaleDateString()}</div>
+                      <div>
+                        📅 Contract until{' '}
+                        {new Date(request.contract_completion_date).toLocaleDateString()}
+                      </div>
                       <div>📍 {request.installation_addresses.length} location(s)</div>
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2">AI Analysis</h4>
                     <div className="space-y-1">
@@ -347,13 +373,19 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
 
                 {/* Proposed Schedule Preview */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Proposed Schedule ({request.proposed_schedule.length} visits)</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">
+                    Proposed Schedule ({request.proposed_schedule.length} visits)
+                  </h4>
                   <div className="bg-gray-50 rounded p-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {request.proposed_schedule.slice(0, 4).map((visit, idx) => (
                         <div key={idx} className="text-xs bg-white p-2 rounded border">
-                          <div className="font-medium">{new Date(visit.visit_date).toLocaleDateString()}</div>
-                          <div className="text-gray-600">{visit.visit_time} • {visit.duration_hours}h</div>
+                          <div className="font-medium">
+                            {new Date(visit.visit_date).toLocaleDateString()}
+                          </div>
+                          <div className="text-gray-600">
+                            {visit.visit_time} • {visit.duration_hours}h
+                          </div>
                           <div className="text-gray-500 truncate">{visit.installation_address}</div>
                         </div>
                       ))}
@@ -414,7 +446,12 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -425,14 +462,21 @@ const PartnerPendingRequests: React.FC<PartnerPendingRequestsProps> = ({ partner
                 <h3 className="text-lg font-medium mb-3">Complete Visit Schedule</h3>
                 <div className="space-y-2">
                   {selectedRequest.proposed_schedule.map((visit, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                    >
                       <div>
                         <div className="font-medium">Visit {idx + 1}</div>
                         <div className="text-sm text-gray-600">{visit.installation_address}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-medium">{new Date(visit.visit_date).toLocaleDateString()}</div>
-                        <div className="text-sm text-gray-600">{visit.visit_time} • {visit.duration_hours}h</div>
+                        <div className="font-medium">
+                          {new Date(visit.visit_date).toLocaleDateString()}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {visit.visit_time} • {visit.duration_hours}h
+                        </div>
                       </div>
                     </div>
                   ))}

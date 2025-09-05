@@ -42,7 +42,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
     new_time: '',
     new_duration: 1,
     reason: '',
-    urgency: 'medium' as 'high' | 'medium' | 'low'
+    urgency: 'medium' as 'high' | 'medium' | 'low',
   });
   const [availableAssignments, setAvailableAssignments] = useState<any[]>([]);
 
@@ -51,7 +51,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
     const loadChangeRequests = () => {
       const stored = JSON.parse(localStorage.getItem('partnerChangeRequests') || '[]');
       const partnerRequests = stored.filter((req: any) => req.partner_id === partner.id);
-      
+
       // Generate sample change requests if none exist
       if (partnerRequests.length === 0) {
         const sampleRequests: ChangeRequest[] = [
@@ -68,7 +68,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             reason: 'Personal emergency requires schedule adjustment',
             urgency: 'high',
             status: 'pending_approval',
-            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
           },
           {
             id: 'change-002',
@@ -84,7 +84,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             status: 'approved',
             created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
             manager_response: 'Approved. Additional time allocated due to site complexity.',
-            response_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+            response_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
           },
           {
             id: 'change-003',
@@ -98,9 +98,10 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             urgency: 'high',
             status: 'rejected',
             created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-            manager_response: 'Rejected. Please coordinate with backup partner. Cancellation too close to scheduled date.',
-            response_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString()
-          }
+            manager_response:
+              'Rejected. Please coordinate with backup partner. Cancellation too close to scheduled date.',
+            response_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+          },
         ];
         setChangeRequests(sampleRequests);
       } else {
@@ -112,10 +113,11 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
     const loadAvailableAssignments = () => {
       // Get confirmed assignments that are in the future
       const confirmedAssignments = JSON.parse(localStorage.getItem('confirmedAssignments') || '[]');
-      const partnerAssignments = confirmedAssignments.filter((assign: any) => 
-        assign.partner_id === partner.id &&
-        assign.status === 'confirmed' &&
-        assign.schedule?.some((visit: any) => new Date(visit.visit_date) > new Date())
+      const partnerAssignments = confirmedAssignments.filter(
+        (assign: any) =>
+          assign.partner_id === partner.id &&
+          assign.status === 'confirmed' &&
+          assign.schedule?.some((visit: any) => new Date(visit.visit_date) > new Date())
       );
 
       // Generate sample assignments if none exist
@@ -127,7 +129,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
             visit_date: '2025-08-15',
             visit_time: '10:00',
-            duration_hours: 2
+            duration_hours: 2,
           },
           {
             id: 'assign-002',
@@ -135,7 +137,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             installation_address: 'ΚΗΦΙΣΙΑΣ 230',
             visit_date: '2025-08-22',
             visit_time: '09:00',
-            duration_hours: 2
+            duration_hours: 2,
           },
           {
             id: 'assign-003',
@@ -143,8 +145,8 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
             installation_address: 'ΠΑΤΗΣΙΩΝ 145',
             visit_date: '2025-08-30',
             visit_time: '15:00',
-            duration_hours: 1
-          }
+            duration_hours: 1,
+          },
         ];
         setAvailableAssignments(sampleAssignments);
       } else {
@@ -170,11 +172,12 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
       requested_change_type: newRequest.change_type,
       new_date: newRequest.new_date || undefined,
       new_time: newRequest.new_time || undefined,
-      new_duration: newRequest.change_type === 'modify_duration' ? newRequest.new_duration : undefined,
+      new_duration:
+        newRequest.change_type === 'modify_duration' ? newRequest.new_duration : undefined,
       reason: newRequest.reason,
       urgency: newRequest.urgency,
       status: 'pending_approval',
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     // Add to requests list
@@ -190,7 +193,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
     traceabilityService.trackChangeRequestSubmitted({
       ...changeRequest,
       partner_id: partner.id,
-      partner_name: partner.name
+      partner_name: partner.name,
     });
 
     // Reset form
@@ -201,35 +204,47 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
       new_time: '',
       new_duration: 1,
       reason: '',
-      urgency: 'medium'
+      urgency: 'medium',
     });
     setShowCreateForm(false);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending_approval': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'pending_approval':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'low':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getChangeTypeLabel = (type: string) => {
     switch (type) {
-      case 'reschedule': return '📅 Reschedule';
-      case 'cancel': return '❌ Cancel';
-      case 'modify_duration': return '⏱️ Modify Duration';
-      default: return type;
+      case 'reschedule':
+        return '📅 Reschedule';
+      case 'cancel':
+        return '❌ Cancel';
+      case 'modify_duration':
+        return '⏱️ Modify Duration';
+      default:
+        return type;
     }
   };
 
@@ -238,7 +253,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
       weekday: 'short',
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
   };
 
@@ -248,9 +263,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg font-medium text-gray-900">Assignment Change Requests</h2>
-          <p className="text-sm text-gray-600">
-            Request changes to your scheduled assignments
-          </p>
+          <p className="text-sm text-gray-600">Request changes to your scheduled assignments</p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
@@ -271,12 +284,23 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmitChangeRequest(); }} className="space-y-4">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                handleSubmitChangeRequest();
+              }}
+              className="space-y-4"
+            >
               {/* Assignment Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -284,14 +308,17 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                 </label>
                 <select
                   value={newRequest.assignment_id}
-                  onChange={(e) => setNewRequest(prev => ({ ...prev, assignment_id: e.target.value }))}
+                  onChange={e =>
+                    setNewRequest(prev => ({ ...prev, assignment_id: e.target.value }))
+                  }
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   <option value="">Choose assignment to modify</option>
                   {availableAssignments.map(assignment => (
                     <option key={assignment.id} value={assignment.id}>
-                      {assignment.customer_name} - {formatDate(assignment.visit_date)} at {assignment.visit_time}
+                      {assignment.customer_name} - {formatDate(assignment.visit_date)} at{' '}
+                      {assignment.visit_time}
                     </option>
                   ))}
                 </select>
@@ -304,7 +331,9 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                 </label>
                 <select
                   value={newRequest.change_type}
-                  onChange={(e) => setNewRequest(prev => ({ ...prev, change_type: e.target.value as any }))}
+                  onChange={e =>
+                    setNewRequest(prev => ({ ...prev, change_type: e.target.value as any }))
+                  }
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -324,7 +353,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                     <input
                       type="date"
                       value={newRequest.new_date}
-                      onChange={(e) => setNewRequest(prev => ({ ...prev, new_date: e.target.value }))}
+                      onChange={e => setNewRequest(prev => ({ ...prev, new_date: e.target.value }))}
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -336,7 +365,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                     <input
                       type="time"
                       value={newRequest.new_time}
-                      onChange={(e) => setNewRequest(prev => ({ ...prev, new_time: e.target.value }))}
+                      onChange={e => setNewRequest(prev => ({ ...prev, new_time: e.target.value }))}
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       required
                     />
@@ -354,7 +383,9 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                     min="1"
                     max="8"
                     value={newRequest.new_duration}
-                    onChange={(e) => setNewRequest(prev => ({ ...prev, new_duration: parseInt(e.target.value) }))}
+                    onChange={e =>
+                      setNewRequest(prev => ({ ...prev, new_duration: parseInt(e.target.value) }))
+                    }
                     className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
@@ -363,12 +394,12 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
 
               {/* Urgency */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Urgency *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Urgency *</label>
                 <select
                   value={newRequest.urgency}
-                  onChange={(e) => setNewRequest(prev => ({ ...prev, urgency: e.target.value as any }))}
+                  onChange={e =>
+                    setNewRequest(prev => ({ ...prev, urgency: e.target.value as any }))
+                  }
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
@@ -385,7 +416,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                 </label>
                 <textarea
                   value={newRequest.reason}
-                  onChange={(e) => setNewRequest(prev => ({ ...prev, reason: e.target.value }))}
+                  onChange={e => setNewRequest(prev => ({ ...prev, reason: e.target.value }))}
                   rows={3}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Please explain why this change is needed..."
@@ -423,17 +454,21 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
         </div>
       ) : (
         <div className="space-y-4">
-          {changeRequests.map((request) => (
+          {changeRequests.map(request => (
             <div key={request.id} className="bg-white border border-gray-200 rounded-lg p-6">
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="text-lg font-medium text-gray-900">{request.customer_name}</h3>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(request.status)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(request.status)}`}
+                    >
                       {request.status.replace('_', ' ').toUpperCase()}
                     </span>
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${getUrgencyColor(request.urgency)}`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full font-medium ${getUrgencyColor(request.urgency)}`}
+                    >
                       {request.urgency.toUpperCase()}
                     </span>
                   </div>
@@ -455,7 +490,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                       <div>🕐 {request.original_time}</div>
                     </div>
                   </div>
-                  
+
                   {request.requested_change_type !== 'cancel' && (
                     <div>
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Requested Changes</h4>
@@ -467,7 +502,7 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-3">
                   <h4 className="text-sm font-medium text-gray-700 mb-1">Reason</h4>
                   <p className="text-sm text-gray-600">{request.reason}</p>
@@ -476,18 +511,24 @@ const PartnerChangeRequests: React.FC<PartnerChangeRequestsProps> = ({ partner }
 
               {/* Manager Response */}
               {request.manager_response && (
-                <div className={`rounded-lg p-4 ${
-                  request.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
-                }`}>
+                <div
+                  className={`rounded-lg p-4 ${
+                    request.status === 'approved'
+                      ? 'bg-green-50 border border-green-200'
+                      : 'bg-red-50 border border-red-200'
+                  }`}
+                >
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="text-sm font-medium text-gray-700">Manager Response</h4>
                     <span className="text-xs text-gray-500">
                       {new Date(request.response_date!).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className={`text-sm ${
-                    request.status === 'approved' ? 'text-green-700' : 'text-red-700'
-                  }`}>
+                  <p
+                    className={`text-sm ${
+                      request.status === 'approved' ? 'text-green-700' : 'text-red-700'
+                    }`}
+                  >
                     {request.manager_response}
                   </p>
                 </div>

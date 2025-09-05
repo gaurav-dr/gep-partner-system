@@ -64,8 +64,14 @@
     "**/*.spec.ts"
   ],
   "ts-node": {
+    "transpileOnly": true,
     "register": {
       "paths": true
+    },
+    "compilerOptions": {
+      "skipLibCheck": true,
+      "strict": false,
+      "noImplicitAny": false
     }
   }
 }

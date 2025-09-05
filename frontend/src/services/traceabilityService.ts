@@ -2,9 +2,18 @@
 interface TraceabilityEvent {
   id: string;
   timestamp: string;
-  event_type: 'customer_request_created' | 'ai_recommendation_generated' | 'partner_assignment_requested' | 
-             'partner_response' | 'assignment_confirmed' | 'assignment_declined' | 'change_request_submitted' |
-             'change_request_approved' | 'change_request_rejected' | 'visit_completed' | 'visit_cancelled';
+  event_type:
+    | 'customer_request_created'
+    | 'ai_recommendation_generated'
+    | 'partner_assignment_requested'
+    | 'partner_response'
+    | 'assignment_confirmed'
+    | 'assignment_declined'
+    | 'change_request_submitted'
+    | 'change_request_approved'
+    | 'change_request_rejected'
+    | 'visit_completed'
+    | 'visit_cancelled';
   actor_type: 'admin' | 'partner' | 'system' | 'ai';
   actor_id: string;
   actor_name: string;
@@ -48,7 +57,7 @@ class TraceabilityService {
     const fullEvent: TraceabilityEvent = {
       ...event,
       id: `trace-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     // Store event
@@ -68,7 +77,7 @@ class TraceabilityService {
       actor_id: 'admin-001',
       actor_name: 'System Administrator',
       related_entities: {
-        customer_request_id: requestData.id?.toString()
+        customer_request_id: requestData.id?.toString(),
       },
       event_data: {
         customer_name: requestData.client_name,
@@ -76,10 +85,10 @@ class TraceabilityService {
         total_employees: requestData.total_employees,
         work_type: requestData.work_type,
         estimated_hours: requestData.calculated_hours,
-        estimated_cost: requestData.estimated_cost
+        estimated_cost: requestData.estimated_cost,
       },
       status: 'success',
-      notes: 'Customer request created and added to system'
+      notes: 'Customer request created and added to system',
     });
   }
 
@@ -91,25 +100,25 @@ class TraceabilityService {
       actor_id: 'ai-scheduler',
       actor_name: 'AI Scheduling System',
       related_entities: {
-        customer_request_id: customerRequestId
+        customer_request_id: customerRequestId,
       },
       event_data: {
         recommendations_count: recommendations.length,
         top_matches: recommendations.slice(0, 3).map(r => ({
           partner_id: r.partner_id,
           partner_name: r.partner_name,
-          match_score: r.match_score
+          match_score: r.match_score,
         })),
         generation_parameters: {
           specialty_weight: 0.3,
           availability_weight: 0.25,
           location_weight: 0.2,
           cost_weight: 0.15,
-          proximity_weight: 0.1
-        }
+          proximity_weight: 0.1,
+        },
       },
       status: 'success',
-      notes: `Generated ${recommendations.length} partner recommendations using AI matching algorithm`
+      notes: `Generated ${recommendations.length} partner recommendations using AI matching algorithm`,
     });
   }
 
@@ -126,7 +135,7 @@ class TraceabilityService {
       events: [],
       confirmation_deadline: assignmentData.confirmation_deadline,
       estimated_hours: assignmentData.estimated_hours,
-      estimated_cost: assignmentData.estimated_cost
+      estimated_cost: assignmentData.estimated_cost,
     };
 
     // Log the initial assignment request event
@@ -138,7 +147,7 @@ class TraceabilityService {
       related_entities: {
         customer_request_id: assignmentData.customer_request_id?.toString(),
         partner_id: assignmentData.partner_id,
-        assignment_id: assignmentData.id
+        assignment_id: assignmentData.id,
       },
       event_data: {
         partner_name: assignmentData.partner_name,
@@ -146,10 +155,10 @@ class TraceabilityService {
         estimated_cost: assignmentData.estimated_cost,
         confirmation_deadline: assignmentData.confirmation_deadline,
         match_score: assignmentData.recommendation_data?.match_score,
-        proposed_schedule: assignmentData.recommendation_data?.proposed_schedule
+        proposed_schedule: assignmentData.recommendation_data?.proposed_schedule,
       },
       status: 'pending',
-      notes: `Assignment request sent to partner with 24-hour confirmation deadline`
+      notes: `Assignment request sent to partner with 24-hour confirmation deadline`,
     });
 
     traceRecord.events.push(event);
@@ -163,9 +172,13 @@ class TraceabilityService {
   }
 
   // Track partner response (accept/decline)
-  trackPartnerResponse(assignmentId: string, partnerId: string, partnerName: string, 
-                      response: 'accepted' | 'declined', reason?: string): void {
-    
+  trackPartnerResponse(
+    assignmentId: string,
+    partnerId: string,
+    partnerName: string,
+    response: 'accepted' | 'declined',
+    reason?: string
+  ): void {
     const event = this.logEvent({
       event_type: 'partner_response',
       actor_type: 'partner',
@@ -173,24 +186,28 @@ class TraceabilityService {
       actor_name: partnerName,
       related_entities: {
         assignment_id: assignmentId,
-        partner_id: partnerId
+        partner_id: partnerId,
       },
       event_data: {
         response,
         response_reason: reason,
-        response_time: new Date().toISOString()
+        response_time: new Date().toISOString(),
       },
       status: 'success',
-      notes: `Partner ${response} the assignment${reason ? ': ' + reason : ''}`
+      notes: `Partner ${response} the assignment${reason ? ': ' + reason : ''}`,
     });
 
     // Update assignment trace
-    this.updateAssignmentTrace(assignmentId, {
-      status: response === 'accepted' ? 'confirmed' : 'declined',
-      confirmed_at: response === 'accepted' ? new Date().toISOString() : undefined,
-      declined_at: response === 'declined' ? new Date().toISOString() : undefined,
-      decline_reason: reason
-    }, event);
+    this.updateAssignmentTrace(
+      assignmentId,
+      {
+        status: response === 'accepted' ? 'confirmed' : 'declined',
+        confirmed_at: response === 'accepted' ? new Date().toISOString() : undefined,
+        declined_at: response === 'declined' ? new Date().toISOString() : undefined,
+        decline_reason: reason,
+      },
+      event
+    );
   }
 
   // Track change request submission
@@ -203,7 +220,7 @@ class TraceabilityService {
       related_entities: {
         assignment_id: changeRequestData.assignment_id,
         change_request_id: changeRequestData.id,
-        partner_id: changeRequestData.partner_id
+        partner_id: changeRequestData.partner_id,
       },
       event_data: {
         change_type: changeRequestData.requested_change_type,
@@ -213,31 +230,35 @@ class TraceabilityService {
         new_time: changeRequestData.new_time,
         new_duration: changeRequestData.new_duration,
         reason: changeRequestData.reason,
-        urgency: changeRequestData.urgency
+        urgency: changeRequestData.urgency,
       },
       status: 'pending',
-      notes: `Partner requested ${changeRequestData.requested_change_type} for assignment`
+      notes: `Partner requested ${changeRequestData.requested_change_type} for assignment`,
     });
   }
 
   // Track manager response to change request
-  trackChangeRequestResponse(changeRequestId: string, managerId: string, 
-                           response: 'approved' | 'rejected', managerNotes: string): void {
+  trackChangeRequestResponse(
+    changeRequestId: string,
+    managerId: string,
+    response: 'approved' | 'rejected',
+    managerNotes: string
+  ): void {
     this.logEvent({
       event_type: response === 'approved' ? 'change_request_approved' : 'change_request_rejected',
       actor_type: 'admin',
       actor_id: managerId,
       actor_name: 'Manager',
       related_entities: {
-        change_request_id: changeRequestId
+        change_request_id: changeRequestId,
       },
       event_data: {
         response,
         manager_notes: managerNotes,
-        response_timestamp: new Date().toISOString()
+        response_timestamp: new Date().toISOString(),
       },
       status: 'success',
-      notes: `Manager ${response} change request: ${managerNotes}`
+      notes: `Manager ${response} change request: ${managerNotes}`,
     });
   }
 
@@ -251,7 +272,7 @@ class TraceabilityService {
       related_entities: {
         assignment_id: visitData.assignment_id,
         visit_id: visitData.id,
-        partner_id: visitData.partner_id
+        partner_id: visitData.partner_id,
       },
       event_data: {
         visit_date: visitData.visit_date,
@@ -261,16 +282,16 @@ class TraceabilityService {
         visit_type: visitData.visit_type,
         completion_notes: visitData.notes,
         customer_name: visitData.customer_name,
-        installation_address: visitData.installation_address
+        installation_address: visitData.installation_address,
       },
       status: 'success',
-      notes: `Visit completed successfully`
+      notes: `Visit completed successfully`,
     });
 
     // Update assignment trace if this was the final visit
     this.updateAssignmentTrace(visitData.assignment_id, {
       status: 'completed',
-      completed_at: new Date().toISOString()
+      completed_at: new Date().toISOString(),
     });
   }
 
@@ -309,11 +330,14 @@ class TraceabilityService {
   }
 
   // Update assignment trace
-  private updateAssignmentTrace(assignmentId: string, updates: Partial<AssignmentTraceRecord>, 
-                               newEvent?: TraceabilityEvent): void {
+  private updateAssignmentTrace(
+    assignmentId: string,
+    updates: Partial<AssignmentTraceRecord>,
+    newEvent?: TraceabilityEvent
+  ): void {
     const traces = this.getAssignmentTraces();
     const traceIndex = traces.findIndex(trace => trace.assignment_id === assignmentId);
-    
+
     if (traceIndex >= 0) {
       traces[traceIndex] = { ...traces[traceIndex], ...updates };
       if (newEvent) {
@@ -324,22 +348,34 @@ class TraceabilityService {
   }
 
   // Generate traceability report
-  generateTraceabilityReport(entityType: string, entityId: string): {
+  generateTraceabilityReport(
+    entityType: string,
+    entityId: string
+  ): {
     entity_info: any;
     timeline: TraceabilityEvent[];
     summary: any;
   } {
     const events = this.getEventsForEntity(entityType, entityId);
-    const sortedEvents = events.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const sortedEvents = events.sort(
+      (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
 
     const summary = {
       total_events: events.length,
       event_types: [...new Set(events.map(e => e.event_type))],
       actors_involved: [...new Set(events.map(e => e.actor_name))],
-      status_changes: events.filter(e => e.event_type.includes('response') || e.event_type.includes('confirmed')),
-      duration_days: events.length > 0 ? 
-        Math.ceil((new Date(events[events.length - 1].timestamp).getTime() - 
-                  new Date(events[0].timestamp).getTime()) / (1000 * 60 * 60 * 24)) : 0
+      status_changes: events.filter(
+        e => e.event_type.includes('response') || e.event_type.includes('confirmed')
+      ),
+      duration_days:
+        events.length > 0
+          ? Math.ceil(
+              (new Date(events[events.length - 1].timestamp).getTime() -
+                new Date(events[0].timestamp).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
+          : 0,
     };
 
     let entity_info = {};
@@ -351,7 +387,7 @@ class TraceabilityService {
     return {
       entity_info,
       timeline: sortedEvents,
-      summary
+      summary,
     };
   }
 
@@ -359,13 +395,13 @@ class TraceabilityService {
   exportTraceabilityData(format: 'json' | 'csv' = 'json'): void {
     const allEvents = this.getAllEvents();
     const allTraces = this.getAssignmentTraces();
-    
+
     const exportData = {
       export_timestamp: new Date().toISOString(),
       total_events: allEvents.length,
       total_assignments: allTraces.length,
       events: allEvents,
-      assignment_traces: allTraces
+      assignment_traces: allTraces,
     };
 
     if (format === 'json') {
@@ -380,14 +416,16 @@ class TraceabilityService {
       const headers = ['Timestamp', 'Event Type', 'Actor Type', 'Actor Name', 'Status', 'Notes'];
       const csvContent = [
         headers.join(','),
-        ...allEvents.map(event => [
-          event.timestamp,
-          event.event_type,
-          event.actor_type,
-          `"${event.actor_name}"`,
-          event.status,
-          `"${event.notes || ''}"`
-        ].join(','))
+        ...allEvents.map(event =>
+          [
+            event.timestamp,
+            event.event_type,
+            event.actor_type,
+            `"${event.actor_name}"`,
+            event.status,
+            `"${event.notes || ''}"`,
+          ].join(',')
+        ),
       ].join('\n');
 
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -404,14 +442,14 @@ class TraceabilityService {
   cleanupOldEvents(daysToKeep: number = 90): void {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-    
+
     const allEvents = this.getAllEvents();
-    const filteredEvents = allEvents.filter(event => 
-      new Date(event.timestamp) > cutoffDate
-    );
+    const filteredEvents = allEvents.filter(event => new Date(event.timestamp) > cutoffDate);
 
     localStorage.setItem(this.EVENTS_KEY, JSON.stringify(filteredEvents));
-    console.log(`🧹 Cleaned up ${allEvents.length - filteredEvents.length} old traceability events`);
+    console.log(
+      `🧹 Cleaned up ${allEvents.length - filteredEvents.length} old traceability events`
+    );
   }
 }
 

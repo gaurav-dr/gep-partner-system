@@ -45,18 +45,30 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
   const generateReportData = () => {
     // Generate synthetic visit data based on time range
     const now = new Date();
-    const daysBack = selectedTimeRange === '30d' ? 30 : 
-                     selectedTimeRange === '90d' ? 90 :
-                     selectedTimeRange === '6m' ? 180 : 365;
+    const daysBack =
+      selectedTimeRange === '30d'
+        ? 30
+        : selectedTimeRange === '90d'
+          ? 90
+          : selectedTimeRange === '6m'
+            ? 180
+            : 365;
 
     const visits: VisitData[] = [];
-    const customers = ['TechnoCorp SA', 'HealthFirst Manufacturing', 'SafeWork Solutions', 'MediCare Ltd', 'BuildCorp', 'EcoManufacturing'];
-    
+    const customers = [
+      'TechnoCorp SA',
+      'HealthFirst Manufacturing',
+      'SafeWork Solutions',
+      'MediCare Ltd',
+      'BuildCorp',
+      'EcoManufacturing',
+    ];
+
     // Generate historical visits
     for (let i = 0; i < 25; i++) {
       const visitDate = new Date(now);
       visitDate.setDate(visitDate.getDate() - Math.floor(Math.random() * daysBack));
-      
+
       const hours = Math.floor(Math.random() * 3) + 1;
       const visit: VisitData = {
         id: `visit-${i}`,
@@ -65,7 +77,7 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
         duration_hours: hours,
         total_cost: partner.hourly_rate * hours,
         visit_type: ['initial', 'follow_up', 'final'][Math.floor(Math.random() * 3)],
-        status: Math.random() > 0.1 ? 'completed' : 'cancelled'
+        status: Math.random() > 0.1 ? 'completed' : 'cancelled',
       };
       visits.push(visit);
     }
@@ -79,14 +91,17 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
     const totalEarnings = completedVisits.reduce((sum, v) => sum + v.total_cost, 0);
 
     // Customer analysis
-    const customerStats = customers.map(customer => {
-      const customerVisits = completedVisits.filter(v => v.customer_name === customer);
-      return {
-        name: customer,
-        visits: customerVisits.length,
-        earnings: customerVisits.reduce((sum, v) => sum + v.total_cost, 0)
-      };
-    }).sort((a, b) => b.earnings - a.earnings).slice(0, 5);
+    const customerStats = customers
+      .map(customer => {
+        const customerVisits = completedVisits.filter(v => v.customer_name === customer);
+        return {
+          name: customer,
+          visits: customerVisits.length,
+          earnings: customerVisits.reduce((sum, v) => sum + v.total_cost, 0),
+        };
+      })
+      .sort((a, b) => b.earnings - a.earnings)
+      .slice(0, 5);
 
     // Monthly trends
     const monthlyData: { [key: string]: { visits: number; earnings: number } } = {};
@@ -103,9 +118,12 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-6)
       .map(([month, data]) => ({
-        month: new Date(month + '-01').toLocaleDateString('el-GR', { month: 'short', year: 'numeric' }),
+        month: new Date(month + '-01').toLocaleDateString('el-GR', {
+          month: 'short',
+          year: 'numeric',
+        }),
         visits: data.visits,
-        earnings: data.earnings
+        earnings: data.earnings,
       }));
 
     const summary: ReportSummary = {
@@ -115,24 +133,33 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
       averageHourlyRate: totalEarnings / totalHours || 0,
       completionRate: (completedVisits.length / visits.length) * 100,
       topCustomers: customerStats,
-      monthlyTrends
+      monthlyTrends,
     };
 
     setReportData(summary);
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Customer', 'Duration (Hours)', 'Earnings (€)', 'Visit Type', 'Status'];
+    const headers = [
+      'Date',
+      'Customer',
+      'Duration (Hours)',
+      'Earnings (€)',
+      'Visit Type',
+      'Status',
+    ];
     const csvContent = [
       headers.join(','),
-      ...visitHistory.map(visit => [
-        visit.visit_date,
-        `"${visit.customer_name}"`,
-        visit.duration_hours,
-        visit.total_cost,
-        visit.visit_type,
-        visit.status
-      ].join(','))
+      ...visitHistory.map(visit =>
+        [
+          visit.visit_date,
+          `"${visit.customer_name}"`,
+          visit.duration_hours,
+          visit.total_cost,
+          visit.visit_type,
+          visit.status,
+        ].join(',')
+      ),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -172,11 +199,11 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
             Analytics and insights for your assignment performance
           </p>
         </div>
-        
+
         <div className="flex space-x-3">
           <select
             value={selectedTimeRange}
-            onChange={(e) => setSelectedTimeRange(e.target.value as any)}
+            onChange={e => setSelectedTimeRange(e.target.value as any)}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="30d">Last 30 Days</option>
@@ -184,10 +211,10 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
             <option value="6m">Last 6 Months</option>
             <option value="1y">Last Year</option>
           </select>
-          
+
           <select
             value={reportType}
-            onChange={(e) => setReportType(e.target.value as any)}
+            onChange={e => setReportType(e.target.value as any)}
             className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="summary">Summary View</option>
@@ -235,7 +262,9 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
               </div>
             </div>
             <div className="ml-5 w-0 flex-1">
-              <div className="text-2xl font-bold text-gray-900">€{reportData.totalEarnings.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                €{reportData.totalEarnings.toLocaleString()}
+              </div>
               <div className="text-sm font-medium text-gray-500">Total Earnings</div>
             </div>
           </div>
@@ -249,7 +278,9 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
               </div>
             </div>
             <div className="ml-5 w-0 flex-1">
-              <div className="text-2xl font-bold text-gray-900">{reportData.completionRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {reportData.completionRate.toFixed(1)}%
+              </div>
               <div className="text-sm font-medium text-gray-500">Completion Rate</div>
             </div>
           </div>
@@ -293,12 +324,14 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                {reportData.monthlyTrends.map((month) => (
+                {reportData.monthlyTrends.map(month => (
                   <div key={month.month} className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-900">{month.month}</div>
                     <div className="flex items-center space-x-4">
                       <div className="text-sm text-gray-600">{month.visits} visits</div>
-                      <div className="text-sm font-medium text-gray-900">€{month.earnings.toLocaleString()}</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        €{month.earnings.toLocaleString()}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -337,7 +370,7 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {visitHistory.slice(0, 20).map((visit) => (
+                  {visitHistory.slice(0, 20).map(visit => (
                     <tr key={visit.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(visit.visit_date).toLocaleDateString()}
@@ -355,11 +388,13 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
                         {visit.visit_type.replace('_', ' ')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          visit.status === 'completed' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            visit.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
                           {visit.status}
                         </span>
                       </td>
@@ -429,10 +464,31 @@ const PartnerReports: React.FC<PartnerReportsProps> = ({ partner }) => {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="text-sm font-medium text-blue-900 mb-2">📈 Performance Insights</h3>
         <div className="text-sm text-blue-800 space-y-1">
-          <div>• Your completion rate of {reportData.completionRate.toFixed(1)}% is {reportData.completionRate > 95 ? 'excellent' : reportData.completionRate > 90 ? 'good' : 'needs improvement'}</div>
-          <div>• Average earnings per visit: €{(reportData.totalEarnings / reportData.totalVisits).toFixed(0)}</div>
-          <div>• Most productive month: {reportData.monthlyTrends.reduce((max, month) => month.earnings > max.earnings ? month : max, reportData.monthlyTrends[0])?.month}</div>
-          <div>• Top customer: {reportData.topCustomers[0]?.name} (€{reportData.topCustomers[0]?.earnings.toLocaleString()} earned)</div>
+          <div>
+            • Your completion rate of {reportData.completionRate.toFixed(1)}% is{' '}
+            {reportData.completionRate > 95
+              ? 'excellent'
+              : reportData.completionRate > 90
+                ? 'good'
+                : 'needs improvement'}
+          </div>
+          <div>
+            • Average earnings per visit: €
+            {(reportData.totalEarnings / reportData.totalVisits).toFixed(0)}
+          </div>
+          <div>
+            • Most productive month:{' '}
+            {
+              reportData.monthlyTrends.reduce(
+                (max, month) => (month.earnings > max.earnings ? month : max),
+                reportData.monthlyTrends[0]
+              )?.month
+            }
+          </div>
+          <div>
+            • Top customer: {reportData.topCustomers[0]?.name} (€
+            {reportData.topCustomers[0]?.earnings.toLocaleString()} earned)
+          </div>
         </div>
       </div>
     </div>

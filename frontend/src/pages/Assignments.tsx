@@ -55,154 +55,165 @@ const Assignments: React.FC = () => {
   const [view, setView] = useState<'list' | 'calendar'>('list');
 
   // Generate synthetic assignments since database relationships don't exist
-  const { data: assignments = [], isLoading, error } = useQuery<Assignment[]>(
-    'assignments',
-    async () => {
-      try {
-        // Try to get real assignments first
-        const realAssignments = await assignmentsApi.getAll();
-        if (realAssignments && realAssignments.length > 0) {
-          return realAssignments;
-        }
-      } catch (apiError) {
-        console.warn('⚠️ Failed to fetch assignments, generating synthetic data:', apiError);
+  const {
+    data: assignments = [],
+    isLoading,
+    error,
+  } = useQuery<Assignment[]>('assignments', async () => {
+    try {
+      // Try to get real assignments first
+      const realAssignments = await assignmentsApi.getAll();
+      if (realAssignments && realAssignments.length > 0) {
+        return realAssignments;
       }
-      
-      // Generate synthetic assignments for demonstration
-      const syntheticAssignments: Assignment[] = [
-        {
-          id: 1,
-          request_id: 1,
-          partner_id: 'R00050',
-          installation_code: 'INST00029',
-          service_type: 'occupational_doctor',
-          assigned_hours: 8,
-          hourly_rate: 75,
-          total_cost: 600,
-          status: 'completed',
-          optimization_score: 95,
-          travel_distance: 5.2,
-          created_at: '2024-01-15T10:00:00Z',
-          updated_at: '2024-01-15T10:00:00Z',
-          customer_requests: {
-            id: 1,
-            client_name: 'DEMO HELLAS A.E.E',
-            installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
-            service_type: 'Health Inspection',
-            start_date: '2024-01-15',
-            end_date: '2024-12-31',
-            status: 'active'
-          },
-          partners: {
-            id: 'R00050',
-            name: 'ΔΑΝΕΖΗΣ ΝΙΚΟΛΑΣ',
-            specialty: 'Παθολόγος',
-            city: 'ΓΕΡΑΚΑΣ',
-            hourly_rate: 75,
-            email: 'n.danezis@example.com'
-          }
-        },
-        {
-          id: 2,
-          request_id: 2,
-          partner_id: 'R00096',
-          installation_code: 'INST25442',
-          service_type: 'safety_engineer',
-          assigned_hours: 4,
-          hourly_rate: 65,
-          total_cost: 260,
-          status: 'accepted',
-          optimization_score: 88,
-          travel_distance: 12.8,
-          email_sent_at: '2024-01-20T09:00:00Z',
-          partner_responded_at: '2024-01-20T14:30:00Z',
-          response_deadline: '2024-01-21T09:00:00Z',
-          created_at: '2024-01-20T09:00:00Z',
-          updated_at: '2024-01-20T14:30:00Z',
-          customer_requests: {
-            id: 2,
-            client_name: 'DEMO HELLAS A.E.E',
-            installation_address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
-            service_type: 'Safety Assessment',
-            start_date: '2024-01-25',
-            end_date: '2024-12-31',
-            status: 'pending'
-          },
-          partners: {
-            id: 'R00096',
-            name: 'ΓΙΑΝΝΗΣ ΓΥΦΤΑΚΗΣ',
-            specialty: 'Μηχανικός Ασφάλειας',
-            city: 'ΑΘΗΝΑ',
-            hourly_rate: 65,
-            email: 'i.gyftakis@example.com'
-          }
-        },
-        {
-          id: 3,
-          request_id: 3,
-          partner_id: 'R00125',
-          installation_code: 'INST25445',
-          service_type: 'occupational_doctor',
-          assigned_hours: 6,
-          hourly_rate: 70,
-          total_cost: 420,
-          status: 'proposed',
-          optimization_score: 82,
-          travel_distance: 8.5,
-          email_sent_at: '2024-01-22T11:00:00Z',
-          response_deadline: '2024-01-23T11:00:00Z',
-          created_at: '2024-01-22T11:00:00Z',
-          updated_at: '2024-01-22T11:00:00Z',
-          customer_requests: {
-            id: 3,
-            client_name: 'DEMO HELLAS A.E.E',
-            installation_address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37',
-            service_type: 'Routine Health Check',
-            start_date: '2024-01-28',
-            end_date: '2024-12-31',
-            status: 'pending'
-          },
-          partners: {
-            id: 'R00125',
-            name: 'ΚΩΣΤΑΣ ΚΩΣΤΑΚΗΣ',
-            specialty: 'Παθολόγος',
-            city: 'ΠΕΙΡΑΙΑΣ',
-            hourly_rate: 70,
-            email: 'k.kostakis@example.com'
-          }
-        }
-      ];
-      
-      return syntheticAssignments;
+    } catch (apiError) {
+      console.warn('⚠️ Failed to fetch assignments, generating synthetic data:', apiError);
     }
-  );
+
+    // Generate synthetic assignments for demonstration
+    const syntheticAssignments: Assignment[] = [
+      {
+        id: 1,
+        request_id: 1,
+        partner_id: 'R00050',
+        installation_code: 'INST00029',
+        service_type: 'occupational_doctor',
+        assigned_hours: 8,
+        hourly_rate: 75,
+        total_cost: 600,
+        status: 'completed',
+        optimization_score: 95,
+        travel_distance: 5.2,
+        created_at: '2024-01-15T10:00:00Z',
+        updated_at: '2024-01-15T10:00:00Z',
+        customer_requests: {
+          id: 1,
+          client_name: 'DEMO HELLAS A.E.E',
+          installation_address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
+          service_type: 'Health Inspection',
+          start_date: '2024-01-15',
+          end_date: '2024-12-31',
+          status: 'active',
+        },
+        partners: {
+          id: 'R00050',
+          name: 'ΔΑΝΕΖΗΣ ΝΙΚΟΛΑΣ',
+          specialty: 'Παθολόγος',
+          city: 'ΓΕΡΑΚΑΣ',
+          hourly_rate: 75,
+          email: 'n.danezis@example.com',
+        },
+      },
+      {
+        id: 2,
+        request_id: 2,
+        partner_id: 'R00096',
+        installation_code: 'INST25442',
+        service_type: 'safety_engineer',
+        assigned_hours: 4,
+        hourly_rate: 65,
+        total_cost: 260,
+        status: 'accepted',
+        optimization_score: 88,
+        travel_distance: 12.8,
+        email_sent_at: '2024-01-20T09:00:00Z',
+        partner_responded_at: '2024-01-20T14:30:00Z',
+        response_deadline: '2024-01-21T09:00:00Z',
+        created_at: '2024-01-20T09:00:00Z',
+        updated_at: '2024-01-20T14:30:00Z',
+        customer_requests: {
+          id: 2,
+          client_name: 'DEMO HELLAS A.E.E',
+          installation_address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
+          service_type: 'Safety Assessment',
+          start_date: '2024-01-25',
+          end_date: '2024-12-31',
+          status: 'pending',
+        },
+        partners: {
+          id: 'R00096',
+          name: 'ΓΙΑΝΝΗΣ ΓΥΦΤΑΚΗΣ',
+          specialty: 'Μηχανικός Ασφάλειας',
+          city: 'ΑΘΗΝΑ',
+          hourly_rate: 65,
+          email: 'i.gyftakis@example.com',
+        },
+      },
+      {
+        id: 3,
+        request_id: 3,
+        partner_id: 'R00125',
+        installation_code: 'INST25445',
+        service_type: 'occupational_doctor',
+        assigned_hours: 6,
+        hourly_rate: 70,
+        total_cost: 420,
+        status: 'proposed',
+        optimization_score: 82,
+        travel_distance: 8.5,
+        email_sent_at: '2024-01-22T11:00:00Z',
+        response_deadline: '2024-01-23T11:00:00Z',
+        created_at: '2024-01-22T11:00:00Z',
+        updated_at: '2024-01-22T11:00:00Z',
+        customer_requests: {
+          id: 3,
+          client_name: 'DEMO HELLAS A.E.E',
+          installation_address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37',
+          service_type: 'Routine Health Check',
+          start_date: '2024-01-28',
+          end_date: '2024-12-31',
+          status: 'pending',
+        },
+        partners: {
+          id: 'R00125',
+          name: 'ΚΩΣΤΑΣ ΚΩΣΤΑΚΗΣ',
+          specialty: 'Παθολόγος',
+          city: 'ΠΕΙΡΑΙΑΣ',
+          hourly_rate: 70,
+          email: 'k.kostakis@example.com',
+        },
+      },
+    ];
+
+    return syntheticAssignments;
+  });
 
   // Filter assignments
   const filteredAssignments = assignments.filter(assignment => {
     const partnerName = assignment.partners?.name || '';
     const clientName = assignment.customer_requests?.client_name || '';
-    const matchesSearch = partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         clientName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      partnerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      clientName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || assignment.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'proposed': return 'border-yellow-500 bg-yellow-50 text-yellow-800';
-      case 'accepted': return 'border-blue-500 bg-blue-50 text-blue-800';
-      case 'completed': return 'border-green-500 bg-green-50 text-green-800';
-      case 'declined': return 'border-red-500 bg-red-50 text-red-800';
-      case 'expired': return 'border-gray-500 bg-gray-50 text-gray-800';
-      default: return 'border-gray-300 bg-gray-50 text-gray-800';
+      case 'proposed':
+        return 'border-yellow-500 bg-yellow-50 text-yellow-800';
+      case 'accepted':
+        return 'border-blue-500 bg-blue-50 text-blue-800';
+      case 'completed':
+        return 'border-green-500 bg-green-50 text-green-800';
+      case 'declined':
+        return 'border-red-500 bg-red-50 text-red-800';
+      case 'expired':
+        return 'border-gray-500 bg-gray-50 text-gray-800';
+      default:
+        return 'border-gray-300 bg-gray-50 text-gray-800';
     }
   };
 
   const getServiceTypeLabel = (type: string) => {
     switch (type) {
-      case 'occupational_doctor': return 'Occupational Doctor';
-      case 'safety_engineer': return 'Safety Engineer';
-      default: return type;
+      case 'occupational_doctor':
+        return 'Occupational Doctor';
+      case 'safety_engineer':
+        return 'Safety Engineer';
+      default:
+        return type;
     }
   };
 
@@ -238,9 +249,7 @@ const Assignments: React.FC = () => {
     return (
       <div className="px-4 sm:px-0">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-800">
-            Error loading assignments: {(error as Error).message}
-          </div>
+          <div className="text-red-800">Error loading assignments: {(error as Error).message}</div>
         </div>
       </div>
     );
@@ -295,14 +304,14 @@ const Assignments: React.FC = () => {
                 type="text"
                 placeholder="Search assignments..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
             <div>
               <select
                 value={filterStatus || ''}
-                onChange={(e) => setFilterStatus(e.target.value || null)}
+                onChange={e => setFilterStatus(e.target.value || null)}
                 className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="">All Statuses</option>
@@ -327,28 +336,39 @@ const Assignments: React.FC = () => {
                 <div className="text-gray-500">No assignments found matching your criteria.</div>
               </div>
             ) : (
-              filteredAssignments.map((assignment) => (
-                <div key={assignment.id} className={`border-l-4 pl-6 py-4 bg-white shadow rounded-lg ${getStatusColor(assignment.status)}`}>
+              filteredAssignments.map(assignment => (
+                <div
+                  key={assignment.id}
+                  className={`border-l-4 pl-6 py-4 bg-white shadow rounded-lg ${getStatusColor(assignment.status)}`}
+                >
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
                         <h3 className="text-lg font-medium text-gray-900">
-                          {assignment.partners?.name || 'Unknown Partner'} → {assignment.customer_requests?.client_name || 'Unknown Client'}
+                          {assignment.partners?.name || 'Unknown Partner'} →{' '}
+                          {assignment.customer_requests?.client_name || 'Unknown Client'}
                         </h3>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          assignment.status === 'proposed' ? 'bg-yellow-100 text-yellow-800' :
-                          assignment.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
-                          assignment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          assignment.status === 'declined' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            assignment.status === 'proposed'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : assignment.status === 'accepted'
+                                ? 'bg-blue-100 text-blue-800'
+                                : assignment.status === 'completed'
+                                  ? 'bg-green-100 text-green-800'
+                                  : assignment.status === 'declined'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
                           {assignment.status.charAt(0).toUpperCase() + assignment.status.slice(1)}
                         </span>
                       </div>
-                      
+
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
                         <div>
-                          <span className="font-medium">Service:</span> {getServiceTypeLabel(assignment.service_type)}
+                          <span className="font-medium">Service:</span>{' '}
+                          {getServiceTypeLabel(assignment.service_type)}
                         </div>
                         <div>
                           <span className="font-medium">Hours:</span> {assignment.assigned_hours}h
@@ -360,31 +380,37 @@ const Assignments: React.FC = () => {
                           <span className="font-medium">Total Cost:</span> €{assignment.total_cost}
                         </div>
                         <div>
-                          <span className="font-medium">Partner Location:</span> {assignment.partners?.city || 'N/A'}
+                          <span className="font-medium">Partner Location:</span>{' '}
+                          {assignment.partners?.city || 'N/A'}
                         </div>
                         {assignment.travel_distance && (
                           <div>
-                            <span className="font-medium">Distance:</span> {assignment.travel_distance}km
+                            <span className="font-medium">Distance:</span>{' '}
+                            {assignment.travel_distance}km
                           </div>
                         )}
                       </div>
 
                       {assignment.customer_requests?.installation_address && (
                         <div className="mt-2 text-sm text-gray-600">
-                          <span className="font-medium">Location:</span> {assignment.customer_requests.installation_address}
+                          <span className="font-medium">Location:</span>{' '}
+                          {assignment.customer_requests.installation_address}
                         </div>
                       )}
 
                       {assignment.customer_requests?.start_date && (
                         <div className="mt-2 text-sm text-gray-600">
-                          <span className="font-medium">Service Period:</span> {formatDate(assignment.customer_requests.start_date)} 
-                          {assignment.customer_requests.end_date && ` - ${formatDate(assignment.customer_requests.end_date)}`}
+                          <span className="font-medium">Service Period:</span>{' '}
+                          {formatDate(assignment.customer_requests.start_date)}
+                          {assignment.customer_requests.end_date &&
+                            ` - ${formatDate(assignment.customer_requests.end_date)}`}
                         </div>
                       )}
 
                       {assignment.response_deadline && assignment.status === 'proposed' && (
                         <div className="mt-2 text-sm text-red-600">
-                          <span className="font-medium">Response Deadline:</span> {formatDateTime(assignment.response_deadline)}
+                          <span className="font-medium">Response Deadline:</span>{' '}
+                          {formatDateTime(assignment.response_deadline)}
                         </div>
                       )}
 

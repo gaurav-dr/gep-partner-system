@@ -33,19 +33,22 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
     phone: '',
     maxHoursPerWeek: 40,
     experienceYears: 0,
-    availabilityStatus: 'Available'
+    availabilityStatus: 'Available',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'hourlyRate' || name === 'maxHoursPerWeek' || name === 'experienceYears' 
-        ? parseFloat(value) || 0 
-        : value
+      [name]:
+        name === 'hourlyRate' || name === 'maxHoursPerWeek' || name === 'experienceYears'
+          ? parseFloat(value) || 0
+          : value,
     }));
   };
 
@@ -54,7 +57,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
       ...prev,
       blockedDays: prev.blockedDays.includes(day)
         ? prev.blockedDays.filter(d => d !== day)
-        : [...prev.blockedDays, day]
+        : [...prev.blockedDays, day],
     }));
   };
 
@@ -69,7 +72,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
 
     try {
       const partnerId = generatePartnerId();
-      
+
       const partnerData = {
         id: partnerId,
         name: formData.name,
@@ -86,7 +89,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
         is_active: formData.availabilityStatus === 'Available',
         rating: 4.0 + Math.random(), // Random initial rating between 4.0-5.0
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       console.log('🔄 Submitting partner data:', partnerData);
@@ -94,7 +97,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
       try {
         await partnersApi.create(partnerData);
         setSubmitMessage('✅ Partner added successfully!');
-        
+
         // Reset form
         setFormData({
           name: '',
@@ -107,7 +110,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
           phone: '',
           maxHoursPerWeek: 40,
           experienceYears: 0,
-          availabilityStatus: 'Available'
+          availabilityStatus: 'Available',
         });
 
         // Notify parent component to refresh data
@@ -115,23 +118,23 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
           onPartnerAdded();
           onClose();
         }, 1500);
-
       } catch (apiError) {
         console.warn('⚠️ API submission failed, storing partner locally:', apiError);
-        
+
         // Store in localStorage as fallback
         const existingPartners = JSON.parse(localStorage.getItem('newPartners') || '[]');
         existingPartners.push(partnerData);
         localStorage.setItem('newPartners', JSON.stringify(existingPartners));
-        
-        setSubmitMessage('✅ Partner information saved! Due to system maintenance, the partner will be added to the system shortly.');
-        
+
+        setSubmitMessage(
+          '✅ Partner information saved! Due to system maintenance, the partner will be added to the system shortly.'
+        );
+
         setTimeout(() => {
           onPartnerAdded();
           onClose();
         }, 2000);
       }
-
     } catch (error) {
       console.error('❌ Error adding partner:', error);
       setSubmitMessage('❌ Error adding partner. Please try again or contact support.');
@@ -142,13 +145,11 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
 
   if (!isOpen) return null;
 
-  const daysOfWeek = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-  ];
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const specialties = [
     'Παθολόγος',
-    'Καρδιολόγος', 
+    'Καρδιολόγος',
     'Ορθοπαιδικός',
     'Οφθαλμίατρος',
     'Δερματολόγος',
@@ -157,12 +158,12 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
     'Μηχανικός Ασφάλειας',
     'Τεχνικός Ασφάλειας',
     'Εργονόμος',
-    'Περιβαλλοντολόγος'
+    'Περιβαλλοντολόγος',
   ];
 
   const greekCities = [
     'ΑΘΗΝΑ',
-    'ΘΕΣΣΑΛΟΝΙΚΗ', 
+    'ΘΕΣΣΑΛΟΝΙΚΗ',
     'ΠΕΙΡΑΙΑΣ',
     'ΠΑΤΡΑ',
     'ΗΡΑΚΛΕΙΟ',
@@ -172,7 +173,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
     'ΧΑΝΙΑ',
     'ΓΕΡΑΚΑΣ',
     'ΚΑΛΛΙΘΕΑ',
-    'ΝΙΚΑΙΑ'
+    'ΝΙΚΑΙΑ',
   ];
 
   return (
@@ -182,22 +183,28 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Add New Partner</h2>
-            <p className="text-gray-600">Enter partner information for health inspection services</p>
+            <p className="text-gray-600">
+              Enter partner information for health inspection services
+            </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         {submitMessage && (
-          <div className={`mb-4 p-4 rounded-md ${
-            submitMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-          }`}>
+          <div
+            className={`mb-4 p-4 rounded-md ${
+              submitMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+            }`}
+          >
             {submitMessage}
           </div>
         )}
@@ -208,9 +215,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
             <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Full Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Full Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -223,9 +228,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Specialty *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Specialty *</label>
                 <select
                   name="specialty"
                   required
@@ -235,15 +238,15 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
                 >
                   <option value="">Select specialty</option>
                   {specialties.map(specialty => (
-                    <option key={specialty} value={specialty}>{specialty}</option>
+                    <option key={specialty} value={specialty}>
+                      {specialty}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  City *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">City *</label>
                 <select
                   name="city"
                   required
@@ -253,7 +256,9 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
                 >
                   <option value="">Select city</option>
                   {greekCities.map(city => (
-                    <option key={city} value={city}>{city}</option>
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -282,9 +287,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
             <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Email *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Email *</label>
                 <input
                   type="email"
                   name="email"
@@ -300,9 +303,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Phone *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Phone *</label>
                 <input
                   type="tel"
                   name="phone"
@@ -321,9 +322,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
             <h3 className="text-lg font-medium text-gray-900 mb-4">Work Information</h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Working Hours *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Working Hours *</label>
                 <input
                   type="text"
                   name="workingHours"
@@ -336,9 +335,7 @@ const AddPartnerModal: React.FC<AddPartnerModalProps> = ({ isOpen, onClose, onPa
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Hourly Rate (€) *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Hourly Rate (€) *</label>
                 <input
                   type="number"
                   name="hourlyRate"

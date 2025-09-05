@@ -29,9 +29,14 @@ interface PartnerDashboardProps {
   activeTab?: string;
 }
 
-const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onTabChange, activeTab: externalActiveTab }) => {
+const PartnerDashboard: React.FC<PartnerDashboardProps> = ({
+  onTabChange,
+  activeTab: externalActiveTab,
+}) => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'calendar' | 'pending' | 'changes' | 'reports' | 'profile'>('calendar');
+  const [activeTab, setActiveTab] = useState<
+    'calendar' | 'pending' | 'changes' | 'reports' | 'profile'
+  >('calendar');
   const [currentPartner, setCurrentPartner] = useState<PartnerUser | null>(null);
 
   // Use external active tab if provided (from Layout navigation)
@@ -54,7 +59,7 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onTabChange, active
         experience_years: 8,
         availability_status: 'Available',
         is_active: true,
-        rating: 4.5
+        rating: 4.5,
       };
       setCurrentPartner(partnerData);
     }
@@ -93,22 +98,25 @@ const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ onTabChange, active
         <div className="flex items-center space-x-4">
           <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
             <span className="text-2xl font-bold text-blue-600">
-              {currentPartner.name.split(' ').map(n => n[0]).join('')}
+              {currentPartner.name
+                .split(' ')
+                .map(n => n[0])
+                .join('')}
             </span>
           </div>
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Welcome, {currentPartner.name}
-            </h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Welcome, {currentPartner.name}</h1>
             <p className="text-sm text-gray-600">
               {currentPartner.specialty} • {currentPartner.city}
             </p>
             <div className="flex items-center space-x-4 mt-1">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                currentPartner.availability_status === 'Available'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
+              <span
+                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  currentPartner.availability_status === 'Available'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}
+              >
                 {currentPartner.availability_status}
               </span>
               <span className="text-sm text-gray-500">

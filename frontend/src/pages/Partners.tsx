@@ -27,10 +27,11 @@ const Partners: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Fetch partners from Supabase
-  const { data: partners = [], isLoading, error } = useQuery<Partner[]>(
-    'partners',
-    partnersApi.getAll
-  );
+  const {
+    data: partners = [],
+    isLoading,
+    error,
+  } = useQuery<Partner[]>('partners', partnersApi.getAll);
 
   // Debug: Log the partners data
   console.log('🔍 Partners component - Raw data:', partners);
@@ -39,9 +40,10 @@ const Partners: React.FC = () => {
 
   // Filter partners based on search and active status
   const filteredPartners = partners.filter(partner => {
-    const matchesSearch = partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         partner.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         partner.city.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      partner.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      partner.city.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesActive = filterActive === null || partner.is_active === filterActive;
     return matchesSearch && matchesActive;
   });
@@ -75,15 +77,21 @@ const Partners: React.FC = () => {
   const stats = {
     total: partners.length,
     active: partners.filter(p => p.is_active === true).length,
-    occupationalDoctors: partners.filter(p => p.specialty.toLowerCase().includes('παθολόγος')).length,
+    occupationalDoctors: partners.filter(p => p.specialty.toLowerCase().includes('παθολόγος'))
+      .length,
     safetyEngineers: partners.filter(p => p.specialty.toLowerCase().includes('μηχανικός')).length,
-    averageRate: partners.length > 0 
-      ? Math.round(partners.reduce((sum, p) => sum + p.hourly_rate, 0) / partners.length) 
-      : 0
+    averageRate:
+      partners.length > 0
+        ? Math.round(partners.reduce((sum, p) => sum + p.hourly_rate, 0) / partners.length)
+        : 0,
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
   };
 
   const getColorForPartner = (index: number) => {
@@ -114,9 +122,7 @@ const Partners: React.FC = () => {
     return (
       <div className="px-4 sm:px-0">
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <div className="text-red-800">
-            Error loading partners: {(error as Error).message}
-          </div>
+          <div className="text-red-800">Error loading partners: {(error as Error).message}</div>
         </div>
       </div>
     );
@@ -149,14 +155,16 @@ const Partners: React.FC = () => {
             type="text"
             placeholder="Search partners..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
         <div className="sm:w-48">
           <select
             value={filterActive === null ? 'all' : filterActive.toString()}
-            onChange={(e) => setFilterActive(e.target.value === 'all' ? null : e.target.value === 'true')}
+            onChange={e =>
+              setFilterActive(e.target.value === 'all' ? null : e.target.value === 'true')
+            }
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="all">All Partners</option>
@@ -175,7 +183,9 @@ const Partners: React.FC = () => {
               <div className="p-6">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className={`h-12 w-12 rounded-full bg-${color}-100 flex items-center justify-center`}>
+                    <div
+                      className={`h-12 w-12 rounded-full bg-${color}-100 flex items-center justify-center`}
+                    >
                       <span className={`text-lg font-medium text-${color}-600`}>
                         {getInitials(partner.name)}
                       </span>
@@ -183,24 +193,26 @@ const Partners: React.FC = () => {
                   </div>
                   <div className="ml-4 flex-1">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-                          onClick={() => handlePartnerClick(partner)}>
+                      <h3
+                        className="text-lg font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handlePartnerClick(partner)}
+                      >
                         {partner.name}
                       </h3>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        partner.is_active
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          partner.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
                         {partner.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {partner.specialty}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{partner.specialty}</p>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Location:</span>

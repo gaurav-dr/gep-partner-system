@@ -17,7 +17,7 @@ interface StreamingData {
 const Analytics: React.FC = () => {
   const [streamingData, setStreamingData] = useState<StreamingData>({
     contractProposals: [],
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
   });
   const [isStreaming, setIsStreaming] = useState(true);
 
@@ -25,23 +25,23 @@ const Analytics: React.FC = () => {
   const generateContractData = (): ContractProposalData => {
     const now = new Date();
     const baseTime = now.getTime();
-    
+
     // Get existing data from localStorage for consistency
     const existingAssignments = JSON.parse(localStorage.getItem('assignmentRequests') || '[]');
     const existingConfirmed = JSON.parse(localStorage.getItem('confirmedAssignments') || '[]');
     const existingDeclined = JSON.parse(localStorage.getItem('declinedAssignments') || '[]');
-    
+
     // Calculate real counts with some randomness for streaming effect
     const basePending = existingAssignments.length + Math.floor(Math.random() * 5);
     const baseApproved = existingConfirmed.length + Math.floor(Math.random() * 3);
     const baseRejected = existingDeclined.length + Math.floor(Math.random() * 2);
-    
+
     return {
       timestamp: now.toISOString(),
       pending: Math.max(0, basePending),
       approved: Math.max(0, baseApproved),
       rejected: Math.max(0, baseRejected),
-      total: basePending + baseApproved + baseRejected
+      total: basePending + baseApproved + baseRejected,
     };
   };
 
@@ -50,7 +50,7 @@ const Analytics: React.FC = () => {
     const newData = generateContractData();
     setStreamingData(prev => ({
       contractProposals: [...prev.contractProposals.slice(-29), newData], // Keep last 30 data points
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
     }));
   };
 
@@ -59,7 +59,7 @@ const Analytics: React.FC = () => {
     // Initial data load
     const initialData: ContractProposalData[] = [];
     const now = new Date();
-    
+
     // Generate initial 10 data points for chart history
     for (let i = 9; i >= 0; i--) {
       const timestamp = new Date(now.getTime() - i * 30000); // 30 second intervals
@@ -67,10 +67,10 @@ const Analytics: React.FC = () => {
       data.timestamp = timestamp.toISOString();
       initialData.push(data);
     }
-    
+
     setStreamingData({
       contractProposals: initialData,
-      lastUpdated: now.toISOString()
+      lastUpdated: now.toISOString(),
     });
 
     // Set up 30-second interval
@@ -91,7 +91,7 @@ const Analytics: React.FC = () => {
     return new Date(timestamp).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   };
 
@@ -109,16 +109,16 @@ const Analytics: React.FC = () => {
         <h1 className="text-2xl font-semibold text-gray-900">Analytics Dashboard</h1>
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
-            <span className="text-sm text-gray-600">
-              {isStreaming ? 'Live' : 'Paused'}
-            </span>
+            <div
+              className={`w-3 h-3 rounded-full ${isStreaming ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}
+            ></div>
+            <span className="text-sm text-gray-600">{isStreaming ? 'Live' : 'Paused'}</span>
           </div>
           <button
             onClick={toggleStreaming}
             className={`px-3 py-1 text-sm rounded-md ${
-              isStreaming 
-                ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+              isStreaming
+                ? 'bg-red-100 text-red-700 hover:bg-red-200'
                 : 'bg-green-100 text-green-700 hover:bg-green-200'
             }`}
           >
@@ -192,14 +192,10 @@ const Analytics: React.FC = () => {
       {/* Live Contract Proposals Chart */}
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            🥧 Contract Proposals Distribution
-          </h3>
-          <div className="text-sm text-gray-500">
-            Current snapshot - Updates every 30 seconds
-          </div>
+          <h3 className="text-lg font-medium text-gray-900">🥧 Contract Proposals Distribution</h3>
+          <div className="text-sm text-gray-500">Current snapshot - Updates every 30 seconds</div>
         </div>
-        
+
         <div className="h-80">
           {streamingData.contractProposals.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
@@ -208,7 +204,7 @@ const Analytics: React.FC = () => {
                   data={[
                     { name: 'Pending', value: currentData.pending, color: '#FBC02D' },
                     { name: 'Approved', value: currentData.approved, color: '#4CAF50' },
-                    { name: 'Rejected', value: currentData.rejected, color: '#F44336' }
+                    { name: 'Rejected', value: currentData.rejected, color: '#F44336' },
                   ].filter(item => item.value > 0)}
                   cx="50%"
                   cy="50%"
@@ -221,26 +217,24 @@ const Analytics: React.FC = () => {
                   {[
                     { name: 'Pending', value: currentData.pending, color: '#FBC02D' },
                     { name: 'Approved', value: currentData.approved, color: '#4CAF50' },
-                    { name: 'Rejected', value: currentData.rejected, color: '#F44336' }
-                  ].filter(item => item.value > 0).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                    { name: 'Rejected', value: currentData.rejected, color: '#F44336' },
+                  ]
+                    .filter(item => item.value > 0)
+                    .map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
                 </Pie>
-                <Tooltip 
+                <Tooltip
                   formatter={(value, name) => [value, name]}
                   labelStyle={{ color: '#374151' }}
-                  contentStyle={{ 
-                    backgroundColor: '#ffffff', 
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
                     border: '1px solid #e5e7eb',
                     borderRadius: '6px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
                   }}
                 />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36}
-                  iconType="circle"
-                />
+                <Legend verticalAlign="bottom" height={36} iconType="circle" />
               </PieChart>
             </ResponsiveContainer>
           ) : (
@@ -279,25 +273,28 @@ const Analytics: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {streamingData.contractProposals.slice(-5).reverse().map((data, index) => (
-                <tr key={data.timestamp} className={index === 0 ? 'bg-blue-50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatTime(data.timestamp)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-600">
-                    {data.pending}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
-                    {data.approved}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
-                    {data.rejected}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {data.total}
-                  </td>
-                </tr>
-              ))}
+              {streamingData.contractProposals
+                .slice(-5)
+                .reverse()
+                .map((data, index) => (
+                  <tr key={data.timestamp} className={index === 0 ? 'bg-blue-50' : ''}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatTime(data.timestamp)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-yellow-600">
+                      {data.pending}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">
+                      {data.approved}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-red-600">
+                      {data.rejected}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {data.total}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -322,7 +319,7 @@ const Analytics: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Cost Analysis</h3>
           <div className="space-y-3">

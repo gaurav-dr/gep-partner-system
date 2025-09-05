@@ -43,7 +43,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Function to get user name from email
   const getUserName = (email: string): string => {
-    return email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return email
+      .split('@')[0]
+      .replace(/[._]/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
   };
 
   useEffect(() => {
@@ -68,33 +71,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           id: session.user.id,
           email: session.user.email!,
           role: getUserRole(session.user.email!),
-          name: getUserName(session.user.email!)
+          name: getUserName(session.user.email!),
         });
       }
       setLoading(false);
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          setUser({
-            id: session.user.id,
-            email: session.user.email!,
-            role: getUserRole(session.user.email!),
-            name: getUserName(session.user.email!)
-          });
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          role: getUserRole(session.user.email!),
+          name: getUserName(session.user.email!),
+        });
+      } else {
+        setUser(null);
       }
-    );
+      setLoading(false);
+    });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -105,19 +111,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Check for demo accounts using environment variables
         const isDemoMode = process.env.REACT_APP_DEMO_MODE === 'true';
         const demoCredentials = process.env.REACT_APP_DEMO_CREDENTIALS;
-        
+
         if (isDemoMode && demoCredentials) {
           try {
             const demoAccounts = JSON.parse(demoCredentials);
-            const demoAccount = demoAccounts.find((acc: any) => acc.email === email && acc.password === password);
-            
+            const demoAccount = demoAccounts.find(
+              (acc: any) => acc.email === email && acc.password === password
+            );
+
             if (demoAccount) {
               // Simulate successful auth for demo accounts
               const demoUser = {
                 id: `demo-${Date.now()}`,
                 email: email,
                 role: getUserRole(email),
-                name: getUserName(email)
+                name: getUserName(email),
               };
               setUser(demoUser);
               // Persist demo user session
@@ -137,19 +145,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Additional fallback for network errors
       const isDemoMode = process.env.REACT_APP_DEMO_MODE === 'true';
       const demoCredentials = process.env.REACT_APP_DEMO_CREDENTIALS;
-      
+
       if (isDemoMode && demoCredentials) {
         try {
           const demoAccounts = JSON.parse(demoCredentials);
-          const demoAccount = demoAccounts.find((acc: any) => acc.email === email && acc.password === password);
-          
+          const demoAccount = demoAccounts.find(
+            (acc: any) => acc.email === email && acc.password === password
+          );
+
           if (demoAccount) {
             // Simulate successful auth for demo accounts
             const demoUser = {
               id: `demo-${Date.now()}`,
               email: email,
               role: getUserRole(email),
-              name: getUserName(email)
+              name: getUserName(email),
             };
             setUser(demoUser);
             // Persist demo user session
@@ -177,7 +187,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     logout,
     isAuthenticated: user !== null,
-    loading
+    loading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

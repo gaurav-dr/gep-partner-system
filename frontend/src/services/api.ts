@@ -12,19 +12,19 @@ const api = axios.create({
 
 // Request interceptor to add auth headers if needed
 api.interceptors.request.use(
-  (config) => {
+  config => {
     // Add any authentication tokens here if needed
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     const message = error.response?.data?.error || error.message || 'An error occurred';
     console.error('API Error:', message);
     return Promise.reject(new Error(message));
@@ -112,9 +112,11 @@ export const customerRequestsApi = {
   getAll: (params?: any) => api.get('/api/customer-requests', { params }),
   getById: (id: number) => api.get(`/api/customer-requests/${id}`),
   create: (data: CustomerRequest) => api.post('/api/customer-requests', data),
-  update: (id: number, data: Partial<CustomerRequest>) => api.put(`/api/customer-requests/${id}`, data),
+  update: (id: number, data: Partial<CustomerRequest>) =>
+    api.put(`/api/customer-requests/${id}`, data),
   delete: (id: number) => api.delete(`/api/customer-requests/${id}`),
-  assign: (id: number, forceReassign = false) => api.post(`/api/customer-requests/${id}/assign`, { force_reassign: forceReassign }),
+  assign: (id: number, forceReassign = false) =>
+    api.post(`/api/customer-requests/${id}/assign`, { force_reassign: forceReassign }),
 };
 
 // Partners API
@@ -124,7 +126,8 @@ export const partnersApi = {
   create: (data: Partner) => api.post('/api/partners', data),
   update: (id: string, data: Partial<Partner>) => api.put(`/api/partners/${id}`, data),
   delete: (id: string) => api.delete(`/api/partners/${id}`),
-  getAvailability: (id: string, params?: any) => api.get(`/api/partners/${id}/availability`, { params }),
+  getAvailability: (id: string, params?: any) =>
+    api.get(`/api/partners/${id}/availability`, { params }),
   updateAvailability: (id: string, data: any) => api.put(`/api/partners/${id}/availability`, data),
 };
 
@@ -132,7 +135,7 @@ export const partnersApi = {
 export const assignmentsApi = {
   getAll: (params?: any) => api.get('/api/assignments', { params }),
   getById: (id: number) => api.get(`/api/assignments/${id}`),
-  updateResponse: (id: number, response: 'accepted' | 'declined', notes?: string) => 
+  updateResponse: (id: number, response: 'accepted' | 'declined', notes?: string) =>
     api.put(`/api/assignments/${id}/response`, { response, notes }),
   getPending: () => api.get('/api/assignments/pending'),
 };

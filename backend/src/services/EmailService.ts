@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail';
+const sgMail = require('@sendgrid/mail');
 import { Logger, Partner, CustomerRequest } from '../types';
 
 const logger: Logger = require('../utils/logger');
@@ -147,6 +147,102 @@ GEP Assignment System
       text: textContent,
       html: htmlContent,
       templateData: emailData
+    });
+  }
+
+  /**
+   * Send password reset email
+   */
+  async sendPasswordResetEmail(email: string, token: string, firstName: string): Promise<EmailResponse> {
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const subject = 'Reset your GEP account password';
+    
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Reset your password</title>
+    </head>
+    <body>
+      <h2>Password Reset Request</h2>
+      <p>Dear ${firstName},</p>
+      <p>We received a request to reset your password for your GEP account. Click the link below to reset your password:</p>
+      <p><a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a></p>
+      <p>This link will expire in 30 minutes for security reasons.</p>
+      <p>If you didn't request this password reset, please ignore this email.</p>
+      <p>Best regards,<br>GEP Assignment System</p>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Password Reset Request
+
+Dear ${firstName},
+
+We received a request to reset your password for your GEP account. 
+
+To reset your password, visit: ${resetUrl}
+
+This link will expire in 30 minutes for security reasons.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+GEP Assignment System
+    `.trim();
+
+    return this.sendEmail({
+      to: email,
+      subject,
+      text: textContent,
+      html: htmlContent
+    });
+  }
+
+  /**
+   * Send approval request email
+   */
+  async sendApprovalRequest(email: string, requestData: any): Promise<EmailResponse> {
+    const subject = 'Approval Required - GEP Assignment System';
+    
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Approval Required</title>
+    </head>
+    <body>
+      <h2>Approval Request</h2>
+      <p>Dear Team,</p>
+      <p>An approval request has been submitted and requires your attention.</p>
+      <p>Please review the request details and provide your approval.</p>
+      <p>Best regards,<br>GEP Assignment System</p>
+    </body>
+    </html>
+    `;
+
+    const textContent = `
+Approval Request
+
+Dear Team,
+
+An approval request has been submitted and requires your attention.
+
+Please review the request details and provide your approval.
+
+Best regards,
+GEP Assignment System
+    `.trim();
+
+    return this.sendEmail({
+      to: email,
+      subject,
+      text: textContent,
+      html: htmlContent,
+      templateData: requestData
     });
   }
 

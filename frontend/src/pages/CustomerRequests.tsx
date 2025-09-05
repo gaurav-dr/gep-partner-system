@@ -47,39 +47,40 @@ const CustomerRequests: React.FC = () => {
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
 
   // Fetch customer requests from Supabase with fallback to localStorage
-  const { data: requests = [], isLoading, error } = useQuery<CustomerRequest[]>(
-    'customer-requests',
-    async () => {
-      try {
-        const apiRequests = await requestsApi.getAll();
-        if (apiRequests && apiRequests.length > 0) {
-          return apiRequests;
-        }
-      } catch (error) {
-        console.warn('⚠️ Failed to fetch requests from API, checking localStorage');
+  const {
+    data: requests = [],
+    isLoading,
+    error,
+  } = useQuery<CustomerRequest[]>('customer-requests', async () => {
+    try {
+      const apiRequests = await requestsApi.getAll();
+      if (apiRequests && apiRequests.length > 0) {
+        return apiRequests;
       }
-      
-      // Fallback to localStorage requests
-      const localRequests = JSON.parse(localStorage.getItem('customerRequests') || '[]');
-      return localRequests.map((req: any, index: number) => ({
-        id: req.id || index + 1,
-        client_name: req.client_name,
-        installation_address: req.location,
-        service_type: req.work_type?.includes('safety') ? 'safety_engineer' : 'occupational_doctor',
-        employee_count: req.total_employees,
-        installation_category: req.installation_type,
-        work_hours: req.hours_of_operation,
-        start_date: new Date().toISOString().split('T')[0],
-        end_date: req.contract_completion_date,
-        special_requirements: req.specific_requests,
-        status: req.status || 'pending',
-        estimated_hours: req.calculated_hours,
-        max_budget: req.estimated_cost,
-        created_at: req.created_at || new Date().toISOString(),
-        updated_at: req.updated_at || new Date().toISOString()
-      }));
+    } catch (error) {
+      console.warn('⚠️ Failed to fetch requests from API, checking localStorage');
     }
-  );
+
+    // Fallback to localStorage requests
+    const localRequests = JSON.parse(localStorage.getItem('customerRequests') || '[]');
+    return localRequests.map((req: any, index: number) => ({
+      id: req.id || index + 1,
+      client_name: req.client_name,
+      installation_address: req.location,
+      service_type: req.work_type?.includes('safety') ? 'safety_engineer' : 'occupational_doctor',
+      employee_count: req.total_employees,
+      installation_category: req.installation_type,
+      work_hours: req.hours_of_operation,
+      start_date: new Date().toISOString().split('T')[0],
+      end_date: req.contract_completion_date,
+      special_requirements: req.specific_requests,
+      status: req.status || 'pending',
+      estimated_hours: req.calculated_hours,
+      max_budget: req.estimated_cost,
+      created_at: req.created_at || new Date().toISOString(),
+      updated_at: req.updated_at || new Date().toISOString(),
+    }));
+  });
 
   const handleAIScheduling = (request: CustomerRequest) => {
     // Convert CustomerRequest to AICustomerRequest format
@@ -89,8 +90,11 @@ const CustomerRequests: React.FC = () => {
       number_of_installations: 1, // Default for existing requests
       total_employees: request.employee_count || 50,
       installation_type: request.installation_category || 'office',
-      work_type: request.service_type === 'safety_engineer' ? 'safety_inspection' : 'routine_health_check',
-      contract_completion_date: request.end_date || new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      work_type:
+        request.service_type === 'safety_engineer' ? 'safety_inspection' : 'routine_health_check',
+      contract_completion_date:
+        request.end_date ||
+        new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       number_of_visits: undefined,
       hours_of_operation: request.work_hours || '09:00-17:00',
       blocked_dates: [],
@@ -101,7 +105,7 @@ const CustomerRequests: React.FC = () => {
       contact_phone: '+30 210 123 4567',
       calculated_hours: request.estimated_hours || 8,
       estimated_cost: request.max_budget || 600,
-      priority: request.employee_count && request.employee_count > 100 ? 'high' : 'medium'
+      priority: request.employee_count && request.employee_count > 100 ? 'high' : 'medium',
     };
 
     setSelectedRequest(aiRequest);
@@ -115,8 +119,9 @@ const CustomerRequests: React.FC = () => {
 
   // Filter requests
   const filteredRequests = requests.filter(request => {
-    const matchesSearch = request.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         request.installation_address.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      request.client_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.installation_address.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = !filterStatus || request.status === filterStatus;
     const matchesServiceType = !filterServiceType || request.service_type === filterServiceType;
     return matchesSearch && matchesStatus && matchesServiceType;
@@ -124,19 +129,27 @@ const CustomerRequests: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'assigned': return 'bg-blue-100 text-blue-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'assigned':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getServiceTypeLabel = (type: string) => {
     switch (type) {
-      case 'occupational_doctor': return 'Occupational Doctor';
-      case 'safety_engineer': return 'Safety Engineer';
-      default: return type;
+      case 'occupational_doctor':
+        return 'Occupational Doctor';
+      case 'safety_engineer':
+        return 'Safety Engineer';
+      default:
+        return type;
     }
   };
 
@@ -200,14 +213,14 @@ const CustomerRequests: React.FC = () => {
             type="text"
             placeholder="Search requests..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           />
         </div>
         <div>
           <select
             value={filterStatus || ''}
-            onChange={(e) => setFilterStatus(e.target.value || null)}
+            onChange={e => setFilterStatus(e.target.value || null)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="">All Statuses</option>
@@ -220,7 +233,7 @@ const CustomerRequests: React.FC = () => {
         <div>
           <select
             value={filterServiceType || ''}
-            onChange={(e) => setFilterServiceType(e.target.value || null)}
+            onChange={e => setFilterServiceType(e.target.value || null)}
             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
             <option value="">All Service Types</option>
@@ -242,7 +255,7 @@ const CustomerRequests: React.FC = () => {
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
-            {filteredRequests.map((request) => (
+            {filteredRequests.map(request => (
               <li key={request.id}>
                 <div className="px-4 py-4 sm:px-6">
                   <div className="flex items-center justify-between">
@@ -250,9 +263,7 @@ const CustomerRequests: React.FC = () => {
                       <p className="text-sm font-medium text-blue-600 truncate">
                         Request #{request.id} - {request.client_name}
                       </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {request.installation_address}
-                      </p>
+                      <p className="text-sm text-gray-500 mt-1">{request.installation_address}</p>
                     </div>
                     <div className="ml-2 flex-shrink-0 flex items-center space-x-2">
                       {request.assignments && request.assignments.length > 0 && (
@@ -260,26 +271,53 @@ const CustomerRequests: React.FC = () => {
                           Assigned to: {request.assignments[0].partners.name}
                         </span>
                       )}
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}>
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(request.status)}`}
+                      >
                         {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="mt-2 sm:flex sm:justify-between">
                     <div className="sm:flex space-y-1 sm:space-y-0 sm:space-x-6">
                       <p className="flex items-center text-sm text-gray-500">
-                        <svg className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg
+                          className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
                         </svg>
                         {getServiceTypeLabel(request.service_type)}
                       </p>
-                      
+
                       {request.employee_count && (
                         <p className="flex items-center text-sm text-gray-500">
-                          <svg className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                          <svg
+                            className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+                            />
                           </svg>
                           {request.employee_count} employees
                         </p>
@@ -287,18 +325,30 @@ const CustomerRequests: React.FC = () => {
 
                       {request.estimated_hours && (
                         <p className="flex items-center text-sm text-gray-500">
-                          <svg className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          <svg
+                            className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
                           </svg>
                           {request.estimated_hours}h estimated
                         </p>
                       )}
                     </div>
-                    
+
                     <div className="mt-2 flex items-center justify-between text-sm text-gray-500 sm:mt-0">
                       <div className="flex flex-col items-end space-y-1">
                         {request.max_budget && (
-                          <p className="font-medium">Budget: €{request.max_budget.toLocaleString()}</p>
+                          <p className="font-medium">
+                            Budget: €{request.max_budget.toLocaleString()}
+                          </p>
                         )}
                         <p className="text-xs">Created: {formatDate(request.created_at)}</p>
                         {request.start_date && (
@@ -311,7 +361,8 @@ const CustomerRequests: React.FC = () => {
                   {request.special_requirements && (
                     <div className="mt-3">
                       <p className="text-sm text-gray-700">
-                        <span className="font-medium">Special Requirements:</span> {request.special_requirements}
+                        <span className="font-medium">Special Requirements:</span>{' '}
+                        {request.special_requirements}
                       </p>
                     </div>
                   )}
@@ -336,8 +387,18 @@ const CustomerRequests: React.FC = () => {
                         onClick={() => handleAIScheduling(request)}
                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                       >
-                        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        <svg
+                          className="mr-2 h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                          />
                         </svg>
                         Schedule AI Assignment
                       </button>

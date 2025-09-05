@@ -1,5 +1,6 @@
-import express, { Request, Response, NextFunction } from 'express';
-import rateLimit from 'express-rate-limit';
+import * as express from 'express';
+import { Request, Response, NextFunction } from 'express';
+const rateLimit = require('express-rate-limit');
 import AuthService from '../services/AuthService';
 import DirectAuthService from '../services/DirectAuthService';
 import { authenticate, authorize, auditLog } from '../middleware/auth';
@@ -187,7 +188,7 @@ router.post('/login', authLimiter, validateLogin, async (req: Request, res: Resp
  * @desc    Refresh JWT token
  * @access  Private
  */
-router.post('/refresh', authLimiter, authenticate, async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.post('/refresh', authLimiter, authenticate, async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
         if (!authHeader) {
@@ -208,7 +209,7 @@ router.post('/refresh', authLimiter, authenticate, async (req: AuthRequest, res:
         });
 
     } catch (error) {
-        logger.error('Token refresh failed:', error);
+        logger.error('Token refresh failed:', { error: error instanceof Error ? error.message : String(error) });
         
         res.status(401).json({
             error: 'Token refresh failed',
@@ -222,7 +223,12 @@ router.post('/refresh', authLimiter, authenticate, async (req: AuthRequest, res:
  * @desc    Get current user profile
  * @access  Private
  */
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/me', authenticate, async (req: Request, res: Response) => {
+    if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+    }
+    
     res.json({
         success: true,
         user: req.user
@@ -234,7 +240,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
  * @desc    Change user password
  * @access  Private
  */
-router.put('/change-password', authenticate, auditLog('update', 'user'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/change-password', authenticate, auditLog('update', 'user'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { currentPassword, newPassword } = req.body;
         
@@ -252,6 +258,11 @@ router.put('/change-password', authenticate, auditLog('update', 'user'), async (
             });
         }
 
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
+        
         const result = await AuthService.changePassword(req.user.id, currentPassword, newPassword);
 
         res.json({
@@ -260,7 +271,7 @@ router.put('/change-password', authenticate, auditLog('update', 'user'), async (
         });
 
     } catch (error) {
-        logger.error('Password change failed:', error);
+        logger.error('Password change failed:', { error: error instanceof Error ? error.message : String(error) });
         
         if ((error as Error).message.includes('incorrect')) {
             return res.status(400).json({
@@ -297,7 +308,7 @@ router.post('/request-password-reset', passwordResetLimiter, async (req: Request
         });
 
     } catch (error) {
-        logger.error('Password reset request failed:', error);
+        logger.error('Password reset request failed:', { error: error instanceof Error ? error.message : String(error) });
         next(error);
     }
 });
@@ -333,7 +344,7 @@ router.post('/reset-password', authLimiter, async (req: Request, res: Response, 
         });
 
     } catch (error) {
-        logger.error('Password reset failed:', error);
+        logger.error('Password reset failed:', { error: error instanceof Error ? error.message : String(error) });
         
         if ((error as Error).message.includes('Invalid') || (error as Error).message.includes('expired')) {
             return res.status(400).json({
@@ -363,7 +374,7 @@ router.get('/verify-email/:token', async (req: Request, res: Response, next: Nex
         });
 
     } catch (error) {
-        logger.error('Email verification failed:', error);
+        logger.error('Email verification failed:', { error: error instanceof Error ? error.message : String(error) });
         
         res.status(400).json({
             error: (error as Error).message,
@@ -377,7 +388,12 @@ router.get('/verify-email/:token', async (req: Request, res: Response, next: Nex
  * @desc    Logout user (client-side token removal)
  * @access  Private
  */
-router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/logout', authenticate, async (req: Request, res: Response) => {
+    if (!req.user) {
+        res.status(401).json({ error: 'User not authenticated' });
+        return;
+    }
+    
     // With JWT, logout is typically handled client-side by removing the token
     // However, we can log the logout event
     logger.info(`User logged out: ${req.user.email}`, {
@@ -396,7 +412,7 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
  * @desc    Get all users (admin only)
  * @access  Private - Admin only
  */
-router.get('/users', authenticate, authorize('admin'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.get('/users', authenticate, authorize('admin'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { supabaseAdmin } = require('../config/supabase');
         
@@ -421,7 +437,7 @@ router.get('/users', authenticate, authorize('admin'), async (req: AuthRequest, 
         });
 
     } catch (error) {
-        logger.error('Failed to fetch users:', error);
+        logger.error('Failed to fetch users:', { error: error instanceof Error ? error.message : String(error) });
         next(error);
     }
 });
@@ -431,7 +447,7 @@ router.get('/users', authenticate, authorize('admin'), async (req: AuthRequest, 
  * @desc    Update user status (activate/deactivate)
  * @access  Private - Admin only
  */
-router.put('/users/:userId/status', authenticate, authorize('admin'), auditLog('update', 'user'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.put('/users/:userId/status', authenticate, authorize('admin'), auditLog('update', 'user'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { userId } = req.params;
         const { isActive } = req.body;
@@ -463,6 +479,11 @@ router.put('/users/:userId/status', authenticate, authorize('admin'), auditLog('
             });
         }
 
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
+        
         logger.info(`User status updated: ${user.email} -> ${isActive ? 'active' : 'inactive'}`, {
             userId: user.id,
             updatedBy: req.user.id
@@ -475,7 +496,7 @@ router.put('/users/:userId/status', authenticate, authorize('admin'), auditLog('
         });
 
     } catch (error) {
-        logger.error('Failed to update user status:', error);
+        logger.error('Failed to update user status:', { error: error instanceof Error ? error.message : String(error) });
         next(error);
     }
 });
@@ -485,9 +506,14 @@ router.put('/users/:userId/status', authenticate, authorize('admin'), auditLog('
  * @desc    Delete user account (admin only)
  * @access  Private - Admin only
  */
-router.delete('/users/:userId', authenticate, authorize('admin'), auditLog('delete', 'user'), async (req: AuthRequest, res: Response, next: NextFunction) => {
+router.delete('/users/:userId', authenticate, authorize('admin'), auditLog('delete', 'user'), async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { userId } = req.params;
+        
+        if (!req.user) {
+            res.status(401).json({ error: 'User not authenticated' });
+            return;
+        }
         
         // Prevent admin from deleting themselves
         if (userId === req.user.id) {
@@ -528,7 +554,7 @@ router.delete('/users/:userId', authenticate, authorize('admin'), auditLog('dele
         });
 
     } catch (error) {
-        logger.error('Failed to delete user:', error);
+        logger.error('Failed to delete user:', { error: error instanceof Error ? error.message : String(error) });
         next(error);
     }
 });

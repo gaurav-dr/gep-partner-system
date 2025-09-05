@@ -1,5 +1,5 @@
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
+import * as jwt from 'jsonwebtoken';
+import * as crypto from 'crypto';
 import { User, UserRole, Logger } from '../types';
 
 const { supabaseAdmin } = require('../config/supabase');
@@ -347,9 +347,218 @@ export class AuthService {
     }
 
     /**
+     * Refresh JWT token
+     */
+    async refreshToken(oldToken: string): Promise<{ token: string; expiresIn: string }> {
+        try {
+            const decoded = jwt.verify(oldToken, this.jwtSecret) as any;
+            
+            // Get fresh user data
+            const { data: user, error } = await supabaseAdmin
+                .from('users')
+                .select('id, email, role, partner_id, client_company_code, is_active')
+                .eq('id', decoded.userId)
+                .single();
+
+            if (error || !user || !user.is_active) {
+                throw new Error('Invalid or inactive user');
+            }
+
+            const newToken = this.generateToken(user);
+            
+            return {
+                token: newToken,
+                expiresIn: this.jwtExpiration
+            };
+        } catch (error) {
+            logger.error('Token refresh error', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
+            throw new Error('Token refresh failed');
+        }
+    }
+
+    /**
+     * Change user password
+     */
+    async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+        try {
+            // Get user with current password hash
+            const { data: user, error } = await supabaseAdmin
+                .from('users')
+                .select('password_hash')
+                .eq('id', userId)
+                .single();
+
+            if (error || !user) {
+                throw new Error('User not found');
+            }
+
+            // Verify old password
+            if (!this.verifyPassword(oldPassword, user.password_hash)) {
+                throw new Error('Current password is incorrect');
+            }
+
+            // Hash new password
+            const newPasswordHash = this.hashPassword(newPassword);
+
+            // Update password
+            const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({ password_hash: newPasswordHash })
+                .eq('id', userId);
+
+            if (updateError) {
+                throw new Error('Failed to update password');
+            }
+
+            logger.info('Password changed successfully', { userId });
+        } catch (error) {
+            logger.error('Change password error', { 
+                error: error instanceof Error ? error.message : String(error),
+                userId 
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Request password reset
+     */
+    async requestPasswordReset(email: string): Promise<void> {
+        try {
+            // Check if user exists
+            const { data: user, error } = await supabaseAdmin
+                .from('users')
+                .select('id, first_name, is_active')
+                .eq('email', email.toLowerCase())
+                .single();
+
+            if (error || !user || !user.is_active) {
+                // Don't reveal if user exists or not for security
+                logger.info('Password reset requested for non-existent/inactive user', { email });
+                return;
+            }
+
+            // Generate reset token
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const resetTokenExpires = new Date(Date.now() + 1800000); // 30 minutes
+
+            // Store reset token
+            const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({
+                    password_reset_token: resetToken,
+                    password_reset_expires: resetTokenExpires.toISOString()
+                })
+                .eq('id', user.id);
+
+            if (updateError) {
+                throw new Error('Failed to store reset token');
+            }
+
+            // Send reset email
+            await EmailService.sendPasswordResetEmail(email, resetToken, user.first_name);
+
+            logger.info('Password reset email sent', { email });
+        } catch (error) {
+            logger.error('Password reset request error', { 
+                error: error instanceof Error ? error.message : String(error),
+                email 
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Reset password with token
+     */
+    async resetPassword(token: string, newPassword: string): Promise<void> {
+        try {
+            // Find user with valid reset token
+            const { data: user, error } = await supabaseAdmin
+                .from('users')
+                .select('id, password_reset_token, password_reset_expires')
+                .eq('password_reset_token', token)
+                .single();
+
+            if (error || !user) {
+                throw new Error('Invalid reset token');
+            }
+
+            // Check if token is expired
+            if (new Date() > new Date(user.password_reset_expires)) {
+                throw new Error('Reset token has expired');
+            }
+
+            // Hash new password
+            const passwordHash = this.hashPassword(newPassword);
+
+            // Update password and clear reset token
+            const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({
+                    password_hash: passwordHash,
+                    password_reset_token: null,
+                    password_reset_expires: null
+                })
+                .eq('id', user.id);
+
+            if (updateError) {
+                throw new Error('Failed to reset password');
+            }
+
+            logger.info('Password reset successfully', { userId: user.id });
+        } catch (error) {
+            logger.error('Password reset error', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Verify email with token
+     */
+    async verifyEmail(token: string): Promise<void> {
+        try {
+            // Find user with verification token
+            const { data: user, error } = await supabaseAdmin
+                .from('users')
+                .select('id, email_verification_token')
+                .eq('email_verification_token', token)
+                .single();
+
+            if (error || !user) {
+                throw new Error('Invalid verification token');
+            }
+
+            // Update user as verified
+            const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({
+                    email_verified: true,
+                    email_verification_token: null
+                })
+                .eq('id', user.id);
+
+            if (updateError) {
+                throw new Error('Failed to verify email');
+            }
+
+            logger.info('Email verified successfully', { userId: user.id });
+        } catch (error) {
+            logger.error('Email verification error', { 
+                error: error instanceof Error ? error.message : String(error) 
+            });
+            throw error;
+        }
+    }
+
+    /**
      * Remove sensitive data from user object
      */
-    private sanitizeUser(user: any): Partial<User> {
+    public sanitizeUser(user: any): Partial<User> {
         const { password_hash, email_verification_token, ...sanitized } = user;
         return sanitized;
     }

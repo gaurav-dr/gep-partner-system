@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { traceabilityService, TraceabilityEvent, AssignmentTraceRecord } from '../services/traceabilityService.ts';
+import {
+  traceabilityService,
+  TraceabilityEvent,
+  AssignmentTraceRecord,
+} from '../services/traceabilityService.ts';
 
 const TraceabilityDashboard: React.FC = () => {
   const [events, setEvents] = useState<TraceabilityEvent[]>([]);
@@ -18,9 +22,13 @@ const TraceabilityDashboard: React.FC = () => {
   const loadTraceabilityData = () => {
     const allEvents = traceabilityService.getAllEvents();
     const allTraces = traceabilityService.getAssignmentTraces();
-    
-    setEvents(allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-    setAssignmentTraces(allTraces.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+
+    setEvents(
+      allEvents.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    );
+    setAssignmentTraces(
+      allTraces.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    );
   };
 
   const handleEntityClick = (type: string, id: string) => {
@@ -44,47 +52,52 @@ const TraceabilityDashboard: React.FC = () => {
   const filteredEvents = events.filter(event => {
     const matchesEventType = filterEventType === 'all' || event.event_type === filterEventType;
     const matchesActorType = filterActorType === 'all' || event.actor_type === filterActorType;
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch =
+      searchTerm === '' ||
       event.actor_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       event.notes?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       JSON.stringify(event.event_data).toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesEventType && matchesActorType && matchesSearch;
   });
 
   const getEventTypeColor = (eventType: string) => {
     const colorMap: { [key: string]: string } = {
-      'customer_request_created': 'bg-blue-100 text-blue-800',
-      'ai_recommendation_generated': 'bg-purple-100 text-purple-800',
-      'partner_assignment_requested': 'bg-orange-100 text-orange-800',
-      'partner_response': 'bg-green-100 text-green-800',
-      'assignment_confirmed': 'bg-green-100 text-green-800',
-      'assignment_declined': 'bg-red-100 text-red-800',
-      'change_request_submitted': 'bg-yellow-100 text-yellow-800',
-      'change_request_approved': 'bg-green-100 text-green-800',
-      'change_request_rejected': 'bg-red-100 text-red-800',
-      'visit_completed': 'bg-green-100 text-green-800',
-      'visit_cancelled': 'bg-red-100 text-red-800'
+      customer_request_created: 'bg-blue-100 text-blue-800',
+      ai_recommendation_generated: 'bg-purple-100 text-purple-800',
+      partner_assignment_requested: 'bg-orange-100 text-orange-800',
+      partner_response: 'bg-green-100 text-green-800',
+      assignment_confirmed: 'bg-green-100 text-green-800',
+      assignment_declined: 'bg-red-100 text-red-800',
+      change_request_submitted: 'bg-yellow-100 text-yellow-800',
+      change_request_approved: 'bg-green-100 text-green-800',
+      change_request_rejected: 'bg-red-100 text-red-800',
+      visit_completed: 'bg-green-100 text-green-800',
+      visit_cancelled: 'bg-red-100 text-red-800',
     };
     return colorMap[eventType] || 'bg-gray-100 text-gray-800';
   };
 
   const getActorTypeIcon = (actorType: string) => {
     const iconMap: { [key: string]: string } = {
-      'admin': '👤',
-      'partner': '🩺',
-      'system': '⚙️',
-      'ai': '🤖'
+      admin: '👤',
+      partner: '🩺',
+      system: '⚙️',
+      ai: '🤖',
     };
     return iconMap[actorType] || '❓';
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'success':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -99,7 +112,7 @@ const TraceabilityDashboard: React.FC = () => {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     });
   };
 
@@ -185,31 +198,35 @@ const TraceabilityDashboard: React.FC = () => {
                   type="text"
                   placeholder="Search events..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
               <div>
                 <select
                   value={filterEventType}
-                  onChange={(e) => setFilterEventType(e.target.value)}
+                  onChange={e => setFilterEventType(e.target.value)}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="all">All Event Types</option>
                   {uniqueEventTypes.map(type => (
-                    <option key={type} value={type}>{formatEventType(type)}</option>
+                    <option key={type} value={type}>
+                      {formatEventType(type)}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
                 <select
                   value={filterActorType}
-                  onChange={(e) => setFilterActorType(e.target.value)}
+                  onChange={e => setFilterActorType(e.target.value)}
                   className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="all">All Actor Types</option>
                   {uniqueActorTypes.map(type => (
-                    <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -223,36 +240,41 @@ const TraceabilityDashboard: React.FC = () => {
 
           {/* Events List */}
           <div className="space-y-3">
-            {filteredEvents.map((event) => (
+            {filteredEvents.map(event => (
               <div key={event.id} className="bg-white border border-gray-200 rounded-lg p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <span className="text-lg">{getActorTypeIcon(event.actor_type)}</span>
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getEventTypeColor(event.event_type)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${getEventTypeColor(event.event_type)}`}
+                      >
                         {formatEventType(event.event_type)}
                       </span>
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(event.status)}`}>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-medium ${getStatusColor(event.status)}`}
+                      >
                         {event.status.toUpperCase()}
                       </span>
-                      <span className="text-sm text-gray-500">{formatTimestamp(event.timestamp)}</span>
+                      <span className="text-sm text-gray-500">
+                        {formatTimestamp(event.timestamp)}
+                      </span>
                     </div>
-                    
-                    <div className="text-sm text-gray-900 font-medium mb-1">
-                      {event.actor_name}
-                    </div>
-                    
-                    {event.notes && (
-                      <div className="text-sm text-gray-600 mb-2">
-                        {event.notes}
-                      </div>
-                    )}
+
+                    <div className="text-sm text-gray-900 font-medium mb-1">{event.actor_name}</div>
+
+                    {event.notes && <div className="text-sm text-gray-600 mb-2">{event.notes}</div>}
 
                     {/* Related Entities */}
                     <div className="flex flex-wrap gap-2 mt-2">
                       {event.related_entities.customer_request_id && (
                         <button
-                          onClick={() => handleEntityClick('customer_request', event.related_entities.customer_request_id!)}
+                          onClick={() =>
+                            handleEntityClick(
+                              'customer_request',
+                              event.related_entities.customer_request_id!
+                            )
+                          }
                           className="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded hover:bg-blue-100"
                         >
                           📋 Request #{event.related_entities.customer_request_id}
@@ -260,7 +282,9 @@ const TraceabilityDashboard: React.FC = () => {
                       )}
                       {event.related_entities.partner_id && (
                         <button
-                          onClick={() => handleEntityClick('partner', event.related_entities.partner_id!)}
+                          onClick={() =>
+                            handleEntityClick('partner', event.related_entities.partner_id!)
+                          }
                           className="inline-flex items-center px-2 py-1 bg-green-50 text-green-700 text-xs rounded hover:bg-green-100"
                         >
                           🩺 Partner {event.related_entities.partner_id}
@@ -268,7 +292,9 @@ const TraceabilityDashboard: React.FC = () => {
                       )}
                       {event.related_entities.assignment_id && (
                         <button
-                          onClick={() => handleEntityClick('assignment', event.related_entities.assignment_id!)}
+                          onClick={() =>
+                            handleEntityClick('assignment', event.related_entities.assignment_id!)
+                          }
                           className="inline-flex items-center px-2 py-1 bg-purple-50 text-purple-700 text-xs rounded hover:bg-purple-100"
                         >
                           📝 Assignment {event.related_entities.assignment_id}
@@ -302,20 +328,28 @@ const TraceabilityDashboard: React.FC = () => {
       {/* Assignment Traces View */}
       {selectedView === 'assignments' && (
         <div className="space-y-4">
-          {assignmentTraces.map((trace) => (
-            <div key={trace.assignment_id} className="bg-white border border-gray-200 rounded-lg p-6">
+          {assignmentTraces.map(trace => (
+            <div
+              key={trace.assignment_id}
+              className="bg-white border border-gray-200 rounded-lg p-6"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">
                     {trace.customer_name} → {trace.partner_name}
                   </h3>
                   <div className="flex items-center space-x-4 mt-1">
-                    <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      trace.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                      trace.status === 'declined' ? 'bg-red-100 text-red-800' :
-                      trace.status === 'completed' ? 'bg-blue-100 text-blue-800' :
-                      'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full font-medium ${
+                        trace.status === 'confirmed'
+                          ? 'bg-green-100 text-green-800'
+                          : trace.status === 'declined'
+                            ? 'bg-red-100 text-red-800'
+                            : trace.status === 'completed'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
                       {trace.status.replace('_', ' ').toUpperCase()}
                     </span>
                     <span className="text-sm text-gray-500">
@@ -339,8 +373,15 @@ const TraceabilityDashboard: React.FC = () => {
                 {trace.events.slice(0, 3).map((event, idx) => (
                   <div key={event.id} className="mb-3 last:mb-0">
                     <div className="flex items-center space-x-2 text-sm">
-                      <span className={`w-2 h-2 rounded-full ${getStatusColor(event.status).includes('green') ? 'bg-green-400' : 
-                                      getStatusColor(event.status).includes('yellow') ? 'bg-yellow-400' : 'bg-gray-400'}`}></span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          getStatusColor(event.status).includes('green')
+                            ? 'bg-green-400'
+                            : getStatusColor(event.status).includes('yellow')
+                              ? 'bg-yellow-400'
+                              : 'bg-gray-400'
+                        }`}
+                      ></span>
                       <span className="text-gray-600">{formatTimestamp(event.timestamp)}</span>
                       <span className="font-medium">{formatEventType(event.event_type)}</span>
                     </div>
@@ -350,7 +391,9 @@ const TraceabilityDashboard: React.FC = () => {
                   </div>
                 ))}
                 {trace.events.length > 3 && (
-                  <div className="text-xs text-gray-500 ml-4">+{trace.events.length - 3} more events...</div>
+                  <div className="text-xs text-gray-500 ml-4">
+                    +{trace.events.length - 3} more events...
+                  </div>
                 )}
               </div>
             </div>
@@ -374,7 +417,7 @@ const TraceabilityDashboard: React.FC = () => {
             <div className="space-y-2">
               {uniqueEventTypes.map(type => {
                 const count = events.filter(e => e.event_type === type).length;
-                const percentage = (count / events.length * 100).toFixed(1);
+                const percentage = ((count / events.length) * 100).toFixed(1);
                 return (
                   <div key={type} className="flex items-center justify-between">
                     <span className="text-sm text-gray-600">{formatEventType(type)}</span>
@@ -392,19 +435,26 @@ const TraceabilityDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Assignment Status Summary</h3>
             <div className="space-y-2">
-              {['pending_confirmation', 'confirmed', 'declined', 'completed', 'cancelled'].map(status => {
-                const count = assignmentTraces.filter(t => t.status === status).length;
-                const percentage = assignmentTraces.length > 0 ? (count / assignmentTraces.length * 100).toFixed(1) : '0';
-                return (
-                  <div key={status} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">{status.replace('_', ' ').toUpperCase()}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium">{count}</span>
-                      <span className="text-xs text-gray-500">({percentage}%)</span>
+              {['pending_confirmation', 'confirmed', 'declined', 'completed', 'cancelled'].map(
+                status => {
+                  const count = assignmentTraces.filter(t => t.status === status).length;
+                  const percentage =
+                    assignmentTraces.length > 0
+                      ? ((count / assignmentTraces.length) * 100).toFixed(1)
+                      : '0';
+                  return (
+                    <div key={status} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">
+                        {status.replace('_', ' ').toUpperCase()}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium">{count}</span>
+                        <span className="text-xs text-gray-500">({percentage}%)</span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
             </div>
           </div>
 
@@ -445,14 +495,20 @@ const TraceabilityDashboard: React.FC = () => {
           <div className="bg-white rounded-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-start mb-6">
               <h2 className="text-xl font-bold text-gray-900">
-                {selectedEntity.type.charAt(0).toUpperCase() + selectedEntity.type.slice(1)} Trace Report
+                {selectedEntity.type.charAt(0).toUpperCase() + selectedEntity.type.slice(1)} Trace
+                Report
               </h2>
               <button
                 onClick={() => setSelectedEntity(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>
@@ -487,16 +543,25 @@ const TraceabilityDashboard: React.FC = () => {
                 {entityReport.timeline.map((event: TraceabilityEvent) => (
                   <div key={event.id} className="pb-4">
                     <div className="flex items-start space-x-3">
-                      <div className={`w-3 h-3 rounded-full mt-1 ${
-                        event.status === 'success' ? 'bg-green-400' :
-                        event.status === 'pending' ? 'bg-yellow-400' : 'bg-red-400'
-                      }`}></div>
+                      <div
+                        className={`w-3 h-3 rounded-full mt-1 ${
+                          event.status === 'success'
+                            ? 'bg-green-400'
+                            : event.status === 'pending'
+                              ? 'bg-yellow-400'
+                              : 'bg-red-400'
+                        }`}
+                      ></div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className={`px-2 py-1 text-xs rounded-full font-medium ${getEventTypeColor(event.event_type)}`}>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full font-medium ${getEventTypeColor(event.event_type)}`}
+                          >
                             {formatEventType(event.event_type)}
                           </span>
-                          <span className="text-sm text-gray-500">{formatTimestamp(event.timestamp)}</span>
+                          <span className="text-sm text-gray-500">
+                            {formatTimestamp(event.timestamp)}
+                          </span>
                         </div>
                         <div className="text-sm font-medium text-gray-900 mb-1">
                           {getActorTypeIcon(event.actor_type)} {event.actor_name}
@@ -505,7 +570,9 @@ const TraceabilityDashboard: React.FC = () => {
                           <div className="text-sm text-gray-600 mb-2">{event.notes}</div>
                         )}
                         <details className="text-xs text-gray-500">
-                          <summary className="cursor-pointer hover:text-gray-700">Event Details</summary>
+                          <summary className="cursor-pointer hover:text-gray-700">
+                            Event Details
+                          </summary>
                           <pre className="mt-2 p-2 bg-gray-50 rounded text-xs overflow-x-auto">
                             {JSON.stringify(event.event_data, null, 2)}
                           </pre>

@@ -34,17 +34,20 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
     working_hours: partner.working_hours,
     blocked_days: [...partner.blocked_days],
     experience_years: partner.experience_years,
-    availability_status: partner.availability_status
+    availability_status: partner.availability_status,
   });
   const [saveMessage, setSaveMessage] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'hourly_rate' || name === 'max_hours_per_week' || name === 'experience_years' 
-        ? parseFloat(value) || 0 
-        : value
+      [name]:
+        name === 'hourly_rate' || name === 'max_hours_per_week' || name === 'experience_years'
+          ? parseFloat(value) || 0
+          : value,
     }));
   };
 
@@ -53,30 +56,30 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
       ...prev,
       blocked_days: prev.blocked_days.includes(day)
         ? prev.blocked_days.filter(d => d !== day)
-        : [...prev.blocked_days, day]
+        : [...prev.blocked_days, day],
     }));
   };
 
   const handleSave = async () => {
     setSaveMessage('Saving changes...');
-    
+
     // Simulate API call
     setTimeout(() => {
       // In a real app, this would update the partner data via API
       const updatedPartner = {
         ...partner,
-        ...formData
+        ...formData,
       };
-      
+
       // Store updated profile locally
       const existingPartners = JSON.parse(localStorage.getItem('partnerProfiles') || '[]');
       const updatedPartners = existingPartners.filter((p: any) => p.id !== partner.id);
       updatedPartners.push(updatedPartner);
       localStorage.setItem('partnerProfiles', JSON.stringify(updatedPartners));
-      
+
       setSaveMessage('✅ Profile updated successfully!');
       setIsEditing(false);
-      
+
       setTimeout(() => setSaveMessage(''), 3000);
     }, 1500);
   };
@@ -93,18 +96,16 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
       working_hours: partner.working_hours,
       blocked_days: [...partner.blocked_days],
       experience_years: partner.experience_years,
-      availability_status: partner.availability_status
+      availability_status: partner.availability_status,
     });
     setIsEditing(false);
   };
 
-  const daysOfWeek = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
-  ];
+  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const specialties = [
     'Παθολόγος',
-    'Καρδιολόγος', 
+    'Καρδιολόγος',
     'Ορθοπαιδικός',
     'Οφθαλμίατρος',
     'Δερματολόγος',
@@ -113,12 +114,12 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
     'Μηχανικός Ασφάλειας',
     'Τεχνικός Ασφάλειας',
     'Εργονόμος',
-    'Περιβαλλοντολόγος'
+    'Περιβαλλοντολόγος',
   ];
 
   const greekCities = [
     'ΑΘΗΝΑ',
-    'ΘΕΣΣΑΛΟΝΙΚΗ', 
+    'ΘΕΣΣΑΛΟΝΙΚΗ',
     'ΠΕΙΡΑΙΑΣ',
     'ΠΑΤΡΑ',
     'ΗΡΑΚΛΕΙΟ',
@@ -128,7 +129,7 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
     'ΧΑΝΙΑ',
     'ΓΕΡΑΚΑΣ',
     'ΚΑΛΛΙΘΕΑ',
-    'ΝΙΚΑΙΑ'
+    'ΝΙΚΑΙΑ',
   ];
 
   return (
@@ -168,9 +169,11 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
 
       {/* Save Message */}
       {saveMessage && (
-        <div className={`p-4 rounded-md ${
-          saveMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
-        }`}>
+        <div
+          className={`p-4 rounded-md ${
+            saveMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'
+          }`}
+        >
           {saveMessage}
         </div>
       )}
@@ -181,26 +184,29 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
           <div className="flex items-center space-x-4">
             <div className="h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
               <span className="text-2xl font-bold text-blue-600">
-                {partner.name.split(' ').map(n => n[0]).join('')}
+                {partner.name
+                  .split(' ')
+                  .map(n => n[0])
+                  .join('')}
               </span>
             </div>
             <div>
               <h3 className="text-xl font-medium text-gray-900">{partner.name}</h3>
-              <p className="text-sm text-gray-600">{partner.specialty} • {partner.city}</p>
+              <p className="text-sm text-gray-600">
+                {partner.specialty} • {partner.city}
+              </p>
               <div className="flex items-center space-x-4 mt-1">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  partner.availability_status === 'Available'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    partner.availability_status === 'Available'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
                   {partner.availability_status}
                 </span>
-                <span className="text-sm text-gray-500">
-                  ⭐ {partner.rating.toFixed(1)} rating
-                </span>
-                <span className="text-sm text-gray-500">
-                  ID: {partner.id}
-                </span>
+                <span className="text-sm text-gray-500">⭐ {partner.rating.toFixed(1)} rating</span>
+                <span className="text-sm text-gray-500">ID: {partner.id}</span>
               </div>
             </div>
           </div>
@@ -241,7 +247,9 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
                       {specialties.map(specialty => (
-                        <option key={specialty} value={specialty}>{specialty}</option>
+                        <option key={specialty} value={specialty}>
+                          {specialty}
+                        </option>
                       ))}
                     </select>
                   ) : (
@@ -250,9 +258,7 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
                   {isEditing ? (
                     <select
                       name="city"
@@ -261,7 +267,9 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
                       {greekCities.map(city => (
-                        <option key={city} value={city}>{city}</option>
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
                       ))}
                     </select>
                   ) : (
@@ -284,7 +292,9 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   ) : (
-                    <div className="text-sm text-gray-900 py-2">{partner.experience_years} years</div>
+                    <div className="text-sm text-gray-900 py-2">
+                      {partner.experience_years} years
+                    </div>
                   )}
                 </div>
               </div>
@@ -295,9 +305,7 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
               <h4 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   {isEditing ? (
                     <input
                       type="email"
@@ -315,9 +323,7 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
                   {isEditing ? (
                     <input
                       type="tel"
@@ -394,7 +400,9 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                       className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     />
                   ) : (
-                    <div className="text-sm text-gray-900 py-2">{partner.max_hours_per_week} hours</div>
+                    <div className="text-sm text-gray-900 py-2">
+                      {partner.max_hours_per_week} hours
+                    </div>
                   )}
                 </div>
 
@@ -446,7 +454,10 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
                   <span className="text-sm text-gray-500">No blocked days</span>
                 ) : (
                   partner.blocked_days.map(day => (
-                    <span key={day} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <span
+                      key={day}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                    >
                       {day}
                     </span>
                   ))
@@ -490,17 +501,13 @@ const PartnerProfile: React.FC<PartnerProfileProps> = ({ partner }) => {
             <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
               🔒 Change Password
             </button>
-            <p className="text-xs text-gray-500 mt-1">
-              Last password change: 30 days ago
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Last password change: 30 days ago</p>
           </div>
           <div>
             <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
               📱 Enable Two-Factor Authentication
             </button>
-            <p className="text-xs text-gray-500 mt-1">
-              Add extra security to your account
-            </p>
+            <p className="text-xs text-gray-500 mt-1">Add extra security to your account</p>
           </div>
         </div>
       </div>

@@ -34,7 +34,7 @@ const NewRequest: React.FC = () => {
     specificRequests: '',
     location: '',
     contactEmail: '',
-    contactPhone: ''
+    contactPhone: '',
   });
 
   const [blockedDateInput, setBlockedDateInput] = useState('');
@@ -42,13 +42,16 @@ const NewRequest: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'numberOfInstallations' || name === 'totalEmployees' || name === 'numberOfVisits' 
-        ? parseInt(value) || 0 
-        : value
+      [name]:
+        name === 'numberOfInstallations' || name === 'totalEmployees' || name === 'numberOfVisits'
+          ? parseInt(value) || 0
+          : value,
     }));
   };
 
@@ -56,7 +59,7 @@ const NewRequest: React.FC = () => {
     if (blockedDateInput && !formData.blockedDates?.includes(blockedDateInput)) {
       setFormData(prev => ({
         ...prev,
-        blockedDates: [...(prev.blockedDates || []), blockedDateInput]
+        blockedDates: [...(prev.blockedDates || []), blockedDateInput],
       }));
       setBlockedDateInput('');
     }
@@ -65,7 +68,7 @@ const NewRequest: React.FC = () => {
   const removeBlockedDate = (date: string) => {
     setFormData(prev => ({
       ...prev,
-      blockedDates: prev.blockedDates?.filter(d => d !== date) || []
+      blockedDates: prev.blockedDates?.filter(d => d !== date) || [],
     }));
   };
 
@@ -73,7 +76,7 @@ const NewRequest: React.FC = () => {
     if (preferredDateInput && !formData.preferredDates?.includes(preferredDateInput)) {
       setFormData(prev => ({
         ...prev,
-        preferredDates: [...(prev.preferredDates || []), preferredDateInput]
+        preferredDates: [...(prev.preferredDates || []), preferredDateInput],
       }));
       setPreferredDateInput('');
     }
@@ -82,16 +85,19 @@ const NewRequest: React.FC = () => {
   const removePreferredDate = (date: string) => {
     setFormData(prev => ({
       ...prev,
-      preferredDates: prev.preferredDates?.filter(d => d !== date) || []
+      preferredDates: prev.preferredDates?.filter(d => d !== date) || [],
     }));
   };
 
   const calculateProjectHours = () => {
     // Synthetic calculation based on previous projects
-    const baseHoursPerEmployee = formData.workType === 'comprehensive_health_assessment' ? 0.5 : 0.3;
+    const baseHoursPerEmployee =
+      formData.workType === 'comprehensive_health_assessment' ? 0.5 : 0.3;
     const installationMultiplier = Math.sqrt(formData.numberOfInstallations); // Economies of scale
-    const totalHours = Math.ceil(formData.totalEmployees * baseHoursPerEmployee * installationMultiplier);
-    
+    const totalHours = Math.ceil(
+      formData.totalEmployees * baseHoursPerEmployee * installationMultiplier
+    );
+
     return Math.max(totalHours, formData.numberOfInstallations * 2); // Minimum 2 hours per installation
   };
 
@@ -100,23 +106,23 @@ const NewRequest: React.FC = () => {
   const fillDemoData = async () => {
     setIsGeneratingAI(true);
     setSubmitMessage('');
-    
+
     try {
       console.log('🤖 Generating AI customer request data...');
-      
+
       // Call the backend API to generate AI customer data
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiBaseUrl}/customer-requests/generate-ai`);
-      
+
       if (!response.ok) {
         throw new Error(`API returned ${response.status}: ${response.statusText}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.success && result.data) {
         const aiData = result.data;
-        
+
         // Transform AI data to match form structure
         setFormData({
           name: aiData.name || '',
@@ -132,22 +138,24 @@ const NewRequest: React.FC = () => {
           specificRequests: aiData.specificRequests || '',
           location: aiData.location || '',
           contactEmail: aiData.contactEmail || '',
-          contactPhone: aiData.contactPhone || ''
+          contactPhone: aiData.contactPhone || '',
         });
-        
-        setSubmitMessage('🤖 AI-generated customer data loaded! Claude has created a unique, realistic request.');
+
+        setSubmitMessage(
+          '🤖 AI-generated customer data loaded! Claude has created a unique, realistic request.'
+        );
         console.log('✅ AI data loaded:', aiData);
       } else {
         throw new Error('Invalid response format from AI service');
       }
     } catch (error) {
       console.error('❌ AI generation failed:', error);
-      
+
       // Fallback to static demo data if AI fails
       const today = new Date();
       const completionDate = new Date(today);
       completionDate.setMonth(today.getMonth() + 6);
-      
+
       setFormData({
         name: 'ACME Manufacturing Ltd. (Fallback)',
         numberOfInstallations: 3,
@@ -159,12 +167,13 @@ const NewRequest: React.FC = () => {
         hoursOfOperation: 'Monday-Friday 08:00-16:00',
         blockedDates: ['2025-12-25', '2025-01-01'],
         preferredDates: ['2025-02-15', '2025-03-20', '2025-04-10'],
-        specificRequests: 'Please coordinate with facility manager before visits. Special attention needed for chemical handling areas.',
+        specificRequests:
+          'Please coordinate with facility manager before visits. Special attention needed for chemical handling areas.',
         location: 'Thessaloniki, Greece',
         contactEmail: 'safety@acme-manufacturing.gr',
-        contactPhone: '+30 231 056 7890'
+        contactPhone: '+30 231 056 7890',
       });
-      
+
       setSubmitMessage('⚠️ AI service unavailable - loaded fallback demo data instead.');
     } finally {
       setIsGeneratingAI(false);
@@ -198,15 +207,18 @@ const NewRequest: React.FC = () => {
         calculated_hours: projectHours,
         estimated_cost: estimatedCost,
         status: 'pending',
-        priority: formData.totalEmployees > 100 ? 'high' : formData.totalEmployees > 50 ? 'medium' : 'low'
+        priority:
+          formData.totalEmployees > 100 ? 'high' : formData.totalEmployees > 50 ? 'medium' : 'low',
       };
 
       console.log('🔄 Submitting customer request:', customerRequest);
 
       try {
         await requestsApi.create(customerRequest);
-        setSubmitMessage('✅ Customer request submitted successfully! Our team will review and assign a partner within 24 hours.');
-        
+        setSubmitMessage(
+          '✅ Customer request submitted successfully! Our team will review and assign a partner within 24 hours.'
+        );
+
         // Reset form
         setFormData({
           name: '',
@@ -222,27 +234,28 @@ const NewRequest: React.FC = () => {
           specificRequests: '',
           location: '',
           contactEmail: '',
-          contactPhone: ''
+          contactPhone: '',
         });
       } catch (apiError) {
         console.warn('⚠️ API submission failed, logging request locally:', apiError);
-        
+
         // Store in localStorage for persistence
         const existingRequests = JSON.parse(localStorage.getItem('customerRequests') || '[]');
         const newRequest = {
           ...customerRequest,
           id: Date.now(),
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
         existingRequests.push(newRequest);
         localStorage.setItem('customerRequests', JSON.stringify(existingRequests));
 
         // Track customer request creation in traceability system
         traceabilityService.trackCustomerRequestCreated(newRequest);
-        
-        setSubmitMessage('✅ Request received! Due to system maintenance, your request has been queued and will be processed shortly.');
-      }
 
+        setSubmitMessage(
+          '✅ Request received! Due to system maintenance, your request has been queued and will be processed shortly.'
+        );
+      }
     } catch (error) {
       console.error('❌ Error submitting request:', error);
       setSubmitMessage('❌ Error submitting request. Please try again or contact support.');
@@ -276,9 +289,25 @@ const NewRequest: React.FC = () => {
           >
             {isGeneratingAI ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
                 </svg>
                 Claude AI Generating...
               </>
@@ -290,9 +319,11 @@ const NewRequest: React.FC = () => {
       </div>
 
       {submitMessage && (
-        <div className={`mt-4 p-4 rounded-md ${
-          submitMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
+        <div
+          className={`mt-4 p-4 rounded-md ${
+            submitMessage.includes('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+          }`}
+        >
           {submitMessage}
         </div>
       )}
@@ -304,9 +335,7 @@ const NewRequest: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Company Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Company Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -319,9 +348,7 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Location *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Location *</label>
                 <input
                   type="text"
                   name="location"
@@ -334,9 +361,7 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Contact Email *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Contact Email *</label>
                 <input
                   type="email"
                   name="contactEmail"
@@ -349,9 +374,7 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Contact Phone *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Contact Phone *</label>
                 <input
                   type="tel"
                   name="contactPhone"
@@ -424,9 +447,7 @@ const NewRequest: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Type of Work *
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Type of Work *</label>
                 <select
                   name="workType"
                   required
@@ -436,11 +457,17 @@ const NewRequest: React.FC = () => {
                 >
                   <option value="">Select work type</option>
                   <option value="routine_health_check">Routine Health Check</option>
-                  <option value="comprehensive_health_assessment">Comprehensive Health Assessment</option>
+                  <option value="comprehensive_health_assessment">
+                    Comprehensive Health Assessment
+                  </option>
                   <option value="safety_inspection">Safety Inspection</option>
-                  <option value="occupational_health_screening">Occupational Health Screening</option>
+                  <option value="occupational_health_screening">
+                    Occupational Health Screening
+                  </option>
                   <option value="compliance_audit">Compliance Audit</option>
-                  <option value="emergency_response_assessment">Emergency Response Assessment</option>
+                  <option value="emergency_response_assessment">
+                    Emergency Response Assessment
+                  </option>
                 </select>
               </div>
 
@@ -513,7 +540,7 @@ const NewRequest: React.FC = () => {
           {/* Date Management */}
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-4">Schedule Preferences</h3>
-            
+
             {/* Blocked Dates */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -523,7 +550,7 @@ const NewRequest: React.FC = () => {
                 <input
                   type="date"
                   value={blockedDateInput}
-                  onChange={(e) => setBlockedDateInput(e.target.value)}
+                  onChange={e => setBlockedDateInput(e.target.value)}
                   className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border"
                 />
                 <button
@@ -535,7 +562,7 @@ const NewRequest: React.FC = () => {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.blockedDates?.map((date) => (
+                {formData.blockedDates?.map(date => (
                   <span
                     key={date}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800"
@@ -562,7 +589,7 @@ const NewRequest: React.FC = () => {
                 <input
                   type="date"
                   value={preferredDateInput}
-                  onChange={(e) => setPreferredDateInput(e.target.value)}
+                  onChange={e => setPreferredDateInput(e.target.value)}
                   className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-2 border"
                 />
                 <button
@@ -574,7 +601,7 @@ const NewRequest: React.FC = () => {
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {formData.preferredDates?.map((date) => (
+                {formData.preferredDates?.map(date => (
                   <span
                     key={date}
                     className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800"
@@ -604,11 +631,14 @@ const NewRequest: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-blue-700">Estimated Cost:</span>
-                  <span className="ml-2 font-medium text-blue-900">€{estimatedCost.toLocaleString()}</span>
+                  <span className="ml-2 font-medium text-blue-900">
+                    €{estimatedCost.toLocaleString()}
+                  </span>
                 </div>
               </div>
               <p className="text-xs text-blue-600 mt-2">
-                * Estimate based on synthetic data from previous projects. Final cost may vary based on partner selection and specific requirements.
+                * Estimate based on synthetic data from previous projects. Final cost may vary based
+                on partner selection and specific requirements.
               </p>
             </div>
           )}

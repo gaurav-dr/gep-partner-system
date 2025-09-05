@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 
@@ -25,33 +25,43 @@ interface LayoutProps {
   activeTab?: string;
 }
 
-export default function Layout({ children, onTabChange, activeTab }: LayoutProps) {
+const Layout = memo<LayoutProps>(({ children, onTabChange, activeTab }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
 
-  // Choose navigation based on user role
-  const navigation = user?.role === 'partner' ? partnerNavigation : adminNavigation;
+  // Choose navigation based on user role (memoized)
+  const navigation = useMemo(() => 
+    user?.role === 'partner' ? partnerNavigation : adminNavigation, 
+    [user?.role]
+  );
 
-  // Update current navigation item based on current path or active tab
-  const updatedNavigation = navigation.map((item) => ({
-    ...item,
-    current: user?.role === 'partner' 
-      ? activeTab === item.tab
-      : location.pathname === item.href || 
-        (item.href !== '/' && location.pathname.startsWith(item.href)),
-  }));
+  // Update current navigation item based on current path or active tab (memoized)
+  const updatedNavigation = useMemo(() => 
+    navigation.map((item) => ({
+      ...item,
+      current: user?.role === 'partner' 
+        ? activeTab === item.tab
+        : location.pathname === item.href || 
+          (item.href !== '/' && location.pathname.startsWith(item.href)),
+    })), 
+    [navigation, user?.role, activeTab, location.pathname]
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 justify-between">
-            <div className="flex">
-              <div className="flex flex-shrink-0 items-center">
-                <Link to="/" className="text-xl font-bold text-blue-600">
-                  GEP Assignment System
-                </Link>
-              </div>
+    <>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <div className="min-h-screen bg-gray-50">
+        <nav className="bg-white shadow" role="navigation" aria-label="Main navigation">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex h-16 justify-between">
+              <div className="flex">
+                <div className="flex flex-shrink-0 items-center">
+                  <Link to="/" className="text-xl font-bold text-blue-600" aria-label="GEP Assignment System - Go to homepage">
+                    GEP Assignment System
+                  </Link>
+                </div>
               <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                 {updatedNavigation.map((item) => (
                   user?.role === 'partner' ? (
@@ -103,7 +113,7 @@ export default function Layout({ children, onTabChange, activeTab }: LayoutProps
       </nav>
 
       <div className="py-10">
-        <main>
+        <main id="main-content" role="main" tabIndex={-1}>
           <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
             {children}
           </div>
@@ -111,4 +121,8 @@ export default function Layout({ children, onTabChange, activeTab }: LayoutProps
       </div>
     </div>
   );
-}
+});
+
+Layout.displayName = 'Layout';
+
+export default Layout;

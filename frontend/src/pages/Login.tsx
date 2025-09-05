@@ -14,7 +14,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const demoAccounts = [
     { role: 'Admin', email: 'admin@gephellas.com', password: 'GEPAdmin2024!' },
     { role: 'Partner', email: 'partner.danezis@gephellas.com', password: 'PartnerDemo2024!' },
-    { role: 'Manager', email: 'manager@gephellas.com', password: 'Manager2024!' }
+    { role: 'Manager', email: 'manager@gephellas.com', password: 'Manager2024!' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +29,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       }
 
       const result = await onLogin(email, password);
-      
+
       if (!result.success) {
         setError(result.error || 'Login failed. Please try again.');
       }
@@ -45,8 +45,18 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-blue-100">
-            <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            <svg
+              className="h-6 w-6 text-blue-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="1.5"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+              />
             </svg>
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
@@ -56,7 +66,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             Partner Assignment & Health Inspection Management
           </p>
         </div>
-        
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
@@ -72,10 +82,10 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
               />
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
@@ -89,7 +99,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
               />
             </div>
           </div>
@@ -108,9 +118,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             >
               {isLoading ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <svg
+                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
                   </svg>
                   Signing in...
                 </span>
@@ -132,7 +158,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-3">
-              {demoAccounts.map((account) => (
+              {demoAccounts.map(account => (
                 <button
                   key={account.role}
                   type="button"
@@ -156,10 +182,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               Click demo buttons above or enter GEP credentials
             </div>
             <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-              💡 <strong>Demo Instructions:</strong><br/>
-              • Admin: Full system access with all features<br/>
-              • Partner: Limited view with personal dashboard only<br/>
-              • Manager: Full system access like Admin<br/>
+              💡 <strong>Demo Instructions:</strong>
+              <br />
+              • Admin: Full system access with all features
+              <br />
+              • Partner: Limited view with personal dashboard only
+              <br />
+              • Manager: Full system access like Admin
+              <br />
               <em>Demo buttons auto-fill the correct credentials</em>
             </div>
           </div>

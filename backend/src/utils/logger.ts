@@ -1,7 +1,7 @@
 import winston from 'winston';
 import { Logger } from '../types';
 
-const transports = [
+const transports: winston.transport[] = [
   new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
   new winston.transports.File({ filename: 'logs/combined.log' })
 ];

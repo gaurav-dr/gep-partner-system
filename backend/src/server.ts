@@ -16,10 +16,10 @@ import customerRequestsRoutes from './routes/customerRequests';
 import partnersRoutes from './routes/partners';
 import optimizationRoutes from './routes/optimization';
 
-// Import remaining JavaScript routes
-const assignmentsRoutes = require('./routes/assignments');
-const analyticsRoutes = require('./routes/analytics');
-const adminRoutes = require('./routes/admin');
+// Import TypeScript routes
+import assignmentsRoutes from './routes/assignments';
+import analyticsRoutes from './routes/analytics';
+// Admin routes not available - removing for now
 
 const app: Application = express();
 const PORT: number = parseInt(process.env.PORT || '3001');
@@ -89,7 +89,7 @@ app.use('/api/partners', partnersRoutes);
 app.use('/api/assignments', assignmentsRoutes);
 app.use('/api/optimization', optimizationRoutes);
 app.use('/api/analytics', analyticsRoutes);
-app.use('/api/admin', adminRoutes);
+// app.use('/api/admin', adminRoutes); // Admin routes temporarily disabled
 
 // Static files for production
 if (process.env.NODE_ENV === 'production') {

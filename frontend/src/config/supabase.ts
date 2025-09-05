@@ -8,14 +8,14 @@ const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 if (!supabaseUrl) {
   throw new Error(
     'Missing REACT_APP_SUPABASE_URL environment variable. ' +
-    'Please set it in your .env file or Docker environment.'
+      'Please set it in your .env file or Docker environment.'
   );
 }
 
 if (!supabaseAnonKey) {
   throw new Error(
     'Missing REACT_APP_SUPABASE_ANON_KEY environment variable. ' +
-    'Please set it in your .env file or Docker environment.'
+      'Please set it in your .env file or Docker environment.'
   );
 }
 
@@ -44,8 +44,8 @@ console.log('✅ Supabase configuration loaded successfully');
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
-    persistSession: true
-  }
+    persistSession: true,
+  },
 });
 
 export default supabase;

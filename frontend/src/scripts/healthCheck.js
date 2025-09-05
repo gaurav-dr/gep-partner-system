@@ -35,11 +35,11 @@ const colors = {
 
 // Utility functions
 const log = {
-  info: (msg) => console.log(`${colors.blue}ℹ${colors.reset} ${msg}`),
-  success: (msg) => console.log(`${colors.green}✓${colors.reset} ${msg}`),
-  warning: (msg) => console.log(`${colors.yellow}⚠${colors.reset} ${msg}`),
-  error: (msg) => console.log(`${colors.red}✗${colors.reset} ${msg}`),
-  header: (msg) => console.log(`\n${colors.bright}${colors.cyan}${msg}${colors.reset}\n`),
+  info: msg => console.log(`${colors.blue}ℹ${colors.reset} ${msg}`),
+  success: msg => console.log(`${colors.green}✓${colors.reset} ${msg}`),
+  warning: msg => console.log(`${colors.yellow}⚠${colors.reset} ${msg}`),
+  error: msg => console.log(`${colors.red}✗${colors.reset} ${msg}`),
+  header: msg => console.log(`\n${colors.bright}${colors.cyan}${msg}${colors.reset}\n`),
 };
 
 // HTTP request helper
@@ -47,7 +47,7 @@ function makeRequest(url, options = {}) {
   return new Promise((resolve, reject) => {
     const urlObj = new URL(url);
     const requestModule = urlObj.protocol === 'https:' ? https : http;
-    
+
     const requestOptions = {
       hostname: urlObj.hostname,
       port: urlObj.port,
@@ -56,14 +56,14 @@ function makeRequest(url, options = {}) {
       timeout: CONFIG.TIMEOUT,
       headers: {
         'User-Agent': 'GEP-Health-Check/1.0',
-        'Accept': 'text/html,application/json,*/*',
+        Accept: 'text/html,application/json,*/*',
         ...options.headers,
       },
     };
 
-    const req = requestModule.request(requestOptions, (res) => {
+    const req = requestModule.request(requestOptions, res => {
       let data = '';
-      res.on('data', (chunk) => data += chunk);
+      res.on('data', chunk => (data += chunk));
       res.on('end', () => {
         resolve({
           statusCode: res.statusCode,
@@ -82,7 +82,7 @@ function makeRequest(url, options = {}) {
     if (options.data) {
       req.write(options.data);
     }
-    
+
     req.end();
   });
 }
@@ -98,7 +98,9 @@ async function withRetry(operation, description) {
         log.error(`${description} failed after ${CONFIG.RETRY_COUNT} attempts: ${error.message}`);
         throw error;
       } else {
-        log.warning(`${description} attempt ${attempt}/${CONFIG.RETRY_COUNT} failed: ${error.message}`);
+        log.warning(
+          `${description} attempt ${attempt}/${CONFIG.RETRY_COUNT} failed: ${error.message}`
+        );
         await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
       }
     }
@@ -109,33 +111,28 @@ async function withRetry(operation, description) {
 const healthChecks = {
   async checkFrontendAvailability() {
     log.info(`Checking frontend availability at ${CONFIG.FRONTEND_URL}`);
-    
+
     const response = await makeRequest(CONFIG.FRONTEND_URL);
-    
+
     if (response.statusCode !== 200) {
       throw new Error(`Expected status 200, got ${response.statusCode}`);
     }
-    
+
     if (!response.data.includes('<!DOCTYPE html>') && !response.data.includes('<html')) {
       throw new Error('Response does not appear to be HTML');
     }
-    
+
     log.success('Frontend is accessible and serving HTML content');
     return true;
   },
 
   async checkStaticAssets() {
     log.info('Checking static assets are served');
-    
-    const assetPaths = [
-      '/static/css/',
-      '/static/js/',
-      '/favicon.ico',
-      '/manifest.json',
-    ];
-    
+
+    const assetPaths = ['/static/css/', '/static/js/', '/favicon.ico', '/manifest.json'];
+
     let assetsFound = 0;
-    
+
     for (const assetPath of assetPaths) {
       try {
         const response = await makeRequest(`${CONFIG.FRONTEND_URL}${assetPath}`);
@@ -148,40 +145,34 @@ const healthChecks = {
         log.warning(`Asset ${assetPath} not accessible: ${error.message}`);
       }
     }
-    
+
     if (assetsFound === 0) {
       throw new Error('No static assets are accessible');
     }
-    
+
     log.success(`${assetsFound}/${assetPaths.length} static assets are accessible`);
     return true;
   },
 
   async checkReactAppBundle() {
     log.info('Checking React app bundle');
-    
+
     try {
       const response = await makeRequest(CONFIG.FRONTEND_URL);
-      
+
       // Check for React indicators in the HTML
-      const reactIndicators = [
-        'react',
-        'ReactDOM',
-        'root',
-        'App',
-        'static/js/',
-      ];
-      
-      const foundIndicators = reactIndicators.filter(indicator => 
+      const reactIndicators = ['react', 'ReactDOM', 'root', 'App', 'static/js/'];
+
+      const foundIndicators = reactIndicators.filter(indicator =>
         response.data.toLowerCase().includes(indicator.toLowerCase())
       );
-      
+
       if (foundIndicators.length === 0) {
         log.warning('No React indicators found in HTML - may be loading dynamically');
       } else {
         log.success(`React app bundle loaded (found indicators: ${foundIndicators.join(', ')})`);
       }
-      
+
       return true;
     } catch (error) {
       throw new Error(`Failed to check React bundle: ${error.message}`);
@@ -190,10 +181,10 @@ const healthChecks = {
 
   async checkAPIConnectivity() {
     log.info(`Checking backend API connectivity at ${CONFIG.API_URL}`);
-    
+
     try {
       const response = await makeRequest(`${CONFIG.API_URL}/health`);
-      
+
       if (response.statusCode === 200) {
         log.success('Backend API is accessible');
         return true;
@@ -205,7 +196,7 @@ const healthChecks = {
           return true;
         }
       }
-      
+
       throw new Error(`API returned status ${response.statusCode}`);
     } catch (error) {
       log.warning(`Backend API not accessible: ${error.message}`);
@@ -216,10 +207,10 @@ const healthChecks = {
 
   async checkSupabaseConnectivity() {
     log.info(`Checking Supabase connectivity at ${CONFIG.SUPABASE_URL}`);
-    
+
     try {
       const response = await makeRequest(`${CONFIG.SUPABASE_URL}/health`);
-      
+
       if (response.statusCode === 200) {
         log.success('Supabase is accessible');
         return true;
@@ -231,7 +222,7 @@ const healthChecks = {
           return true;
         }
       }
-      
+
       throw new Error(`Supabase returned status ${response.statusCode}`);
     } catch (error) {
       log.warning(`Supabase not accessible: ${error.message}`);
@@ -242,19 +233,13 @@ const healthChecks = {
 
   async checkEnvironmentConfig() {
     log.info('Checking environment configuration');
-    
-    const requiredEnvVars = [
-      'REACT_APP_SUPABASE_URL',
-      'REACT_APP_SUPABASE_ANON_KEY',
-    ];
-    
-    const optionalEnvVars = [
-      'REACT_APP_API_URL',
-      'REACT_APP_ENVIRONMENT',
-    ];
-    
+
+    const requiredEnvVars = ['REACT_APP_SUPABASE_URL', 'REACT_APP_SUPABASE_ANON_KEY'];
+
+    const optionalEnvVars = ['REACT_APP_API_URL', 'REACT_APP_ENVIRONMENT'];
+
     let configValid = true;
-    
+
     // Check required variables
     for (const envVar of requiredEnvVars) {
       if (process.env[envVar]) {
@@ -264,7 +249,7 @@ const healthChecks = {
         configValid = false;
       }
     }
-    
+
     // Check optional variables
     for (const envVar of optionalEnvVars) {
       if (process.env[envVar]) {
@@ -273,31 +258,27 @@ const healthChecks = {
         log.warning(`${envVar} is not set (optional)`);
       }
     }
-    
+
     if (!configValid) {
       throw new Error('Required environment variables are missing');
     }
-    
+
     log.success('Environment configuration is valid');
     return true;
   },
 
   async checkBuildArtifacts() {
     log.info('Checking build artifacts');
-    
+
     const buildDir = path.join(__dirname, '../../build');
-    
+
     if (!fs.existsSync(buildDir)) {
       log.warning('Build directory not found - may be running in development mode');
       return true; // Not critical in development
     }
-    
-    const criticalFiles = [
-      'index.html',
-      'static/css',
-      'static/js',
-    ];
-    
+
+    const criticalFiles = ['index.html', 'static/css', 'static/js'];
+
     for (const file of criticalFiles) {
       const filePath = path.join(buildDir, file);
       if (fs.existsSync(filePath)) {
@@ -307,7 +288,7 @@ const healthChecks = {
         throw new Error(`Critical build artifact ${file} is missing`);
       }
     }
-    
+
     log.success('All critical build artifacts are present');
     return true;
   },
@@ -316,14 +297,14 @@ const healthChecks = {
 // Main health check runner
 async function runHealthChecks() {
   log.header('🏥 GEP Frontend Health Check');
-  
+
   const results = {
     passed: 0,
     failed: 0,
     warnings: 0,
     total: 0,
   };
-  
+
   const checks = [
     { name: 'Environment Configuration', fn: healthChecks.checkEnvironmentConfig, critical: true },
     { name: 'Build Artifacts', fn: healthChecks.checkBuildArtifacts, critical: false },
@@ -333,11 +314,11 @@ async function runHealthChecks() {
     { name: 'API Connectivity', fn: healthChecks.checkAPIConnectivity, critical: false },
     { name: 'Supabase Connectivity', fn: healthChecks.checkSupabaseConnectivity, critical: false },
   ];
-  
+
   for (const check of checks) {
     results.total++;
     log.info(`Running: ${check.name}`);
-    
+
     try {
       const result = await withRetry(check.fn, check.name);
       if (result === false) {
@@ -350,41 +331,41 @@ async function runHealthChecks() {
     } catch (error) {
       results.failed++;
       log.error(`${check.name} failed: ${error.message}`);
-      
+
       if (check.critical) {
         log.error(`Critical check failed: ${check.name}`);
         throw error;
       }
     }
-    
+
     console.log(''); // Add spacing between checks
   }
-  
+
   return results;
 }
 
 // Summary and exit
 async function main() {
   const startTime = Date.now();
-  
+
   try {
     const results = await runHealthChecks();
     const duration = Date.now() - startTime;
-    
+
     log.header('📊 Health Check Summary');
     log.info(`Total checks: ${results.total}`);
     log.success(`Passed: ${results.passed}`);
-    
+
     if (results.warnings > 0) {
       log.warning(`Warnings: ${results.warnings}`);
     }
-    
+
     if (results.failed > 0) {
       log.error(`Failed: ${results.failed}`);
     }
-    
+
     log.info(`Duration: ${duration}ms`);
-    
+
     if (results.failed === 0) {
       log.success('🎉 All critical health checks passed!');
       log.info('Frontend application appears to be healthy and ready for use.');
@@ -394,7 +375,6 @@ async function main() {
       log.info('Frontend application may not be functioning correctly.');
       process.exit(1);
     }
-    
   } catch (error) {
     log.error('💥 Health check failed with critical error:');
     log.error(error.message);

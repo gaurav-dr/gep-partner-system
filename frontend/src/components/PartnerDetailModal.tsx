@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { partnersApi, assignmentsApi, schedulesApi, installationsApi, clientsApi, contractsApi } from '../services/supabaseApi.ts';
+import {
+  partnersApi,
+  assignmentsApi,
+  schedulesApi,
+  installationsApi,
+  clientsApi,
+  contractsApi,
+} from '../services/supabaseApi.ts';
 
 interface Partner {
   id: string;
@@ -58,10 +65,10 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
     ['partner-visits', partner.id],
     async () => {
       console.log('🔍 Generating visit data for partner:', partner.id, partner.name);
-      
+
       try {
         let installations = [];
-        
+
         try {
           installations = await installationsApi.getAll();
           console.log('📊 Fetched data - Installations:', installations?.length);
@@ -69,36 +76,74 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
           console.warn('⚠️ Failed to fetch installations, using fallback data:', apiError);
           // Fallback installation data
           installations = [
-            { installation_code: 'INST00029', company_code: 'C000011', address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350', employees_count: 46, category: 'C', description: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 320 - ΠΡΟΗΓΟΥΜΕΝΗ ΔΙΕΥΘΥΝΣΗ test' },
-            { installation_code: 'INST25442', company_code: 'C000011', address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98', employees_count: 1, category: 'C', description: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98 - (ΕΝΤΟΣ ΑΧΑ-ΚΥΡΙΑΚΟΠΟΥΛΟΣ Π.)' },
-            { installation_code: 'INST25445', company_code: 'C000011', address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37', employees_count: 1, category: 'C', description: 'ΗΛΙΑ ΗΛΙΟΥ 36-37 - (ΕΝΤΟΣ -ΣΩΚΟΣ Κ.)' },
-            { installation_code: 'INST25451', company_code: 'C000011', address: 'ΠΕΙΡΑΙΩΣ 247-249', employees_count: 1, category: 'C', description: 'ΠΕΙΡΑΙΩΣ 247-249 - (ΕΝΤΟΣ ΚΑΤΣΟΥΝΗΣ Α.)' },
-            { installation_code: 'INST32836', company_code: 'C000011', address: 'ΣΟΦΟΚΛΕΟΥΣ 11', employees_count: 1, category: 'C', description: 'ΣΟΦΟΚΛΕΟΥΣ 11 - (ΕΝΤΟΣ ΤΡΑΠΕΖΑΣ BANK-ΚΟ)' }
+            {
+              installation_code: 'INST00029',
+              company_code: 'C000011',
+              address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
+              employees_count: 46,
+              category: 'C',
+              description: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 320 - ΠΡΟΗΓΟΥΜΕΝΗ ΔΙΕΥΘΥΝΣΗ test',
+            },
+            {
+              installation_code: 'INST25442',
+              company_code: 'C000011',
+              address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98 - (ΕΝΤΟΣ ΑΧΑ-ΚΥΡΙΑΚΟΠΟΥΛΟΣ Π.)',
+            },
+            {
+              installation_code: 'INST25445',
+              company_code: 'C000011',
+              address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΗΛΙΑ ΗΛΙΟΥ 36-37 - (ΕΝΤΟΣ -ΣΩΚΟΣ Κ.)',
+            },
+            {
+              installation_code: 'INST25451',
+              company_code: 'C000011',
+              address: 'ΠΕΙΡΑΙΩΣ 247-249',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΠΕΙΡΑΙΩΣ 247-249 - (ΕΝΤΟΣ ΚΑΤΣΟΥΝΗΣ Α.)',
+            },
+            {
+              installation_code: 'INST32836',
+              company_code: 'C000011',
+              address: 'ΣΟΦΟΚΛΕΟΥΣ 11',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΣΟΦΟΚΛΕΟΥΣ 11 - (ΕΝΤΟΣ ΤΡΑΠΕΖΑΣ BANK-ΚΟ)',
+            },
           ];
         }
-        
+
         // Generate realistic visits based on partner's specialty and installations
         const simulatedVisits: Visit[] = [];
-        
+
         // Use partner ID hash to make visits consistent for each partner
         const partnerHash = partner.id.charCodeAt(partner.id.length - 1);
-        
+
         // Create visits for each installation (simulating quarterly inspections)
         installations?.forEach((installation: any, index: number) => {
           const visitCount = 3 + (partnerHash % 6); // 3-8 visits per installation, consistent per partner
-          
-          console.log(`Creating ${visitCount} visits for installation:`, installation.installation_code);
-          
+
+          console.log(
+            `Creating ${visitCount} visits for installation:`,
+            installation.installation_code
+          );
+
           for (let i = 0; i < visitCount; i++) {
             // Create more predictable dates
-            const monthsAgo = 24 - (i * 3); // Every 3 months going back 2 years
+            const monthsAgo = 24 - i * 3; // Every 3 months going back 2 years
             const visitDate = new Date();
             visitDate.setMonth(visitDate.getMonth() - monthsAgo);
             visitDate.setDate(15); // Fixed day of month
-            
+
             const isFutureVisit = monthsAgo < 0; // Future if months ago is negative
             const status = isFutureVisit ? 'Scheduled' : 'Completed';
-            
+
             simulatedVisits.push({
               id: `visit-${partner.id}-${installation.installation_code}-${i}`,
               partner_id: partner.id,
@@ -107,15 +152,19 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
               scheduled_date: visitDate.toISOString().split('T')[0],
               status: status,
               service_type: partner.specialty,
-              notes: isFutureVisit ? 'Quarterly inspection scheduled' : 'Routine health inspection completed',
+              notes: isFutureVisit
+                ? 'Quarterly inspection scheduled'
+                : 'Routine health inspection completed',
               client_name: 'DEMO HELLAS A.E.E',
-              installation_address: installation.address || 'Installation address'
+              installation_address: installation.address || 'Installation address',
             });
           }
         });
-        
+
         console.log('✅ Generated visits:', simulatedVisits.length);
-        return simulatedVisits.sort((a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime());
+        return simulatedVisits.sort(
+          (a, b) => new Date(b.scheduled_date).getTime() - new Date(a.scheduled_date).getTime()
+        );
       } catch (error) {
         console.error('❌ Error generating visit data:', error);
         return [];
@@ -133,13 +182,13 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
 
   // Filter visits based on search criteria
   const filteredVisits = visits.filter(visit => {
-    const matchesCustomer = !filterCustomer || 
-      visit.client_name?.toLowerCase().includes(filterCustomer.toLowerCase());
-    const matchesDate = !filterDate || 
-      visit.scheduled_date.includes(filterDate);
-    const matchesLocation = !filterLocation || 
+    const matchesCustomer =
+      !filterCustomer || visit.client_name?.toLowerCase().includes(filterCustomer.toLowerCase());
+    const matchesDate = !filterDate || visit.scheduled_date.includes(filterDate);
+    const matchesLocation =
+      !filterLocation ||
       visit.installation_address?.toLowerCase().includes(filterLocation.toLowerCase());
-    
+
     return matchesCustomer && matchesDate && matchesLocation;
   });
 
@@ -153,10 +202,10 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
     ['project-recommendations', partner.id],
     async () => {
       console.log('🤖 Generating AI recommendations for partner:', partner.id);
-      
+
       try {
         let installations = [];
-        
+
         try {
           installations = await installationsApi.getAll();
           console.log('📊 AI data - Installations:', installations?.length);
@@ -164,30 +213,65 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
           console.warn('⚠️ Failed to fetch installations for AI, using fallback data:', apiError);
           // Fallback installation data for AI recommendations
           installations = [
-            { installation_code: 'INST00029', company_code: 'C000011', address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350', employees_count: 46, category: 'C', description: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 320 - ΠΡΟΗΓΟΥΜΕΝΗ ΔΙΕΥΘΥΝΣΗ test' },
-            { installation_code: 'INST25442', company_code: 'C000011', address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98', employees_count: 1, category: 'C', description: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98 - (ΕΝΤΟΣ ΑΧΑ-ΚΥΡΙΑΚΟΠΟΥΛΟΣ Π.)' },
-            { installation_code: 'INST25445', company_code: 'C000011', address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37', employees_count: 1, category: 'C', description: 'ΗΛΙΑ ΗΛΙΟΥ 36-37 - (ΕΝΤΟΣ -ΣΩΚΟΣ Κ.)' },
-            { installation_code: 'INST25451', company_code: 'C000011', address: 'ΠΕΙΡΑΙΩΣ 247-249', employees_count: 1, category: 'C', description: 'ΠΕΙΡΑΙΩΣ 247-249 - (ΕΝΤΟΣ ΚΑΤΣΟΥΝΗΣ Α.)' },
-            { installation_code: 'INST32836', company_code: 'C000011', address: 'ΣΟΦΟΚΛΕΟΥΣ 11', employees_count: 1, category: 'C', description: 'ΣΟΦΟΚΛΕΟΥΣ 11 - (ΕΝΤΟΣ ΤΡΑΠΕΖΑΣ BANK-ΚΟ)' }
+            {
+              installation_code: 'INST00029',
+              company_code: 'C000011',
+              address: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 350',
+              employees_count: 46,
+              category: 'C',
+              description: 'ΛΕΩΦ. ΣΥΓΓΡΟΥ 320 - ΠΡΟΗΓΟΥΜΕΝΗ ΔΙΕΥΘΥΝΣΗ test',
+            },
+            {
+              installation_code: 'INST25442',
+              company_code: 'C000011',
+              address: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΜΙΧΑΛΑΚΟΠΟΥΛΟΥ 98 - (ΕΝΤΟΣ ΑΧΑ-ΚΥΡΙΑΚΟΠΟΥΛΟΣ Π.)',
+            },
+            {
+              installation_code: 'INST25445',
+              company_code: 'C000011',
+              address: 'ΗΛΙΑ ΗΛΙΟΥ 36-37',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΗΛΙΑ ΗΛΙΟΥ 36-37 - (ΕΝΤΟΣ -ΣΩΚΟΣ Κ.)',
+            },
+            {
+              installation_code: 'INST25451',
+              company_code: 'C000011',
+              address: 'ΠΕΙΡΑΙΩΣ 247-249',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΠΕΙΡΑΙΩΣ 247-249 - (ΕΝΤΟΣ ΚΑΤΣΟΥΝΗΣ Α.)',
+            },
+            {
+              installation_code: 'INST32836',
+              company_code: 'C000011',
+              address: 'ΣΟΦΟΚΛΕΟΥΣ 11',
+              employees_count: 1,
+              category: 'C',
+              description: 'ΣΟΦΟΚΛΕΟΥΣ 11 - (ΕΝΤΟΣ ΤΡΑΠΕΖΑΣ BANK-ΚΟ)',
+            },
           ];
         }
-        
+
         const recommendations = [];
-        
+
         // Calculate partner performance metrics (use simulated data for now)
         const estimatedCompletedVisits = installations ? installations.length * 3 : 15; // Estimate based on installations
         const estimatedUniqueLocations = installations ? installations.length : 5;
         const avgVisitsPerMonth = 2.5; // Realistic average
         const totalHoursWorked = estimatedCompletedVisits * 4; // Assume 4 hours per visit
         const costEfficiencyScore = Math.max(100 - partner.hourly_rate, 20); // Lower rate = higher score
-        
+
         // Recommendation 1: High-priority installation based on employee count
-        const largestInstallation = installations.reduce((prev: any, current: any) => 
-          (current.employees_count > prev.employees_count) ? current : prev
+        const largestInstallation = installations.reduce((prev: any, current: any) =>
+          current.employees_count > prev.employees_count ? current : prev
         );
-        
+
         if (largestInstallation) {
-          const score = Math.min(95, 80 + (largestInstallation.employees_count / 10));
+          const score = Math.min(95, 80 + largestInstallation.employees_count / 10);
           recommendations.push({
             type: 'Priority Installation Assignment',
             score: Math.round(score),
@@ -197,18 +281,22 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             expectedHours: largestInstallation.employees_count > 20 ? 8 : 4,
             estimatedCost: (largestInstallation.employees_count > 20 ? 8 : 4) * partner.hourly_rate,
             priority: 'High',
-            action: `Schedule comprehensive health inspection for ${largestInstallation.employees_count}-employee facility`
+            action: `Schedule comprehensive health inspection for ${largestInstallation.employees_count}-employee facility`,
           });
         }
-        
+
         // Recommendation 2: Location-based efficiency
-        const nearbyInstallations = installations.filter((inst: any) => 
-          inst.address.includes(partner.city) || 
-          partner.city.includes('ΑΘΗΝ') && inst.address.includes('ΣΥΓΓΡΟΥ')
+        const nearbyInstallations = installations.filter(
+          (inst: any) =>
+            inst.address.includes(partner.city) ||
+            (partner.city.includes('ΑΘΗΝ') && inst.address.includes('ΣΥΓΓΡΟΥ'))
         );
-        
+
         if (nearbyInstallations.length > 0) {
-          const totalEmployees = nearbyInstallations.reduce((sum: number, inst: any) => sum + inst.employees_count, 0);
+          const totalEmployees = nearbyInstallations.reduce(
+            (sum: number, inst: any) => sum + inst.employees_count,
+            0
+          );
           recommendations.push({
             type: 'Location Efficiency Cluster',
             score: 88,
@@ -218,14 +306,17 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             expectedHours: nearbyInstallations.length * 3,
             estimatedCost: nearbyInstallations.length * 3 * partner.hourly_rate,
             priority: 'Medium',
-            action: `Bundle ${nearbyInstallations.length} nearby inspections for cost-effective route`
+            action: `Bundle ${nearbyInstallations.length} nearby inspections for cost-effective route`,
           });
         }
-        
+
         // Recommendation 3: Specialty-based urgent assignment
-        const urgentCategories = installations.filter((inst: any) => inst.category === 'C' && inst.employees_count > 1);
+        const urgentCategories = installations.filter(
+          (inst: any) => inst.category === 'C' && inst.employees_count > 1
+        );
         if (urgentCategories.length > 0) {
-          const targetInstallation = urgentCategories[Math.floor(Math.random() * urgentCategories.length)];
+          const targetInstallation =
+            urgentCategories[Math.floor(Math.random() * urgentCategories.length)];
           recommendations.push({
             type: 'Specialty Match - Urgent',
             score: 92,
@@ -235,13 +326,15 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             expectedHours: 6,
             estimatedCost: 6 * partner.hourly_rate,
             priority: 'Urgent',
-            action: `Immediate assignment for compliance emergency at ${targetInstallation.description}`
+            action: `Immediate assignment for compliance emergency at ${targetInstallation.description}`,
           });
         }
-        
+
         // Recommendation 4: Cost-optimization project
         if (partner.hourly_rate <= 70) {
-          const costOptimalInstallations = installations.filter((inst: any) => inst.employees_count <= 10);
+          const costOptimalInstallations = installations.filter(
+            (inst: any) => inst.employees_count <= 10
+          );
           if (costOptimalInstallations.length > 0) {
             const totalHours = costOptimalInstallations.length * 3;
             recommendations.push({
@@ -253,11 +346,11 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
               expectedHours: totalHours,
               estimatedCost: totalHours * partner.hourly_rate,
               priority: 'Medium',
-              action: `Assign batch of ${costOptimalInstallations.length} small-site inspections for maximum cost efficiency`
+              action: `Assign batch of ${costOptimalInstallations.length} small-site inspections for maximum cost efficiency`,
             });
           }
         }
-        
+
         // Recommendation 5: Capacity utilization
         if (partner.max_hours_per_week >= 35) {
           const weeklyCapacity = partner.max_hours_per_week;
@@ -271,10 +364,10 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             expectedHours: weeklyCapacity,
             estimatedCost: weeklyCapacity * partner.hourly_rate,
             priority: 'High',
-            action: `Maximize weekly utilization with ${possibleVisits} scheduled inspections`
+            action: `Maximize weekly utilization with ${possibleVisits} scheduled inspections`,
           });
         }
-        
+
         console.log('✅ Generated recommendations:', recommendations.length);
         return recommendations.sort((a, b) => b.score - a.score).slice(0, 4); // Top 4 recommendations
       } catch (error) {
@@ -286,20 +379,30 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
   );
 
   // Calculate summary statistics
-  console.log('📊 Visit data status:', { 
-    visitsLoading, 
-    visitsLength: visits.length, 
+  console.log('📊 Visit data status:', {
+    visitsLoading,
+    visitsLength: visits.length,
     pastVisitsLength: pastVisits.length,
-    futureVisitsLength: futureVisits.length 
+    futureVisitsLength: futureVisits.length,
   });
 
   const stats = {
     totalVisits: visits.length,
     completedVisits: pastVisits.filter(v => v.status === 'Completed').length,
     customersServed: Array.from(new Set(visits.map(v => v.client_name))).length,
-    averageHoursPerCustomer: visits.length > 0 ? Math.round((visits.length * 4) / Array.from(new Set(visits.map(v => v.client_name))).length) : 0,
+    averageHoursPerCustomer:
+      visits.length > 0
+        ? Math.round(
+            (visits.length * 4) / Array.from(new Set(visits.map(v => v.client_name))).length
+          )
+        : 0,
     totalHours: visits.length * 4, // Assume 4 hours per visit
-    completionRate: visits.length > 0 && pastVisits.length > 0 ? Math.round((pastVisits.filter(v => v.status === 'Completed').length / pastVisits.length) * 100) : 0
+    completionRate:
+      visits.length > 0 && pastVisits.length > 0
+        ? Math.round(
+            (pastVisits.filter(v => v.status === 'Completed').length / pastVisits.length) * 100
+          )
+        : 0,
   };
 
   if (!isOpen) return null;
@@ -311,16 +414,18 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{partner.name}</h2>
-            <p className="text-gray-600">{partner.specialty} • €{partner.hourly_rate}/hour • {partner.city}</p>
+            <p className="text-gray-600">
+              {partner.specialty} • €{partner.hourly_rate}/hour • {partner.city}
+            </p>
             <div className="flex items-center space-x-4 mt-2">
               <span className="text-sm text-gray-500">Max: {partner.max_hours_per_week}h/week</span>
               <span className="text-sm text-gray-500">Total visits: {stats.totalVisits}</span>
               <span className="text-sm text-gray-500">Completion: {stats.completionRate}%</span>
-              <span className={`px-2 py-1 text-xs rounded-full ${
-                partner.is_active 
-                  ? 'bg-green-100 text-green-800' 
-                  : 'bg-red-100 text-red-800'
-              }`}>
+              <span
+                className={`px-2 py-1 text-xs rounded-full ${
+                  partner.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}
+              >
                 {partner.is_active ? 'Active' : 'Inactive'}
               </span>
             </div>
@@ -328,12 +433,14 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
               ⚠️ Contact info (email/phone) is placeholder data for demo purposes
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -344,7 +451,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             {[
               { key: 'visits', label: 'Visit History' },
               { key: 'calendar', label: 'Calendar Availability' },
-              { key: 'recommendations', label: 'AI Recommendations' }
+              { key: 'recommendations', label: 'AI Recommendations' },
             ].map(tab => (
               <button
                 key={tab.key}
@@ -375,7 +482,9 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                 <div className="text-sm text-gray-500">Customers Served</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{stats.averageHoursPerCustomer}h</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {stats.averageHoursPerCustomer}h
+                </div>
                 <div className="text-sm text-gray-500">Avg Hours/Customer</div>
               </div>
               <div className="text-center">
@@ -383,34 +492,40 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                 <div className="text-sm text-gray-500">Total Hours</div>
               </div>
             </div>
-            
+
             {/* Filters */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Customer</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Customer
+                </label>
                 <input
                   type="text"
                   value={filterCustomer}
-                  onChange={(e) => setFilterCustomer(e.target.value)}
+                  onChange={e => setFilterCustomer(e.target.value)}
                   placeholder="Search customers..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Date
+                </label>
                 <input
                   type="date"
                   value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
+                  onChange={e => setFilterDate(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Filter by Location
+                </label>
                 <input
                   type="text"
                   value={filterLocation}
-                  onChange={(e) => setFilterLocation(e.target.value)}
+                  onChange={e => setFilterLocation(e.target.value)}
                   placeholder="Search locations..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -423,13 +538,18 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
               <div className="space-y-6">
                 {/* Future Visits */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Upcoming Visits ({futureVisits.length})</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Upcoming Visits ({futureVisits.length})
+                  </h3>
                   {futureVisits.length === 0 ? (
                     <p className="text-gray-500">No upcoming visits scheduled</p>
                   ) : (
                     <div className="space-y-3">
                       {futureVisits.map(visit => (
-                        <div key={visit.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div
+                          key={visit.id}
+                          className="bg-blue-50 border border-blue-200 rounded-lg p-4"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
                               <h4 className="font-medium text-gray-900">{visit.client_name}</h4>
@@ -440,9 +560,13 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                               <p className="text-sm font-medium text-blue-600">
                                 {new Date(visit.scheduled_date).toLocaleDateString()}
                               </p>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                visit.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  visit.status === 'Scheduled'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}
+                              >
                                 {visit.status}
                               </span>
                             </div>
@@ -458,13 +582,18 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
 
                 {/* Past Visits */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Past Visits ({pastVisits.length})</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    Past Visits ({pastVisits.length})
+                  </h3>
                   {pastVisits.length === 0 ? (
                     <p className="text-gray-500">No past visits recorded</p>
                   ) : (
                     <div className="space-y-3">
                       {pastVisits.map(visit => (
-                        <div key={visit.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <div
+                          key={visit.id}
+                          className="bg-gray-50 border border-gray-200 rounded-lg p-4"
+                        >
                           <div className="flex justify-between items-start">
                             <div>
                               <h4 className="font-medium text-gray-900">{visit.client_name}</h4>
@@ -475,9 +604,13 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                               <p className="text-sm font-medium text-gray-600">
                                 {new Date(visit.scheduled_date).toLocaleDateString()}
                               </p>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                visit.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
+                              <span
+                                className={`px-2 py-1 text-xs rounded-full ${
+                                  visit.status === 'Completed'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
                                 {visit.status}
                               </span>
                             </div>
@@ -502,9 +635,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Current Status</h4>
-                  <p className={`text-sm ${
-                    partner.is_active ? 'text-green-600' : 'text-red-600'
-                  }`}>
+                  <p className={`text-sm ${partner.is_active ? 'text-green-600' : 'text-red-600'}`}>
                     {partner.is_active ? 'Active' : 'Inactive'}
                   </p>
                 </div>
@@ -519,10 +650,9 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">Next Available</h4>
                   <p className="text-sm text-gray-600">
-                    {futureVisits.length > 0 
-                      ? `After ${new Date(futureVisits[0]?.scheduled_date).toLocaleDateString()}` 
-                      : 'Immediately'
-                    }
+                    {futureVisits.length > 0
+                      ? `After ${new Date(futureVisits[0]?.scheduled_date).toLocaleDateString()}`
+                      : 'Immediately'}
                   </p>
                 </div>
               </div>
@@ -538,23 +668,34 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
             ) : (
               <div className="space-y-6">
                 {projectRecommendations.map((rec: any, index: number) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+                  >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
                           <h4 className="font-semibold text-lg text-gray-900">{rec.type}</h4>
-                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
-                            rec.priority === 'Urgent' ? 'bg-red-100 text-red-800' :
-                            rec.priority === 'High' ? 'bg-orange-100 text-orange-800' :
-                            'bg-blue-100 text-blue-800'
-                          }`}>
+                          <span
+                            className={`px-3 py-1 text-xs font-medium rounded-full ${
+                              rec.priority === 'Urgent'
+                                ? 'bg-red-100 text-red-800'
+                                : rec.priority === 'High'
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
                             {rec.priority} Priority
                           </span>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            rec.score >= 90 ? 'bg-green-100 text-green-800' :
-                            rec.score >= 80 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              rec.score >= 90
+                                ? 'bg-green-100 text-green-800'
+                                : rec.score >= 80
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
                             {rec.score}% Match
                           </span>
                         </div>
@@ -562,7 +703,7 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                         <p className="text-sm text-gray-600 mb-2">📍 {rec.location}</p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 rounded">
                       <div>
                         <span className="text-sm font-medium text-gray-700">Expected Hours:</span>
@@ -570,19 +711,21 @@ const PartnerDetailModal: React.FC<PartnerDetailModalProps> = ({ partner, isOpen
                       </div>
                       <div>
                         <span className="text-sm font-medium text-gray-700">Estimated Cost:</span>
-                        <span className="ml-2 text-sm text-gray-900 font-medium">€{rec.estimatedCost}</span>
+                        <span className="ml-2 text-sm text-gray-900 font-medium">
+                          €{rec.estimatedCost}
+                        </span>
                       </div>
                     </div>
-                    
+
                     <p className="text-sm text-gray-700 mb-3 leading-relaxed">{rec.reason}</p>
-                    
+
                     <div className="bg-blue-50 border border-blue-200 rounded p-3">
                       <p className="text-sm font-medium text-blue-900">Recommended Action:</p>
                       <p className="text-sm text-blue-800 mt-1">{rec.action}</p>
                     </div>
                   </div>
                 ))}
-                
+
                 {projectRecommendations.length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     No specific project recommendations available at this time.

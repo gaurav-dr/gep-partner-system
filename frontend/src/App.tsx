@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext.tsx';
 import Layout from './components/Layout.tsx';
-import Dashboard from './pages/Dashboard.tsx';
-import CustomerRequests from './pages/CustomerRequests.tsx';
-import Partners from './pages/Partners.tsx';
-import NewRequest from './pages/NewRequest.tsx';
-import Assignments from './pages/Assignments.tsx';
-import Analytics from './pages/Analytics.tsx';
-import TestConnection from './pages/TestConnection.tsx';
-import TraceabilityDashboard from './pages/TraceabilityDashboard.tsx';
-import PartnerDashboard from './pages/PartnerDashboard.tsx';
-import Login from './pages/Login.tsx';
+import ErrorBoundary from './components/ErrorBoundary';
+import { LoadingState } from './components/ui';
+
+// Lazy load pages for code splitting
+const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
+const CustomerRequests = lazy(() => import('./pages/CustomerRequests.tsx'));
+const Partners = lazy(() => import('./pages/Partners.tsx'));
+const NewRequest = lazy(() => import('./pages/NewRequest.tsx'));
+const Assignments = lazy(() => import('./pages/Assignments.tsx'));
+const Analytics = lazy(() => import('./pages/Analytics.tsx'));
+const TestConnection = lazy(() => import('./pages/TestConnection.tsx'));
+const TraceabilityDashboard = lazy(() => import('./pages/TraceabilityDashboard.tsx'));
+const PartnerDashboard = lazy(() => import('./pages/PartnerDashboard.tsx'));
+const Login = lazy(() => import('./pages/Login.tsx'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +44,11 @@ const AppContent: React.FC = () => {
   }
 
   if (!isAuthenticated) {
-    return <Login onLogin={login} />;
+    return (
+      <Suspense fallback={<LoadingState message="Loading login..." />}>
+        <Login onLogin={login} />
+      </Suspense>
+    );
   }
 
   // Partner users get their own dedicated dashboard
@@ -50,9 +58,11 @@ const AppContent: React.FC = () => {
         activeTab={partnerActiveTab} 
         onTabChange={setPartnerActiveTab}
       >
-        <Routes>
-          <Route path="/*" element={<PartnerDashboard activeTab={partnerActiveTab} />} />
-        </Routes>
+        <Suspense fallback={<LoadingState message="Loading dashboard..." />}>
+          <Routes>
+            <Route path="/*" element={<PartnerDashboard activeTab={partnerActiveTab} />} />
+          </Routes>
+        </Suspense>
       </Layout>
     );
   }
@@ -60,30 +70,34 @@ const AppContent: React.FC = () => {
   // Admin/Manager users get full system access
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/requests" element={<CustomerRequests />} />
-        <Route path="/requests/new" element={<NewRequest />} />
-        <Route path="/partners" element={<Partners />} />
-        <Route path="/assignments" element={<Assignments />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/traceability" element={<TraceabilityDashboard />} />
-        <Route path="/test" element={<TestConnection />} />
-      </Routes>
+      <Suspense fallback={<LoadingState message="Loading page..." />}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/requests" element={<CustomerRequests />} />
+          <Route path="/requests/new" element={<NewRequest />} />
+          <Route path="/partners" element={<Partners />} />
+          <Route path="/assignments" element={<Assignments />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/traceability" element={<TraceabilityDashboard />} />
+          <Route path="/test" element={<TestConnection />} />
+        </Routes>
+      </Suspense>
     </Layout>
   );
 };
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
-        <Toaster position="top-right" />
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+          <Toaster position="top-right" />
+        </AuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

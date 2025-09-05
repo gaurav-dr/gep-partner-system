@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { Logger, User } from '../types';
+import { Logger, User, AuthRequest } from '../types';
 
 const logger: Logger = require('../utils/logger');
 import AuthService from '../services/AuthService';
