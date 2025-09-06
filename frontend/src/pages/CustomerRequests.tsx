@@ -95,8 +95,7 @@ const CustomerRequests: React.FC = () => {
       number_of_installations: 1, // Default for existing requests
       total_employees: request.employee_count || 50,
       installation_type: request.installation_category || 'office',
-      work_type:
-        request.service_type === 'safety_engineer' ? 'safety_inspection' : 'routine_health_check',
+      work_type: request.service_type, // Pass service_type directly to AI scheduler
       contract_completion_date:
         request.end_date ||
         new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],

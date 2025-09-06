@@ -115,11 +115,17 @@ class AIScheduler {
 
   private async loadPartners(): Promise<Partner[]> {
     try {
-      const partnersData = await partnersApi.getAll();
+      console.log('🔍 Loading partners from API...');
+      const response = await partnersApi.getAll({ limit: 1000 });
+      const partnersData = response.data.data; // Fix: Access nested data property
+      
       if (!partnersData || !Array.isArray(partnersData)) {
         console.warn('⚠️ No partners data received, using fallback data');
+        console.log('⚠️ Response structure:', response);
         return this.getFallbackPartners();
       }
+
+      console.log('📊 Raw partners data:', partnersData.length, 'partners loaded');
 
       // Map the API data to the expected Partner structure
       const partners = partnersData.map((apiPartner: any) => ({
@@ -137,10 +143,12 @@ class AIScheduler {
         rating: 4.0 + Math.random() * 1.0, // Random rating 4.0-5.0
       }));
 
-      console.log('✅ Mapped partners data:', partners.length);
+      console.log('✅ Mapped partners data:', partners.length, 'partners ready for AI matching');
+      console.log('🔍 Sample partner specialties:', partners.slice(0, 5).map(p => p.specialty));
       return partners;
     } catch (error) {
-      console.warn('⚠️ Failed to load partners, using fallback data');
+      console.error('❌ Failed to load partners:', error);
+      console.warn('⚠️ Using fallback data');
       return this.getFallbackPartners();
     }
   }
@@ -167,16 +175,43 @@ class AIScheduler {
 
   async generateRecommendations(customerRequest: CustomerRequest): Promise<AIRecommendation[]> {
     console.log('🎯 Generating AI recommendations for request:', customerRequest.id);
+    console.log('🔍 Customer request details:', {
+      work_type: customerRequest.work_type,
+      service_type: (customerRequest as any).service_type, // Check for service_type
+      installation_type: customerRequest.installation_type,
+      total_employees: customerRequest.total_employees,
+      location: customerRequest.location
+    });
 
     if (this.partners.length === 0) {
+      console.log('🔄 Initializing AI Scheduler...');
       await this.initialize();
     }
 
+    console.log('👥 Total partners available:', this.partners.length);
+    console.log('🔍 Active partners:', this.partners.filter(p => p.is_active).length);
+
     const eligiblePartners = this.findEligiblePartners(customerRequest);
+    console.log('✅ Eligible partners found:', eligiblePartners.length);
+    
+    if (eligiblePartners.length === 0) {
+      console.log('❌ No eligible partners found. Debugging:');
+      console.log('- Request work_type:', customerRequest.work_type);
+      console.log('- Request service_type:', (customerRequest as any).service_type);
+      console.log('- Available specialties:', [...new Set(this.partners.map(p => p.specialty))]);
+      console.log('- Active partners:', this.partners.filter(p => p.is_active).map(p => ({
+        name: p.name,
+        specialty: p.specialty,
+        is_active: p.is_active
+      })));
+    }
+
     const recommendations: AIRecommendation[] = [];
 
     for (const partner of eligiblePartners) {
+      console.log('🤖 Evaluating partner:', partner.name, 'specialty:', partner.specialty);
       const recommendation = await this.evaluatePartnerForRequest(partner, customerRequest);
+      console.log('📊 Match score for', partner.name, ':', recommendation.match_score);
       if (recommendation.match_score > 60) {
         // Only include viable matches
         recommendations.push(recommendation);
@@ -193,36 +228,63 @@ class AIScheduler {
     );
 
     console.log('✅ Generated recommendations:', recommendations.length);
+    console.log('🏆 Top recommendations:', recommendations.map(r => ({
+      name: r.partner_name,
+      score: r.match_score,
+      cost: r.total_estimated_cost
+    })));
+    
     return recommendations.slice(0, 3); // Return top 3 recommendations
   }
 
   private findEligiblePartners(request: CustomerRequest): Partner[] {
+    console.log('🔍 Finding eligible partners for request...');
+    
     return this.partners.filter(partner => {
+      console.log(`🔍 Checking partner ${partner.name}:`, {
+        is_active: partner.is_active,
+        availability_status: partner.availability_status,
+        specialty: partner.specialty
+      });
+
       // Must be active and available
       if (!partner.is_active || partner.availability_status !== 'Available') {
+        console.log(`❌ Partner ${partner.name} not available (active: ${partner.is_active}, status: ${partner.availability_status})`);
         return false;
       }
+
+      // Use service_type from API response instead of work_type
+      const serviceType = request.work_type || (request as any).service_type || '';
+      console.log('🔍 Service type to match:', serviceType);
 
       // Check specialty match for medical work
       const requiresMedical = [
         'routine_health_check',
         'comprehensive_health_assessment',
         'occupational_health_screening',
-      ].includes(request.work_type);
+        'occupational_doctor' // Add direct match
+      ].includes(serviceType.toLowerCase());
+      
       const requiresSafety = [
         'safety_inspection',
         'compliance_audit',
         'emergency_response_assessment',
-      ].includes(request.work_type);
+        'safety_engineer' // Add direct match
+      ].includes(serviceType.toLowerCase());
+
+      console.log('🔍 Match requirements:', { requiresMedical, requiresSafety, serviceType });
 
       if (requiresMedical && !partner.specialty.toLowerCase().includes('occupational doctor')) {
+        console.log(`❌ Partner ${partner.name} doesn't match medical requirement`);
         return false;
       }
 
       if (requiresSafety && !partner.specialty.toLowerCase().includes('safety engineer')) {
+        console.log(`❌ Partner ${partner.name} doesn't match safety requirement`);
         return false;
       }
 
+      console.log(`✅ Partner ${partner.name} is eligible!`);
       return true;
     });
   }
